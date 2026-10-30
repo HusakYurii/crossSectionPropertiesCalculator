@@ -1,0 +1,77 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* ---- Typeface: the one font every piece of text in the app uses ---- */
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* the toast library reads its font from this variable of its own */
+  --toastify-font-family: var(--font-family);
+
+  /* ---- Surfaces ---- */
+  /* Side panels: left & right */
+  --color-surface-sidebar: #e4e6ea;
+  /* Chrome panels: top & assets, modals, menus */
+  --color-surface-chrome: #f0f1f4;
+  /* Main workspace and the inputs that sit on it */
+  --color-surface-canvas: #fafbfc;
+
+  /* ---- Text and borders ---- */
+  /* The ink color as bare channels, so every tint below is made from the same value */
+  --color-text-rgb: 44 51 64;
+  --color-text: rgb(var(--color-text-rgb));
+  --color-border-subtle: #d5d8de;
+
+  /* ---- Fills: the ink color at different strengths, for buttons, hovers and pills ---- */
+  --color-fill-faint: rgb(var(--color-text-rgb) / 0.06);
+  --color-fill: rgb(var(--color-text-rgb) / 0.08);
+  --color-fill-active: rgb(var(--color-text-rgb) / 0.12);
+  --color-fill-disabled: rgb(var(--color-text-rgb) / 0.15);
+  --color-fill-hover: rgb(var(--color-text-rgb) / 0.16);
+  --color-fill-strong: rgb(var(--color-text-rgb) / 0.2);
+
+  /* ---- Accent: selection and edit ---- */
+  --color-accent-rgb: 47 111 237;
+  --color-accent: rgb(var(--color-accent-rgb));
+  --color-accent-selected: rgb(var(--color-accent-rgb) / 0.12);
+  --color-accent-selected-hover: rgb(var(--color-accent-rgb) / 0.18);
+
+  /* ---- Danger: delete ---- */
+  --color-danger: #e5484d;
+
+  /* ---- A selected point in the custom shape list ---- */
+  --color-point-selected: rgb(220 60 60 / 0.12);
+
+  /* ---- Form controls ---- */
+  --color-control-accent: #7a7f87;
+
+  /* ---- Overlay and shadows ---- */
+  --color-overlay: rgb(0 0 0 / 0.4);
+  --color-shadow: rgb(0 0 0 / 0.15);
+  --color-shadow-strong: rgb(0 0 0 / 0.25);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  user-select: none;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-surface-canvas);
+}
+
+/* Form controls do not inherit the page font on their own (they use the system control font), so
+   they are told to, and the text of every button, input, select and textarea matches the rest. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
