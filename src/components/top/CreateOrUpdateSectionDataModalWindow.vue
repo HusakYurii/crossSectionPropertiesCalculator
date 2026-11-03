@@ -15,35 +15,12 @@ import RectSectionForm from './forms/RectSectionForm.vue';
 import HollowRectSectionForm from './forms/HollowRectSectionForm.vue';
 import PlaceholderSectionForm from './forms/PlaceholderSectionForm.vue';
 import SectionPropertiesTable from './forms/SectionPropertiesTable.vue';
-import { SHAPE_TYPES } from '../../interfaces/beams/common.types.ts';
+import { FEM_SHAPE_TYPES, SHAPE_LABELS } from '../../interfaces/beams/shapeLabels.ts';
 import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from '../../interfaces/sectionProperties';
 import type { Point } from '../../interfaces/common/types.ts';
 import type { Triangle } from '../../solvers/femTriangulator/triangulate.ts';
 
 type SolverType = 'simple' | 'fem';
-
-// Every form runs its own solver and exposes the result; the modal only shows and saves it.
-// The solver switch in the header is information only: the shapes below are solved with FEM
-// (on request, from their own form), every other shape with the simple solver.
-const FEM_SHAPES = new Set<ShapeType>([SHAPE_TYPES.CUSTOM_SHAPE]);
-
-const SHAPE_LABELS: Record<ShapeType, string> = {
-	RECTANGLE: 'Rectangle',
-	HOLLOW_RECTANGLE: 'Hollow Rectangle',
-	ROUNDED_RECTANGLE: 'Rounded Rectangle',
-	HOLLOW_ROUNDED_RECTANGLE: 'Hollow Rounded Rectangle',
-	TUBE: 'Tube',
-	HOLLOW_TUBE: 'Hollow Tube',
-	I_SECTION: 'I Shape',
-	C_SECTION: 'C Shape',
-	T_SECTION: 'T Shape',
-	L_SECTION: 'L Shape',
-	S_SECTION: 'S Shape',
-	Z_SECTION: 'Z Shape',
-	FILLET: 'Fillet',
-	TRIANGLE: 'Triangle',
-	CUSTOM_SHAPE: 'Custom Shape',
-};
 
 const SHAPE_FORMS: Partial<Record<ShapeType, Component>> = {
 	RECTANGLE: RectSectionForm,
@@ -83,7 +60,7 @@ function randomShapeName() {
 
 const currentSolver = computed<SolverType>(() => {
 	const shapeType = sectionModalState.shapeType;
-	return shapeType && FEM_SHAPES.has(shapeType) ? 'fem' : 'simple';
+	return shapeType && FEM_SHAPE_TYPES.has(shapeType) ? 'fem' : 'simple';
 });
 
 const crossSectionProperties = computed(() => formRef.value?.crossSectionProperties ?? EMPTY_CROSS_SECTION_PROPERTIES);

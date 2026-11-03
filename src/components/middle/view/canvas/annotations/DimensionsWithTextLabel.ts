@@ -23,6 +23,9 @@ export type DimensionsWithTextLabelParams = {
 	store: Store;
 	sessionState: AppSessionState;
 	color: string;
+	/** in screen pixels, like every size here; the editor's look when left out */
+	lineWidth?: number;
+	arrowHeadSize?: number;
 };
 
 /**
@@ -46,8 +49,8 @@ export class DimensionsWithTextLabel extends BaseDimensions {
 	constructor(params: DimensionsWithTextLabelParams) {
 		super(params.uid, {
 			color: params.color,
-			lineWidth: LINE_WIDTH,
-			arrowHeadSize: ARROW_HEAD_SIZE,
+			lineWidth: params.lineWidth ?? LINE_WIDTH,
+			arrowHeadSize: params.arrowHeadSize ?? ARROW_HEAD_SIZE,
 			dashSize: DASH_SIZE,
 		});
 		this._shapeUid = params.shapeUid;

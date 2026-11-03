@@ -1,4 +1,3 @@
-import type { Point } from "../common/types";
 
 export const SHAPE_TYPES = {
 	RECTANGLE: "RECTANGLE",

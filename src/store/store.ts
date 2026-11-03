@@ -1,4 +1,4 @@
-import { markRaw, reactive, shallowReactive } from 'vue';
+import { markRaw, reactive } from 'vue';
 import type { Geometry } from '../interfaces/beams/common.types';
 import type { Point } from '../interfaces/common/types';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';

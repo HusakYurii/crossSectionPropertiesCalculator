@@ -8,6 +8,7 @@ import SectionField from '../form/SectionField.vue';
 import IsNegativeField from '../form/IsNegativeField.vue';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from './composables/useStoreGeometryWatcher.ts';
 import { useSimpleFormSolver } from './composables/useSimpleFormSolver.ts';
+import { TUBE_FIELDS, INNER_DIAMETER_FIELD } from './fields/shapeFields.ts';
 
 const getDefault = (): OSectionGeometry | OSectionHollowGeometry => ({
 	isNegative: false,
@@ -62,8 +63,8 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon });
 		</template>
 		<IsNegativeField v-model="geometry.isNegative" />
 		<SectionField v-model="geometry.rotation" label="Rotation" unit="deg" />
-		<SectionField v-model="geometry.d1" label="Outer diameter (d1)" unit="mm" />
-		<SectionField v-model="innerDiameter" label="Inner diameter (d2)" unit="mm" :disabled="!hollow">
+		<SectionField v-for="field in TUBE_FIELDS" :key="field.key" v-model="geometry[field.key]" :label="field.label" :unit="field.unit" />
+		<SectionField v-model="innerDiameter" :label="INNER_DIAMETER_FIELD.label" :unit="INNER_DIAMETER_FIELD.unit" :disabled="!hollow">
 			<template #option>
 				<input v-model="hollow" type="checkbox" />
 			</template>

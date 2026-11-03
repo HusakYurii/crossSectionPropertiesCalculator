@@ -8,6 +8,7 @@ import SectionField from '../form/SectionField.vue';
 import IsNegativeField from '../form/IsNegativeField.vue';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from './composables/useStoreGeometryWatcher.ts';
 import { useSimpleFormSolver } from './composables/useSimpleFormSolver.ts';
+import { HOLLOW_RECTANGLE_FIELDS, CORNER_RADIUS_FIELD } from './fields/shapeFields.ts';
 
 const getDefault = (): HollowRectangleGeometry | RoundedHollowRectangleGeometry => ({
 	isNegative: false,
@@ -45,11 +46,8 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon });
 		</template>
 		<IsNegativeField v-model="geometry.isNegative" />
 		<SectionField v-model="geometry.rotation" label="Rotation" unit="deg" />
-		<SectionField v-model="geometry.w1" label="Outer width (w1)" unit="mm" />
-		<SectionField v-model="geometry.h1" label="Outer height (h1)" unit="mm" />
-		<SectionField v-model="geometry.w2" label="Inner width (w2)" unit="mm" />
-		<SectionField v-model="geometry.h2" label="Inner height (h2)" unit="mm" />
-		<SectionField v-model="geometry.r" label="Corner radius (r)" unit="mm" :disabled="!rounded">
+		<SectionField v-for="field in HOLLOW_RECTANGLE_FIELDS" :key="field.key" v-model="geometry[field.key]" :label="field.label" :unit="field.unit" />
+		<SectionField v-model="geometry.r" :label="CORNER_RADIUS_FIELD.label" :unit="CORNER_RADIUS_FIELD.unit" :disabled="!rounded">
 			<template #option>
 				<input v-model="rounded" type="checkbox" />
 			</template>

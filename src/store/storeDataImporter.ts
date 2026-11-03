@@ -61,6 +61,20 @@ const replaceAppSessionData = (session: PersistedSessionState) => {
     appSessionState.currentHoveredShapeID = null;
 }
 
+export const loadProjectData = (data: unknown): 'ok' | 'invalid' | 'unsupported' => {
+    if (!isStoreDataValid(data)) {
+        return 'invalid';
+    }
+    const project = normalizeProject(data);
+    if (!project) {
+        return 'unsupported';
+    }
+    replaceStoreData(project.state);
+    replaceAppSessionData(project.session);
+    markStateDirty();
+    return 'ok';
+}
+
 export const importStoreData = async (file: File | undefined) => {
     if (!file) {
         toast.error("File wasn't picked up. Upload valid JSON file");
@@ -69,18 +83,15 @@ export const importStoreData = async (file: File | undefined) => {
     try {
         const fileContent = await file.text();
         const data: unknown = JSON.parse(fileContent);
-        if (!isStoreDataValid(data)) {
+        const result = loadProjectData(data);
+        if (result === 'invalid') {
             toast.error("The JSON data is not valid. Probably wrong file");
             return;
         }
-        const project = normalizeProject(data);
-        if (!project) {
+        if (result === 'unsupported') {
             toast.error("This project file version is not supported");
             return;
         }
-        replaceStoreData(project.state);
-        replaceAppSessionData(project.session);
-        markStateDirty();
         toast.info('Successfully imported');
     } catch (error) {
         toast.error("Failed to parse the file, make sure it is the right one");

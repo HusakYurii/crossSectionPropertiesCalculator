@@ -27,6 +27,7 @@ import { PolygonEditor } from './customShapeFormDrawUtils/PolygonEditor.ts';
 import { PropertyOverlays } from '../../middle/view/canvas/propertiesHelperPreviews/index.ts';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from './composables/useStoreGeometryWatcher.ts';
 import { uploadCsv } from '../../../fileLoader/uploadFile.ts';
+import { FEM_OPTION_FIELDS } from './fields/shapeFields.ts';
 
 const MIN_POINTS = 3;
 const MIN_ZOOM = 0.5;
@@ -421,12 +422,7 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 			<details class="custom-shape__mesh">
 				<summary>Mesh settings</summary>
 				<div class="custom-shape__mesh-fields">
-					<SectionField v-model="femOptions.improvePasses" label="Improve passes" unit="" />
-					<SectionField v-model="femOptions.subdivideLevels" label="Subdivide levels" unit="" />
-					<SectionField v-model="femOptions.minSegmentLength" label="Min segment length" unit="mm" />
-					<SectionField v-model="femOptions.minAngleDeg" label="Min triangle angle" unit="deg" />
-					<SectionField v-model="femOptions.maxSteinerPoints" label="Max extra points" unit="" />
-					<SectionField v-model="femOptions.maxIterations" label="Max iterations" unit="" />
+					<SectionField v-for="field in FEM_OPTION_FIELDS" :key="field.key" v-model="femOptions[field.key]" :label="field.label" :unit="field.unit" />
 				</div>
 				<div class="custom-shape__mesh-actions">
 					<button type="button" class="custom-shape__clear" @click="resetFemOptions">Reset</button>

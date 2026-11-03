@@ -10,7 +10,7 @@ export class LSectionPropertiesStrategy extends AbstractPropertiesStrategy<LSect
 		return geometry.type === SHAPE_TYPES.L_SECTION;
 	}
 
-	execute(geometry: LSectionGeometry, polygon: Point[]) {
+	execute(_geometry: LSectionGeometry, polygon: Point[]) {
 		return calculateCrossSectionProperties(polygon);
 	}
 }

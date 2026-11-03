@@ -7,9 +7,13 @@ import { CROSS_SECTION_UNITS, type CrossSectionProperties } from '../../../inter
  * Create a solver and move all math there
  */
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	properties?: CrossSectionProperties;
-}>();
+	/** the report prints the table whole, so it turns the scroll off */
+	scrollable?: boolean;
+}>(), {
+	scrollable: true,
+});
 
 const ROWS: { key: keyof CrossSectionProperties; notation: string; label: string }[] = [
 	{ key: 'A', notation: 'A', label: 'Area' },
@@ -42,7 +46,7 @@ function unitFor(key: keyof CrossSectionProperties) {
 </script>
 
 <template>
-	<div class="properties-table-wrapper">
+	<div class="properties-table-wrapper" :class="{ 'properties-table-wrapper--scroll': scrollable }">
 		<table class="properties-table">
 			<thead>
 				<tr>
@@ -66,7 +70,7 @@ function unitFor(key: keyof CrossSectionProperties) {
 </template>
 
 <style scoped>
-.properties-table-wrapper {
+.properties-table-wrapper--scroll {
 	overflow-y: scroll;
 }
 
@@ -101,5 +105,15 @@ function unitFor(key: keyof CrossSectionProperties) {
 .properties-table th {
 	opacity: 0.6;
 	font-weight: 500;
+}
+
+@media print {
+	.properties-table thead {
+		display: table-header-group;
+	}
+
+	.properties-table tr {
+		break-inside: avoid;
+	}
 }
 </style>

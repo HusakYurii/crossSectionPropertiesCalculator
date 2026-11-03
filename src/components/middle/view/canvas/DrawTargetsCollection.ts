@@ -38,7 +38,7 @@ export class DrawTargetsCollection<T extends DrawableTarget> {
 		return this._items;
 	}
 
-	draw(...args: any[]): void {
+	draw(..._args: any[]): void {
 		this._items.forEach(item => item.draw(this._props));
 	}
 }

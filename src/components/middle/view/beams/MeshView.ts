@@ -1,5 +1,6 @@
-import type { Detectable, Drawable, DrawTarget, Point } from "../../../../interfaces/common/types";
+import type { DrawTarget, Point } from "../../../../interfaces/common/types";
 import type { Triangle } from "../../../../solvers/femTriangulator/triangulate";
+import { getScaledSize } from "../canvas/drawUtils";
 
 export class MeshView implements DrawTarget {
 
@@ -8,9 +9,12 @@ export class MeshView implements DrawTarget {
 	public showDebug: boolean = false;
 
 	private _triangles: Triangle[];
+	private _screenLineWidth?: number;
 
-	constructor(triangles: Triangle[]) {
+	/** `screenLineWidth` keeps the lines one width at any zoom; without it they are 0.2 in world units */
+	constructor(triangles: Triangle[], options: { screenLineWidth?: number } = {}) {
 		this._triangles = triangles;
+		this._screenLineWidth = options.screenLineWidth;
 	}
 
 	contains(_point: Point): boolean {
@@ -27,7 +31,7 @@ export class MeshView implements DrawTarget {
 		const lineWidth = context.lineWidth;
 
 		context.strokeStyle = 'rgba(0, 110, 255, 1)';
-		context.lineWidth = 0.2;
+		context.lineWidth = this._screenLineWidth === undefined ? 0.2 : getScaledSize(context, this._screenLineWidth);
 
 		for (const [a, b, c] of this._triangles) {
 			context.beginPath();

@@ -75,3 +75,11 @@ select,
 textarea {
   font-family: inherit;
 }
+
+/* the report is a document that scrolls and whose text can be selected, not a fixed-height app */
+.report-mode,
+.report-mode body,
+.report-mode #app {
+  height: auto;
+  user-select: text;
+}

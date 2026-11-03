@@ -17,19 +17,11 @@ import { AXIS_COLORS } from './canvas/constants/axisColors.ts';
 
 import { Grid, MainAxis } from './shapes';
 import { appSessionState, setSelectedShapeID, store } from '../../../store/store';
-import { SHAPE_TYPES } from '../../../interfaces/beams/common.types';
-import { GenericBeamView, type GenericBeamViewParams } from './beams';
-import { HollowTubeBeam } from './beams/HollowTubeBeam';
-import { HollowRectangleBeam } from './beams/HollowRectangleBeam';
+import { createBeamView } from './beams';
 
 // remembers which geometry type each beam on the canvas was built for, to notice when a shape changes kind
 const beamTypes = new Map<string, string>();
 
-const specialBeamMap = {
-	[SHAPE_TYPES.HOLLOW_TUBE]: HollowTubeBeam,
-	[SHAPE_TYPES.HOLLOW_RECTANGLE]: HollowRectangleBeam,
-	[SHAPE_TYPES.HOLLOW_ROUNDED_RECTANGLE]: HollowRectangleBeam,
-} as const
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const canvasWrapperRef = ref<HTMLDivElement | null>(null);
 
@@ -111,13 +103,7 @@ watch(() => appSessionState.redrawId, () => {
 			return;
 		}
 
-		const params: GenericBeamViewParams = {
-			uid,
-			store: store
-		};
-
-		const BeamClass = specialBeamMap[geometryData.type as keyof typeof specialBeamMap] ?? GenericBeamView;
-		const beam = new BeamClass(params as any);
+		const beam = createBeamView(uid, store);
 		beamsDrawTargetCollection.add(beam);
 		beamTypes.set(uid, geometryData.type);
 	});

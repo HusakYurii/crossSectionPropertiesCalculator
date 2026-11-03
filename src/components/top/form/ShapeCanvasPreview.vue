@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { sectionModalState } from '../../../store/sectionModal';
-import { setShowRotation, store } from '../../../store/store';
+import { setShowRotation, store, type Store } from '../../../store/store';
 import { Canvas, type CanvasSize, type CanvasTransformState } from '../../middle/view/canvas/Canvas';
 import { BeamsDrawTargetCollection } from '../../middle/view/canvas/BeamsDrawTargetCollection';
 import { ResizeService } from '../../middle/view/services/ResizeService';
-import { GenericBeamView, type GenericBeamViewParams } from '../../middle/view/beams';
-import { HollowTubeBeam } from '../../middle/view/beams/HollowTubeBeam';
-import { HollowRectangleBeam } from '../../middle/view/beams/HollowRectangleBeam';
-import { SHAPE_TYPES, type Geometry } from '../../../interfaces/beams/common.types';
+import { type GenericBeamView, createBeamView } from '../../middle/view/beams';
+import type { Geometry } from '../../../interfaces/beams/common.types';
 import { useCrossSectionPropertiesSolver } from '../forms/composables/useCrossSectionPropertiesSolver';
 import { useDebounce } from '../../../composables/useDebounce';
 import { DrawTargetsCollection, type DrawableTarget } from '../../middle/view/canvas/DrawTargetsCollection';
@@ -35,12 +33,6 @@ const showRotation = computed({
 	},
 });
 
-const specialBeamMap = {
-	[SHAPE_TYPES.HOLLOW_TUBE]: HollowTubeBeam,
-	[SHAPE_TYPES.HOLLOW_RECTANGLE]: HollowRectangleBeam,
-	[SHAPE_TYPES.HOLLOW_ROUNDED_RECTANGLE]: HollowRectangleBeam,
-} as const;
-
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const wrapperRef = ref<HTMLDivElement | null>(null);
 
@@ -64,9 +56,7 @@ let resizeService: ResizeService;
 let beam: GenericBeamView;
 
 const buildBeam = () => {
-	const BeamClass = specialBeamMap[props.geometry.type as keyof typeof specialBeamMap] ?? GenericBeamView;
-	const params: GenericBeamViewParams = { uid: PREVIEW_UID, store: shadowStore as any };
-	return new BeamClass(params as any);
+	return createBeamView(PREVIEW_UID, shadowStore as unknown as Store);
 };
 
 const computeFitTransform = (): CanvasTransformState => {

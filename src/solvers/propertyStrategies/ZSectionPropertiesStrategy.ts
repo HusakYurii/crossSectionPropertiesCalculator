@@ -10,7 +10,7 @@ export class ZSectionPropertiesStrategy extends AbstractPropertiesStrategy<ZSect
 		return geometry.type === SHAPE_TYPES.Z_SECTION;
 	}
 
-	execute(geometry: ZSectionGeometry, polygon: Point[]) {
+	execute(_geometry: ZSectionGeometry, polygon: Point[]) {
 		return calculateCrossSectionProperties(polygon);
 	}
 }

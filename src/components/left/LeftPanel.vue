@@ -43,7 +43,7 @@ function onMouseEnter(event: MouseEvent) {
 	setHoveredShapeID((event.target as HTMLElement).id);
 }
 
-function onMouseLeave(event: MouseEvent) {
+function onMouseLeave(_event: MouseEvent) {
 	setHoveredShapeID(null);
 }
 

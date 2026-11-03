@@ -3,8 +3,7 @@ import { MIME_JSON } from "../fileLoader/mimeTypes";
 import { PROJECT_FILE_VERSION, PROJECT_SOURCE, type ProjectFile } from "./projectFile";
 import { appSessionState, store } from "./store";
 
-export const exportStoreData = () => {
-    const projectFile: ProjectFile = {
+export const buildProjectFile = (): ProjectFile => ({
         meta: {
             source: PROJECT_SOURCE,
             version: PROJECT_FILE_VERSION,
@@ -20,9 +19,8 @@ export const exportStoreData = () => {
             crossSectionPolygon: store.crossSectionPolygon,
             crossSectionMesh: store.crossSectionMesh,
         },
-    };
+});
 
-    const dataToDownload = JSON.stringify(projectFile, null, 2);
-
-    downloadText('project.json', dataToDownload, MIME_JSON);
+export const exportStoreData = () => {
+    downloadText('project.json', JSON.stringify(buildProjectFile(), null, 2), MIME_JSON);
 }

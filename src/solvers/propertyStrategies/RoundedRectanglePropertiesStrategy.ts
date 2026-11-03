@@ -10,7 +10,7 @@ export class RoundedRectanglePropertiesStrategy extends AbstractPropertiesStrate
 		return geometry.type === SHAPE_TYPES.ROUNDED_RECTANGLE;
 	}
 
-	execute(geometry: RoundedRectangleGeometry, polygon: Point[]) {
+	execute(_geometry: RoundedRectangleGeometry, polygon: Point[]) {
 		return calculateCrossSectionProperties(polygon);
 	}
 }

@@ -7,6 +7,7 @@ import SectionField from '../form/SectionField.vue';
 import IsNegativeField from '../form/IsNegativeField.vue';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from './composables/useStoreGeometryWatcher.ts';
 import { useSimpleFormSolver } from './composables/useSimpleFormSolver.ts';
+import { T_SECTION_FIELDS } from './fields/shapeFields.ts';
 
 // a centered T by default: the flange overhangs the web by the same amount on both sides
 const getDefault = (): TSectionGeometry => ({
@@ -37,11 +38,6 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon });
 		</template>
 		<IsNegativeField v-model="geometry.isNegative" />
 		<SectionField v-model="geometry.rotation" label="Rotation" unit="deg" />
-		<SectionField v-model="geometry.h" label="Height (h)" unit="mm" />
-		<SectionField v-model="geometry.t_w" label="Web thickness (t_w)" unit="mm" />
-		<SectionField v-model="geometry.t_f" label="Flange thickness (t_f)" unit="mm" />
-		<SectionField v-model="geometry.w" label="Flange width (w)" unit="mm" />
-		<SectionField v-model="geometry.b" label="Flange offset (b)" unit="mm" />
-		<SectionField v-model="geometry.r" label="Fillet radius (r)" unit="mm" />
+		<SectionField v-for="field in T_SECTION_FIELDS" :key="field.key" v-model="geometry[field.key]" :label="field.label" :unit="field.unit" />
 	</SectionShapeLayout>
 </template>

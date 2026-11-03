@@ -7,6 +7,7 @@ import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CSectionGeometry } from '../../../interfaces/beams/CSection.types.ts';
 import { useStoreGeometryWatcher, type WatchStoreGeometryProps } from './composables/useStoreGeometryWatcher.ts';
 import { useSimpleFormSolver } from './composables/useSimpleFormSolver.ts';
+import { C_SECTION_FIELDS } from './fields/shapeFields.ts';
 
 const getDefault = (): CSectionGeometry => ({
 	isNegative: false,
@@ -37,13 +38,6 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon });
 		</template>
 		<IsNegativeField v-model="geometry.isNegative" />
 		<SectionField v-model="geometry.rotation" label="Rotation" unit="deg" />
-		<SectionField v-model="geometry.h" label="Height (h)" unit="mm" />
-		<SectionField v-model="geometry.t_w" label="Web thickness (t_w)" unit="mm" />
-		<SectionField v-model="geometry.t_f1" label="Top flange thickness (t_f1)" unit="mm" />
-		<SectionField v-model="geometry.w1" label="Top flange width (w1)" unit="mm" />
-		<SectionField v-model="geometry.r1" label="Top web fillet (r1)" unit="mm" />
-		<SectionField v-model="geometry.t_f2" label="Bottom flange thickness (t_f2)" unit="mm" />
-		<SectionField v-model="geometry.w2" label="Bottom flange width (w2)" unit="mm" />
-		<SectionField v-model="geometry.r2" label="Bottom web fillet (r2)" unit="mm" />
+		<SectionField v-for="field in C_SECTION_FIELDS" :key="field.key" v-model="geometry[field.key]" :label="field.label" :unit="field.unit" />
 	</SectionShapeLayout>
 </template>

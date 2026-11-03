@@ -9,7 +9,8 @@ import { importStoreData} from '../../store/storeDataImporter.ts';
 import { exportStoreData } from '../../store/storeDataExporter.ts';
 import { store } from '../../store/store.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../solvers/CompositeCrossSectionPropertiesSolver.ts';
-import { CROSS_SECTION_UNITS, type CrossSectionProperties } from '../../interfaces/sectionProperties/index.ts';
+import { createReportSnapshot, saveReportSnapshot } from '../../report/reportSnapshot.ts';
+import { toast } from 'vue3-toastify';
 
 type ActionNames = "import" | "export" | "results";
 
@@ -24,11 +25,19 @@ const ACTIONS_STRATEGIES: Record<ActionNames, () => void> = {
 	},
 	results: () => {
 		const properties = compositeCrossSectionPropertiesSolver.calculate(store);
-		console.table(Object.entries(properties).map(([key, value]) => ({
-			property: key,
-			value,
-			unit: CROSS_SECTION_UNITS[key as keyof CrossSectionProperties],
-		})));
+		if (!(properties.A > 0)) return; // the solver already showed a toast saying why
+		const id = saveReportSnapshot(createReportSnapshot());
+		if (!id) {
+			toast.error('Could not prepare the report: the project is too big to pass to a new tab.');
+			return;
+		}
+		const url = new URL(window.location.href);
+		url.search = '';
+		url.hash = '';
+		url.searchParams.set('report', id);
+		// no `noopener`: with it window.open always returns null and a blocked pop-up could not be detected
+		const tab = window.open(url, '_blank');
+		if (!tab) toast.error('The browser blocked the report tab. Allow pop-ups for this site and try again.');
 	},
 }
 
