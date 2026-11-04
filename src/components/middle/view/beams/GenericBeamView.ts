@@ -81,6 +81,9 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 		return this._cachedPathPoints;
 	}
 
+	get boundingBox() {
+		return this._cachedBoundingBox;
+	}
 
 	draw(props: { context: CanvasRenderingContext2D; isHovered?: boolean, isSelected?: boolean; }): void {
 		this._recalculateAndCacheShapeData();

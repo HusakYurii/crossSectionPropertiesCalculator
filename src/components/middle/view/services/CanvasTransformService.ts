@@ -1,4 +1,4 @@
-import type { Sizes, Service, Point } from "../../../../interfaces/common/types";
+import type { Sizes, Service, Point, BoundingBox } from "../../../../interfaces/common/types";
 import type { CanvasTransformState } from "../canvas/Canvas";
 import type { InputService } from "./InputService";
 
@@ -59,6 +59,22 @@ export class CanvasTransformService implements Service {
 			x: (sx - this._currentTransforms.panX) / this._currentTransforms.zoom,
 			y: (this._currentTransforms.panY - sy) / this._currentTransforms.zoom,
 		};
+	}
+
+	/** Centers a world-space box in the canvas and zooms so it fits, leaving `margin` screen pixels around it. */
+	fitToBounds(bounds: BoundingBox, margin: number): void {
+		const { width, height } = this._getDisplaySize();
+		const zoom = this._clamp(
+			Math.min((width - margin * 2) / bounds.width, (height - margin * 2) / bounds.height),
+			this._minZoom,
+			this._maxZoom,
+		);
+
+		this._currentTransforms.zoom = zoom;
+		// pan is the screen offset of the world origin from the canvas center, and world y points up
+		this._currentTransforms.panX = -(bounds.x + bounds.width / 2) * zoom;
+		this._currentTransforms.panY = (bounds.y + bounds.height / 2) * zoom;
+		this._onViewChange();
 	}
 
 	initialize(): void {

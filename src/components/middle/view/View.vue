@@ -12,6 +12,7 @@ import { NAVIGATION_HINTS } from './canvas/constants/canvasHints.ts';
 import CanvasHint from './CanvasHint.vue';
 import centerIconRaw from '../../../svg/center.svg?raw';
 import resetZoomIconRaw from '../../../svg/reset-zoom.svg?raw';
+import fitScreenIconRaw from '../../../svg/fit-screen.svg?raw';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
 import { AXIS_COLORS } from './canvas/constants/axisColors.ts';
 
@@ -28,10 +29,21 @@ const canvasWrapperRef = ref<HTMLDivElement | null>(null);
 
 const HINTS = ['Drag a beam to move it', ...NAVIGATION_HINTS];
 
+// screen pixels left between the shapes and the canvas edges by "Fit to screen"
+const FIT_MARGIN = 48;
+
+const fitToScreen = () => {
+	const bounds = beamsDrawTargetCollection.getBoundingBox();
+	if (bounds) {
+		scene.transformService.fitToBounds(bounds, FIT_MARGIN);
+	}
+};
+
 // quick actions bar: each one is a square icon button in the top left corner of the canvas
 const QUICK_ACTIONS = [
 	{ id: 'center', label: 'Center the canvas', icon: centerIconRaw, run: () => scene.centerView() },
 	{ id: 'reset-zoom', label: 'Reset zoom', icon: resetZoomIconRaw, run: () => scene.resetZoom() },
+	{ id: 'fit-to-screen', label: 'Fit to screen', icon: fitScreenIconRaw, run: fitToScreen },
 ];
 
 let scene: CanvasScene;
