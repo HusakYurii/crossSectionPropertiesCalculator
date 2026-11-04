@@ -44,7 +44,6 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 
 	protected _store: Store;
 
-	protected _geometryConfig: G;
 	/**
 	 * This one derives from this._geometryPolygon and takes into account the
 	 * shape calculated centroid from CrossSectionProperties, this._geometryConfig.rotation and this._position
@@ -56,12 +55,18 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 	constructor(params: GenericBeamViewParams) {
 		this.uid = params.uid;
 		this._store = params.store;
-		this._geometryConfig = params.store.geometry[params.uid] as G;
 
 		this._cachedPathPoints = [];
 		this._cachedBoundingBox = { x: 0, y: 0, width: 1, height: 1 };
+	}
 
-		// this.recalculateAndCacheShapeData();
+	/**
+	 * This getter works safer because of history feature.
+	 * Read from the store on every access: undo/redo can replace the stored object, 
+	 * so we want to avoid local references in constructor because those would go stale
+	 */
+	protected get _geometryConfig(): G {
+		return this._store.geometry[this.uid] as G;
 	}
 
 	get isNegative() {

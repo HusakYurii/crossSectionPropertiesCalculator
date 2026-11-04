@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { store, appSessionState, setSelectedShapeID, removeGeometryData, removeCrossSectionProperties, removeCrossSectionPolygon, removeCrossSectionMesh, removeGeometryExtraData, setHoveredShapeID, removeShapeSessionState } from '../../store/store';
+import { history } from '../../store/history';
 import { openSectionModal } from '../../store/sectionModal';
 import trashIconRaw from '../../svg/trash.svg?raw';
 import editIconRaw from '../../svg/edit.svg?raw';
@@ -37,6 +38,7 @@ function onDelete(uid: string) {
 	removeCrossSectionProperties(uid);
 	removeGeometryExtraData(uid);
 	removeShapeSessionState(uid);
+	history.commit();
 }
 
 function onMouseEnter(event: MouseEvent) {

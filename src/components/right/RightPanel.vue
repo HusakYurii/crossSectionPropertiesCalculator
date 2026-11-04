@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { watch, ref } from 'vue';
+import { watch, ref, onMounted, onUnmounted } from 'vue';
 import { store, appSessionState, updateGeometryExtraData, type GeometryDataExtra } from '../../store/store';
 import { useDebounce } from '../../composables/useDebounce';
+import { history } from '../../store/history';
 
 const empty: GeometryDataExtra = {
 	name: '',
@@ -10,7 +11,33 @@ const empty: GeometryDataExtra = {
 
 const data = ref<GeometryDataExtra>(empty);
 const hasSelectedID = ref(false);
-const [updateData] = useDebounce(updateGeometryExtraData, 500);
+// the shape can be deleted (or undone away) while a write waits, and the write must not throw then
+const [updateData, _, flushData] = useDebounce((payload: { uid: string; data: Partial<GeometryDataExtra> }) => {
+	if (store.geometryExtra[payload.uid]) {
+		updateGeometryExtraData(payload);
+	}
+}, 500);
+
+// undo and redo save what is still waiting first
+const stopBeforeCommit = history.onBeforeCommit(flushData);
+
+// A pending write must land before the canvas reads the shape's position for a drag. The canvas
+// handler runs on mousedown, before the input's change event, so flush in the capture phase.
+onMounted(() => window.addEventListener('mousedown', flushData, true));
+onUnmounted(() => {
+	stopBeforeCommit();
+	window.removeEventListener('mousedown', flushData, true);
+});
+
+const handleFormChange = () => {
+	flushData();
+	history.commit();
+	// a field that was left blank (and so was not written) shows the stored value again
+	const stored = store.geometryExtra[appSessionState.currentSelectedShapeID as string];
+	if (stored) {
+		data.value = { name: stored.name, position: { ...stored.position } };
+	}
+}
 
 watch(() => store.geometryExtra[appSessionState.currentSelectedShapeID as string], (newData: GeometryDataExtra) => {
 	hasSelectedID.value = newData !== undefined;
@@ -32,14 +59,21 @@ const handleFormInput = (event: InputEvent) => {
 		return
 	}
 	const formData = new FormData(event.currentTarget as HTMLFormElement);
-	const data: GeometryDataExtra = {
+	const x = parseFloat(formData.get('positionX') as string);
+	const y = parseFloat(formData.get('positionY') as string);
+	const current = store.geometryExtra[appSessionState.currentSelectedShapeID];
+	if (!current) {
+		return;
+	}
+	// an empty number input parses to NaN, which must not become the position (it would export as null),
+	// so each axis is written only when it is a number and keeps its stored value otherwise
+	const data: Partial<GeometryDataExtra> = {
 		name: formData.get('name') as string,
 		position: {
-			x: parseFloat(formData.get('positionX') as string),
-			y: parseFloat(formData.get('positionY') as string),
-		}
-
-	}
+			x: Number.isFinite(x) ? x : current.position.x,
+			y: Number.isFinite(y) ? y : current.position.y,
+		},
+	};
 
 	updateData({
 		uid: appSessionState.currentSelectedShapeID,
@@ -51,7 +85,7 @@ const handleFormInput = (event: InputEvent) => {
 
 <template>
 	<aside class="right-panel">
-		<form v-if="hasSelectedID" class="shape-form" @input="handleFormInput" @submit.prevent>
+		<form v-if="hasSelectedID" class="shape-form" @input="handleFormInput" @change="handleFormChange" @submit.prevent>
 			<label class="shape-form__label" for="shape-name">Name:</label>
 			<div class="shape-form__row">
 				<input id="shape-name" :value="data.name" type="text" name="name" class="shape-form__input" />

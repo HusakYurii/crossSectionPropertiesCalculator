@@ -3,7 +3,10 @@ import TopPanel from './components/top/TopPanel.vue';
 import LeftPanel from './components/left/LeftPanel.vue';
 import View from './components/middle/view/View.vue';
 import RightPanel from './components/right/RightPanel.vue';
+import { useHistoryShortcuts } from './composables/useHistoryShortcuts.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
+
+useHistoryShortcuts();
 
 const {
 	leftWidth,

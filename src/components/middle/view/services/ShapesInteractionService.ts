@@ -21,6 +21,10 @@ type ShapesInteractionServiceProps = {
 	/** that other grabbable thing is being dragged right now, so the cursor shows it is held */
 	isOtherInteractiveDragging?: () => boolean;
 	onChange: () => void;
+	/** 
+	 *  A drag of a label ended (mouse up or mouse leave), switching windows mid-drag sends no mouse up or leave
+	 * */
+	onDragEnd: () => void;
 };
 
 export class ShapesInteractionService implements Service {
@@ -44,6 +48,7 @@ export class ShapesInteractionService implements Service {
 	private _isOverOtherInteractive: (point: Point) => boolean;
 	private _isOtherInteractiveDragging: () => boolean;
 	private _onChange: () => void;
+	private _onDragEnd: () => void;
 
 	constructor(props: ShapesInteractionServiceProps) {
 		this._canvas = props.canvas;
@@ -55,10 +60,15 @@ export class ShapesInteractionService implements Service {
 		this._isOverOtherInteractive = props.isOverOtherInteractive ?? (() => false);
 		this._isOtherInteractiveDragging = props.isOtherInteractiveDragging ?? (() => false);
 		this._onChange = props.onChange;
+		this._onDragEnd = props.onDragEnd;
 	}
 
 	get shapeHighlights(): ReadonlyArray<string> {
 		return this._cachedShapeHighlights;
+	}
+
+	get isDragging(): boolean {
+		return this._draggedShape !== null;
 	}
 
 	get mouseWorldPosition(): Point | undefined {
@@ -75,6 +85,7 @@ export class ShapesInteractionService implements Service {
 			this._inputService.onMouseMove(this._onMouseMove),
 			this._inputService.onMouseUp(this._onMouseUp),
 			this._inputService.onMouseLeave(this._onMouseLeave),
+			this._inputService.onWindowBlur(this._onMouseLeave),
 		];
 		this._active = true;
 	}
@@ -232,15 +243,19 @@ export class ShapesInteractionService implements Service {
 			return;
 		}
 
+		const wasDragging = this.isDragging;
 		this._draggedShape = null;
 		this._updateCursor(this._screenToWorld({ x: event.offsetX, y: event.offsetY }), true);
 		this._onChange();
+		wasDragging && this._onDragEnd();
 	};
 
 	private _onMouseLeave = (): void => {
+		const wasDragging = this.isDragging;
 		this._draggedShape = null;
 		this._mouseWorldPosition = undefined;
 		this._canvas.style.cursor = CURSOR.DEFAULT;
 		this._onChange();
+		wasDragging && this._onDragEnd();
 	};
 }

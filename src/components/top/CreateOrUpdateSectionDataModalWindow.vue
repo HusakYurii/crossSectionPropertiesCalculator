@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, type Component } from 'vue';
 import { sectionModalState, closeSectionModal } from '../../store/sectionModal.ts';
 import type { ShapeType } from '../../store/sectionModal.ts';
 import { addGeometryData, updateGeometryData, getUID, store, addCrossSectionProperties, updateCrossSectionProperties, updateCrossSectionPolygon, addCrossSectionPolygon, updateGeometryExtraData, addGeometryExtraData, setCrossSectionMesh, removeCrossSectionMesh, setShowRotation } from '../../store/store.ts';
+import { history } from '../../store/history.ts';
 import type { Geometry } from '../../interfaces/beams/common.types.ts';
 import ISectionForm from './forms/ISectionForm.vue';
 import CSectionForm from './forms/CSectionForm.vue';
@@ -128,6 +129,7 @@ function confirmAddShape() {
 	}
 
 	setShowRotation(uid, sectionModalState.showRotation);
+	history.commit();
 	closeSectionModal();
 }
 

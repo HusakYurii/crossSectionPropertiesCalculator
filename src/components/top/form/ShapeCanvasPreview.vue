@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { sectionModalState } from '../../../store/sectionModal';
+import { history } from '../../../store/history';
 import { setShowRotation, store, type Store } from '../../../store/store';
 import { Canvas, type CanvasSize, type CanvasTransformState } from '../../middle/view/canvas/Canvas';
 import { BeamsDrawTargetCollection } from '../../middle/view/canvas/BeamsDrawTargetCollection';
@@ -29,6 +30,7 @@ const showRotation = computed({
 		const uid = sectionModalState.selectedShapeUID;
 		if (uid && uid in store.geometry) {
 			setShowRotation(uid, value);
+			history.commit();
 		}
 	},
 });

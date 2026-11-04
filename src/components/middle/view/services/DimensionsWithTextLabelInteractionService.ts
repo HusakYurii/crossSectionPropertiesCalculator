@@ -9,6 +9,10 @@ type DimensionsWithTextLabelInteractionServiceProps = {
 	screenToWorld: (point: Point) => Point;
 	isTransformModeActive: () => boolean;
 	onChange: () => void;
+	/** 
+	 *  A drag of a label ended (mouse up or mouse leave), switching windows mid-drag sends no mouse up or leave
+	 * */
+	onDragEnd: () => void;
 };
 
 /**
@@ -22,6 +26,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 	private _screenToWorld: (point: Point) => Point;
 	private _isTransformModeActive: () => boolean;
 	private _onChange: () => void;
+	private _onDragEnd: () => void;
 
 	private _unsubscribeHandlers: Array<() => void> = [];
 	private _active = false;
@@ -37,6 +42,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 		this._screenToWorld = props.screenToWorld;
 		this._isTransformModeActive = props.isTransformModeActive;
 		this._onChange = props.onChange;
+		this._onDragEnd = props.onDragEnd;
 	}
 
 	get isDragging(): boolean {
@@ -53,6 +59,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 			this._inputService.onMouseMove(this._onMouseMove),
 			this._inputService.onMouseUp(this._onMouseUp),
 			this._inputService.onMouseLeave(this._onMouseLeave),
+			this._inputService.onWindowBlur(this._onMouseLeave),
 		];
 		this._active = true;
 	}
@@ -134,14 +141,18 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 			return;
 		}
 
+		const wasDragging = this.isDragging;
 		this._draggedLabel = null;
 		// the label may have been dropped away from the mouse, so the hover is checked again
 		const worldPosition = this._screenToWorld({ x: event.offsetX, y: event.offsetY });
 		this._setHoveredLabel(this._findLabelAt(worldPosition) ?? null);
+		wasDragging && this._onDragEnd();
 	};
 
 	private _onMouseLeave = (): void => {
+		const wasDragging = this.isDragging;
 		this._draggedLabel = null;
 		this._setHoveredLabel(null);
+		wasDragging && this._onDragEnd();
 	};
 }

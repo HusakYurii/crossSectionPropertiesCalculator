@@ -1,6 +1,7 @@
 import { markRaw } from 'vue';
 import { toast } from 'vue3-toastify';
 import { PROJECT_SOURCE, type ProjectState } from "./projectFile";
+import { history } from "./history";
 import { appSessionState, markStateDirty, resetStore, store, type PersistedSessionState } from "./store";
 
 type NormalizedProject = {
@@ -72,6 +73,8 @@ export const loadProjectData = (data: unknown): 'ok' | 'invalid' | 'unsupported'
     replaceStoreData(project.state);
     replaceAppSessionData(project.session);
     markStateDirty();
+    // only a successful import gets here, so a failed one keeps the history
+    history.reset();
     return 'ok';
 }
 

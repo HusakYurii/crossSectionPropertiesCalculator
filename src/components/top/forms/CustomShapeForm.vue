@@ -98,19 +98,14 @@ function resetFemOptions() {
 
 const selectedIndex = ref<number | null>(null);
 
-// The FEM solver meshes the polygon, which is slow, so it never runs on its own: only the
-// "Calculate" button runs it. Until then the results are the ones stored with the shape (when
-// editing one) or empty, and any change to the polygon marks them as out of date.
 const stored = props.selectedShapeUID ? store.crossSectionProperties[props.selectedShapeUID] : undefined;
 const storedPolygon = props.selectedShapeUID ? store.crossSectionPolygon[props.selectedShapeUID] : undefined;
 const crossSectionProperties = ref<CrossSectionProperties>(
 	stored ? { ...stored } : { ...EMPTY_CROSS_SECTION_PROPERTIES }
 );
 const crossSectionPolygon = ref<Point[]>(storedPolygon ? storedPolygon.map(({ x, y }) => ({ x, y })) : []);
-// The mesh the stored results were calculated from, in the solver's frame. It is kept with the shape
-// so it is still there when the popup is opened again. Never edited in place, so no deep reactivity.
 const storedMesh = props.selectedShapeUID ? store.crossSectionMesh[props.selectedShapeUID] : undefined;
-const crossSectionMesh = shallowRef<Triangle[]>(storedMesh ? copyTriangles(storedMesh) : []);
+const crossSectionMesh = shallowRef<Triangle[]>(storedMesh ?? []);
 const isStale = ref(!stored);
 const isCalculating = ref(false);
 
@@ -215,11 +210,6 @@ watch(() => geometry.points, requestRedraw, { deep: true });
 // results are only valid for the polygon and FEM settings they were calculated from (isNegative does not change them)
 watch(() => [geometry.points, geometry.femOptions], () => { isStale.value = true; }, { deep: true });
 
-/** a plain copy, so what the form holds is never the object that sits in the store */
-function copyTriangles(triangles: Triangle[]): Triangle[] {
-	return triangles.map(([a, b, c]): Triangle => [{ x: a.x, y: a.y }, { x: b.x, y: b.y }, { x: c.x, y: c.y }]);
-}
-
 /** the polygon is never rotated, so the mesh lies on the drawn points as the solver returned it */
 function showMesh(triangles: Triangle[]) {
 	meshTargets.cleanUp();
@@ -242,7 +232,7 @@ async function calculateWithFem() {
 		const { properties, triangles } = femCrossSectionPropertiesSolver.solve(polygon, geometry.femOptions);
 		crossSectionProperties.value = properties;
 		crossSectionPolygon.value = polygon;
-		crossSectionMesh.value = copyTriangles(triangles);
+		crossSectionMesh.value = triangles;
 		showMesh(triangles);
 		isStale.value = false;
 		requestRedraw();

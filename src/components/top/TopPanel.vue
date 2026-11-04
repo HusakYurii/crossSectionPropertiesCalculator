@@ -11,6 +11,9 @@ import { store } from '../../store/store.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../solvers/CompositeCrossSectionPropertiesSolver.ts';
 import { createReportSnapshot, saveReportSnapshot } from '../../report/reportSnapshot.ts';
 import { toast } from 'vue3-toastify';
+import { history } from '../../store/history.ts';
+import undoIconRaw from '../../svg/undo.svg?raw';
+import redoIconRaw from '../../svg/redo.svg?raw';
 
 type ActionNames = "import" | "export" | "results";
 
@@ -81,6 +84,26 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 				<li v-for="item in MAIN_MENU_ITEMS" :key="item.value">
 					<button type="button" class="nav-menu__item" @click="onFileSelect(item.value)">
 						{{ item.label }}
+					</button>
+				</li>
+			</ul>
+		</div>
+
+		<div class="nav-item">
+			<button type="button" class="nav-button">
+				Edit
+			</button>
+			<ul class="nav-menu hidden">
+				<li>
+					<button type="button" class="nav-menu__item nav-menu__item--with-icon" :disabled="!history.canUndo.value" @click="history.undo()">
+						<span class="nav-menu__icon" v-html="undoIconRaw"></span>
+						Undo
+					</button>
+				</li>
+				<li>
+					<button type="button" class="nav-menu__item nav-menu__item--with-icon" :disabled="!history.canRedo.value" @click="history.redo()">
+						<span class="nav-menu__icon" v-html="redoIconRaw"></span>
+						Redo
 					</button>
 				</li>
 			</ul>
@@ -179,7 +202,34 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 	transition: background-color 0.35s;
 }
 
-.nav-menu__item:hover {
+.nav-menu__item:hover:not(:disabled) {
 	background-color: var(--color-fill);
+}
+
+.nav-menu__item:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.nav-menu__item--with-icon {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nav-menu__icon {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+}
+
+.nav-menu__icon :deep(svg) {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.nav-menu__icon :deep(path) {
+	stroke: currentColor;
 }
 </style>

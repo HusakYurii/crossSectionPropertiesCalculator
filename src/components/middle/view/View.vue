@@ -18,6 +18,7 @@ import { AXIS_COLORS } from './canvas/constants/axisColors.ts';
 import { Grid, MainAxis } from './shapes';
 import { appSessionState, setSelectedShapeID, store } from '../../../store/store';
 import { createBeamView } from './beams';
+import { history } from '../../../store/history';
 
 // remembers which geometry type each beam on the canvas was built for, to notice when a shape changes kind
 const beamTypes = new Map<string, string>();
@@ -108,6 +109,9 @@ watch(() => appSessionState.redrawId, () => {
 		beamTypes.set(uid, geometryData.type);
 	});
 
+	// the list and the z-order follow the order of the keys in the store (undoing a delete puts a shape back in its place)
+	beamsDrawTargetCollection.sortBy(Object.keys(store.geometry));
+
 	requestRedraw();
 });
 
@@ -180,6 +184,7 @@ onMounted(() => {
 		isOverOtherInteractive: (point) => arrowLabelDrawTargets.getTargets().some((label) => label.contains(point)),
 		isOtherInteractiveDragging: () => dimensionsWithTextLabelInteractionService.isDragging,
 		onChange: requestRedraw,
+		onDragEnd: () => history.commit(),
 		setSelectedShapeID: (uid: string | null) => setSelectedShapeID(uid)
 	});
 
@@ -189,14 +194,17 @@ onMounted(() => {
 		screenToWorld: (point) => transformService.screenToWorld(point),
 		isTransformModeActive: () => transformService.isPanModeActive,
 		onChange: requestRedraw,
+		onDragEnd: () => history.commit(),
 	});
 
 	scene.addService(shapesInteractionService);
 	scene.addService(dimensionsWithTextLabelInteractionService);
 	scene.initialize();
+	history.setDragProbe(() => shapesInteractionService.isDragging || dimensionsWithTextLabelInteractionService.isDragging);
 });
 
 onUnmounted(() => {
+	history.setDragProbe(null);
 	scene?.deactivate();
 });
 </script>
