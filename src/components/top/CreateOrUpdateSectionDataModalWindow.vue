@@ -206,8 +206,8 @@ function openSolverInfo() {
 
 .modal {
 	position: relative;
-	width: max(80%, 800px);
-	height: max(90%, 900px);
+	width: min(90%, 1000px);
+	height: 90%;
 	padding: 16px;
 	display: flex;
 	flex-direction: column;

@@ -1,24 +1,32 @@
-import type { Point } from "../../../../../interfaces/common/types";
+import type { BoundingBox, Point } from "../../../../../interfaces/common/types";
 import type { DrawableTarget } from "../DrawTargetsCollection";
 import { drawArrowHead, getScaledSize } from "../drawUtils";
 
-/** The look of a dimension. Every size is in screen pixels, and the class that extends this owns the numbers. */
+/**
+ * How a dimension looks. Sizes are in screen pixels and are scaled by the current zoom when drawn,
+ * so the dimension keeps the same size on screen at any zoom. The subclass passes these in to the constructor.
+ */
 export type DimensionStyle = {
 	color: string;
 	lineWidth: number;
+	/** length of each arrow head */
 	arrowHeadSize: number;
-	/** length of a dash and of a gap in the dashed connector; only needed when a connector is drawn */
+	/** dash and gap length of the connector line; defaults to DEFAULT_DASH_SIZE */
 	dashSize?: number;
 };
 
-/** Where the lines of one dimension go, in world coordinates. */
+/**
+ * Where the lines of one dimension go, in world coordinates. A subclass may work them out from
+ * screen-pixel offsets, so they hold only for the zoom they were computed at.
+ */
 export type DimensionGeometry = {
-	/** the two ends of the dimension line, which carries an arrow head on each */
+	/** one end of the dimension line; gets an arrow head */
 	from: Point;
+	/** the other end of the dimension line; gets an arrow head */
 	to: Point;
-	/** solid lines from the measured points out to the dimension line */
+	/** solid [start, end] lines, usually from a measured point to just past the dimension line */
 	extensionLines?: [Point, Point][];
-	/** a dashed line that ties the dimension back to the thing it measures */
+	/** a dashed [start, end] line, e.g. back to the measured point once the dimension line is moved away from it */
 	connector?: [Point, Point];
 };
 
@@ -35,10 +43,21 @@ export abstract class BaseDimensions implements DrawableTarget {
 	public readonly uid: string;
 
 	protected readonly _style: DimensionStyle;
+	protected _cachedBoundingBox: BoundingBox | null = null;
 
 	protected constructor(uid: string, style: DimensionStyle) {
 		this.uid = uid;
 		this._style = style;
+	}
+
+	/**
+	 * World-space box around the lines only (from, to, connector and extension lines), not the label,
+	 * as of the last draw. null before the first draw and while there is nothing to draw.
+	 * A subclass whose geometry depends on zoom (DimensionsWithLabel) gets a box that is only accurate
+	 * at the zoom it was last drawn at.
+	 */
+	get boundingBox() {
+		return this._cachedBoundingBox;
 	}
 
 	/** null when there is nothing to draw (a dimension whose shape is gone) */
@@ -51,8 +70,11 @@ export abstract class BaseDimensions implements DrawableTarget {
 		const { context } = props;
 		const geometry = this._getGeometry(context);
 		if (!geometry) {
+			this._cachedBoundingBox = null;
 			return;
 		}
+
+		this._recalculateBoundingBox(geometry);
 
 		const strokeStyle = context.strokeStyle;
 		const fillStyle = context.fillStyle;
@@ -99,5 +121,22 @@ export abstract class BaseDimensions implements DrawableTarget {
 		context.fillStyle = fillStyle;
 		context.lineWidth = lineWidth;
 		context.setLineDash(dash);
+	}
+
+	protected _recalculateBoundingBox({ from, to, extensionLines, connector }: DimensionGeometry): void {
+		const points = [from, to, ...(connector ?? []), ...(extensionLines ?? []).flat()];
+		let minX = Infinity;
+		let minY = Infinity;
+		let maxX = -Infinity;
+		let maxY = -Infinity;
+
+		for (const { x, y } of points) {
+			minX = Math.min(minX, x);
+			minY = Math.min(minY, y);
+			maxX = Math.max(maxX, x);
+			maxY = Math.max(maxY, y);
+		}
+
+		this._cachedBoundingBox = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 	}
 }

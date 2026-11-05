@@ -1,4 +1,4 @@
-import { markRaw, reactive } from 'vue';
+import { markRaw, reactive, toRaw } from 'vue';
 import type { Geometry } from '../interfaces/beams/common.types';
 import type { Point } from '../interfaces/common/types';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';
@@ -166,6 +166,18 @@ export const updateGeometryData = <T extends Geometry>(payload: Payload<T>) => {
 export const removeGeometryData = (uid: UID) => {
 	delete store.geometry[uid];
 	markStateDirty()
+}
+
+/** A key keeps its place when it is overwritten, so to change the order the keys are put back one by one */
+export const setGeometryOrder = (order: UID[]) => {
+	for (const uid of order) {
+		if (uid in store.geometry) {
+			const value = toRaw(store.geometry)[uid];
+			delete store.geometry[uid];
+			store.geometry[uid] = value;
+		}
+	}
+	markStateDirty(); // View.vue re-sorts the beams on redrawId
 }
 
 // CS properties ====================================

@@ -63,18 +63,24 @@ export class CanvasTransformService implements Service {
 
 	/** Centers a world-space box in the canvas and zooms so it fits, leaving `margin` screen pixels around it. */
 	fitToBounds(bounds: BoundingBox, margin: number): void {
-		const { width, height } = this._getDisplaySize();
-		const zoom = this._clamp(
-			Math.min((width - margin * 2) / bounds.width, (height - margin * 2) / bounds.height),
-			this._minZoom,
-			this._maxZoom,
-		);
+		const zoom = this._clamp(this._getFitZoom(bounds, margin), this._minZoom, this._maxZoom);
 
 		this._currentTransforms.zoom = zoom;
 		// pan is the screen offset of the world origin from the canvas center, and world y points up
 		this._currentTransforms.panX = -(bounds.x + bounds.width / 2) * zoom;
 		this._currentTransforms.panY = (bounds.y + bounds.height / 2) * zoom;
 		this._onViewChange();
+	}
+
+	/** Whether `fitToBounds` can show the whole box without the zoom being clamped up to the minimum. */
+	canFit(bounds: BoundingBox, margin: number): boolean {
+		return this._getFitZoom(bounds, margin) >= this._minZoom;
+	}
+
+	/** The zoom at which a box fits the canvas with `margin` screen pixels around it, before clamping. */
+	private _getFitZoom(bounds: BoundingBox, margin: number): number {
+		const { width, height } = this._getDisplaySize();
+		return Math.min((width - margin * 2) / bounds.width, (height - margin * 2) / bounds.height);
 	}
 
 	initialize(): void {

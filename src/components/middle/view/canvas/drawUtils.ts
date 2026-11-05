@@ -11,6 +11,28 @@ export function getScaledSize(context: CanvasRenderingContext2D, screenSize: num
 	return screenSize / zoom;
 }
 
+/** Smallest box that holds all the given boxes. Nulls are skipped; null when nothing is left. */
+export function unionBoundingBoxes(boxes: Iterable<BoundingBox | null>): BoundingBox | null {
+	let minX = Infinity;
+	let minY = Infinity;
+	let maxX = -Infinity;
+	let maxY = -Infinity;
+	let found = false;
+
+	for (const box of boxes) {
+		if (!box) {
+			continue;
+		}
+		found = true;
+		minX = Math.min(minX, box.x);
+		minY = Math.min(minY, box.y);
+		maxX = Math.max(maxX, box.x + box.width);
+		maxY = Math.max(maxY, box.y + box.height);
+	}
+
+	return found ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY } : null;
+}
+
 export type FontWeight = 'normal' | 'bold';
 
 function getFont(context: CanvasRenderingContext2D, fontSize: number, fontWeight: FontWeight = 'normal'): string {

@@ -36,9 +36,9 @@ export class DrawTargetsCollection<T extends DrawableTarget> {
 
 	/** 
 	 * 
-	 * This is needed only because we added the history feature but the DrawTargetsCollection never
-	 * remove and recreate DrawableTarget for performance, so we have to check uids from history to 
-	 * put them in right order
+	 * DrawTargetsCollection never removes and recreates DrawableTarget for performance, so after
+	 * the history do/undo or a list reorder we have to sort the items by the given uids to put
+	 * them in right order
 	 * 
 	 * Note: items that are not listed go to the end, in their old order
 	 *  */

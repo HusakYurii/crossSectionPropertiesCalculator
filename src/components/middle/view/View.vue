@@ -14,6 +14,7 @@ import centerIconRaw from '../../../svg/center.svg?raw';
 import resetZoomIconRaw from '../../../svg/reset-zoom.svg?raw';
 import fitScreenIconRaw from '../../../svg/fit-screen.svg?raw';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
+import { unionBoundingBoxes } from './canvas/drawUtils.ts';
 import { AXIS_COLORS } from './canvas/constants/axisColors.ts';
 
 import { Grid, MainAxis } from './shapes';
@@ -21,19 +22,27 @@ import { appSessionState, setSelectedShapeID, store } from '../../../store/store
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
 
-// remembers which geometry type each beam on the canvas was built for, to notice when a shape changes kind
-const beamTypes = new Map<string, string>();
-
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-const canvasWrapperRef = ref<HTMLDivElement | null>(null);
+let scene: CanvasScene;
+let gridDrawTargets: DrawTargetsCollection<Grid>;
+let axisDrawTargets: DrawTargetsCollection<MainAxis>;
+let beamsDrawTargets: BeamsDrawTargetCollection;
+let arrowLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
+let shapesInteractionService: ShapesInteractionService;
+let dimensionsWithTextLabelInteractionService: DimensionsWithTextLabelInteractionService;
 
 const HINTS = ['Drag a beam to move it', ...NAVIGATION_HINTS];
-
-// screen pixels left between the shapes and the canvas edges by "Fit to screen"
-const FIT_MARGIN = 48;
+// screen pixels left between the shapes and the canvas edges by "Fit to screen"; it also leaves
+// room for the dimension numbers, which are not part of the fitted bounds
+const FIT_MARGIN = 72;
 
 const fitToScreen = () => {
-	const bounds = beamsDrawTargetCollection.getBoundingBox();
+	const beamBounds = unionBoundingBoxes(beamsDrawTargets.getTargets().map(beam => beam.boundingBox));
+	const allBounds = unionBoundingBoxes([
+		beamBounds,
+		...arrowLabelDrawTargets.getTargets().map(label => label.boundingBox),
+	]);
+	// the dimension lines reach back to the world axes, so a shape far out may not fit together with them: then the shape wins
+	const bounds = allBounds && scene.transformService.canFit(allBounds, FIT_MARGIN) ? allBounds : beamBounds;
 	if (bounds) {
 		scene.transformService.fitToBounds(bounds, FIT_MARGIN);
 	}
@@ -46,13 +55,11 @@ const QUICK_ACTIONS = [
 	{ id: 'fit-to-screen', label: 'Fit to screen', icon: fitScreenIconRaw, run: fitToScreen },
 ];
 
-let scene: CanvasScene;
-let gridDrawTargets: DrawTargetsCollection<Grid>;
-let axisDrawTargets: DrawTargetsCollection<MainAxis>;
-let beamsDrawTargetCollection: BeamsDrawTargetCollection;
-let arrowLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
-let shapesInteractionService: ShapesInteractionService;
-let dimensionsWithTextLabelInteractionService: DimensionsWithTextLabelInteractionService;
+// remembers which geometry type each beam on the canvas was built for, to notice when a shape changes kind
+const beamTypes = new Map<string, string>();
+
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+const canvasWrapperRef = ref<HTMLDivElement | null>(null);
 
 const requestRedraw = () => scene.requestRedraw();
 
@@ -63,9 +70,9 @@ const redraw = (context: CanvasRenderingContext2D) => {
 	const hoveredShapeID = appSessionState.currentHoveredShapeID || '';
 	gridDrawTargets.draw(context);
 	axisDrawTargets.draw(context);
-	beamsDrawTargetCollection.draw(
+	beamsDrawTargets.draw(
 		shapesInteractionService.getHitsForShapes(
-			beamsDrawTargetCollection.getTargets(),
+			beamsDrawTargets.getTargets(),
 			shapesInteractionService.mouseWorldPosition
 		),
 		{
@@ -78,7 +85,7 @@ const redraw = (context: CanvasRenderingContext2D) => {
 };
 
 watch(() => appSessionState.redrawId, () => {
-	const currentBeamIds = new Set(beamsDrawTargetCollection.getTargets().map(val => val.uid));
+	const currentBeamIds = new Set(beamsDrawTargets.getTargets().map(val => val.uid));
 	const allGeometryIds = new Set(Object.keys(store.geometry));
 	const toAdd: Set<string> = new Set();
 	const toDelete: Set<string> = new Set();
@@ -99,7 +106,7 @@ watch(() => appSessionState.redrawId, () => {
 	});
 
 	toDelete.forEach(uid => {
-		beamsDrawTargetCollection.delete(uid);
+		beamsDrawTargets.delete(uid);
 		beamTypes.delete(uid);
 	});
 
@@ -117,12 +124,12 @@ watch(() => appSessionState.redrawId, () => {
 		}
 
 		const beam = createBeamView(uid, store);
-		beamsDrawTargetCollection.add(beam);
+		beamsDrawTargets.add(beam);
 		beamTypes.set(uid, geometryData.type);
 	});
 
 	// the list and the z-order follow the order of the keys in the store (undoing a delete puts a shape back in its place)
-	beamsDrawTargetCollection.sortBy(Object.keys(store.geometry));
+	beamsDrawTargets.sortBy(Object.keys(store.geometry));
 
 	requestRedraw();
 });
@@ -172,14 +179,14 @@ onMounted(() => {
 	scene = new CanvasScene({
 		canvasEl: canvasRef.value!,
 		wrapper: canvasWrapperRef.value!,
-		minSize: { width: 600, height: 600 },
-		minZoom: 0.7,
+		minSize: { width: 800, height: 800 },
+		minZoom: 0.3,
 		maxZoom: 8,
 		draw: redraw,
 	});
 	const { context, inputService, transformService } = scene;
 
-	beamsDrawTargetCollection = new BeamsDrawTargetCollection({ context });
+	beamsDrawTargets = new BeamsDrawTargetCollection({ context });
 	gridDrawTargets = new DrawTargetsCollection<Grid>({ context });
 	axisDrawTargets = new DrawTargetsCollection<MainAxis>({ context });
 	arrowLabelDrawTargets = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
@@ -189,7 +196,7 @@ onMounted(() => {
 
 	shapesInteractionService = new ShapesInteractionService({
 		canvas: canvasRef.value!,
-		drawTargets: beamsDrawTargetCollection,
+		drawTargets: beamsDrawTargets,
 		inputService,
 		screenToWorld: (point) => transformService.screenToWorld(point),
 		isTransformModeActive: () => transformService.isPanModeActive,

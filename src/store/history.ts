@@ -8,6 +8,7 @@ import {
 	appSessionState,
 	markStateDirty,
 	removeShapeSessionState,
+	setGeometryOrder,
 	setShowRotation,
 	store,
 	type GeometryDataExtra,
@@ -168,12 +169,11 @@ class History {
 	private _isShapeUnchanged(uid: UID, record: ShapeRecord): boolean {
 		const groups = this._getStoreDataAsRaw();
 		const session = this._getSessionDataAsRaw();
+		// properties and the polygon are only written with the geometry, and a recalculated FEM shape also gets a new mesh
 		return Object.is(groups.crossSectionMesh[uid], record.mesh)
 			&& Boolean(session.showRotationFor[uid]) === Boolean(record.showRotation)
 			&& this._isSameData(groups.geometry[uid], record.geometry)
 			&& this._isSameData(groups.geometryExtra[uid], record.extra)
-			&& this._isSameData(groups.crossSectionProperties[uid], record.properties)
-			&& this._isSameData(groups.crossSectionPolygon[uid], record.polygon)
 			&& this._isSameData(session.dimensionLabelOffsets[uid], record.labelOffsets);
 	}
 
@@ -208,17 +208,6 @@ class History {
 			appSessionState.dimensionLabelOffsets[uid] = this._copyData(record.labelOffsets);
 		} else {
 			delete appSessionState.dimensionLabelOffsets[uid];
-		}
-	}
-
-	/** A key keeps its place when it is overwritten, so to change the order the keys are put back one by one */
-	private _applyOrder(order: UID[]) {
-		for (const uid of order) {
-			if (uid in store.geometry) {
-				const value = toRaw(store.geometry)[uid];
-				delete store.geometry[uid];
-				store.geometry[uid] = value;
-			}
 		}
 	}
 
@@ -286,7 +275,7 @@ class History {
 		}
 		const order = direction === 'before' ? entry.orderBefore : entry.orderAfter;
 		if (order) {
-			this._applyOrder(order);
+			setGeometryOrder(order);
 		}
 		this._baseOrder = Object.keys(this._getStoreDataAsRaw().geometry);
 
