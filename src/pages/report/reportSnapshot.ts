@@ -1,6 +1,6 @@
-import { buildProjectFile } from '../store/storeDataExporter';
-import type { ProjectFile } from '../store/projectFile';
-import { store } from '../store/store';
+import { buildProjectFile } from '../../store/storeDataExporter';
+import type { ProjectFile } from '../../store/projectFile';
+import { store } from '../../store/store';
 
 const KEY_PREFIX = 'cspc-report:';
 const KEEP_LAST = 3;

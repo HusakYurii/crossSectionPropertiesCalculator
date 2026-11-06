@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { store } from '../store/store';
-import { compositeCrossSectionPropertiesSolver } from '../solvers/CompositeCrossSectionPropertiesSolver';
-import { SHAPE_TYPES } from '../interfaces/beams/common.types';
-import type { CustomShapeGeometry } from '../interfaces/beams/CustomShape.types';
-import { FEM_SHAPE_TYPES, SHAPE_LABELS } from '../interfaces/beams/shapeLabels';
-import SectionPropertiesTable from '../components/top/forms/SectionPropertiesTable.vue';
+import { store } from '../../store/store';
+import { compositeCrossSectionPropertiesSolver } from '../../solvers/CompositeCrossSectionPropertiesSolver';
+import { SHAPE_TYPES } from '../../interfaces/beams/common.types';
+import type { CustomShapeGeometry } from '../../interfaces/beams/CustomShape.types';
+import { FEM_SHAPE_TYPES, SHAPE_LABELS } from '../../interfaces/beams/shapeLabels';
+import SectionPropertiesTable from '../../components/top/forms/SectionPropertiesTable.vue';
 import ReportSectionCanvas from './ReportSectionCanvas.vue';
 import ReportShapeCanvas from './ReportShapeCanvas.vue';
 import ShapeParametersTable from './ShapeParametersTable.vue';
 import FemSettingsTable from './FemSettingsTable.vue';
-import type { CrossSectionProperties } from '../interfaces/sectionProperties';
+import type { CrossSectionProperties } from '../../interfaces/sectionProperties';
 import type { ReportSnapshot } from './reportSnapshot';
 
 const props = defineProps<{

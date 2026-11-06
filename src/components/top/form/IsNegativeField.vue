@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { openInfoPanel } from '../../../store/infoPanel.ts';
+
 const model = defineModel<boolean>({ required: true });
 
 function openNegativeInfo() {
-	// TODO: open a modal or slide-in panel with negative-area info
+	openInfoPanel('whatIsNegativeArea');
 }
 
 function onChange(event: Event) {

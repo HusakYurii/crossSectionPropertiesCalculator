@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-import { store, type Store } from '../store/store';
-import { BeamsDrawTargetCollection } from '../components/middle/view/canvas/BeamsDrawTargetCollection';
-import { DrawTargetsCollection, type DrawableTarget } from '../components/middle/view/canvas/DrawTargetsCollection';
-import { PropertyOverlays } from '../components/middle/view/canvas/propertiesHelperPreviews';
-import { MeshView, createBeamView } from '../components/middle/view/beams';
-import { Grid } from '../components/middle/view/shapes';
-import { buildAnnotations } from '../components/top/form/annotations';
-import { degToRad } from '../mathUtils/anglesMath';
+import { store, type Store } from '../../store/store';
+import { BeamsDrawTargetCollection } from '../../components/middle/view/canvas/BeamsDrawTargetCollection';
+import { DrawTargetsCollection, type DrawableTarget } from '../../components/middle/view/canvas/DrawTargetsCollection';
+import { PropertyOverlays } from '../../components/middle/view/canvas/propertiesHelperPreviews';
+import { MeshView, createBeamView } from '../../components/middle/view/beams';
+import { Grid } from '../../components/middle/view/shapes';
+import { buildAnnotations } from '../../components/top/form/annotations';
+import { degToRad } from '../../mathUtils/anglesMath';
 import { getShapesBounds, renderStaticScene } from './renderStaticScene';
 
 const props = defineProps<{

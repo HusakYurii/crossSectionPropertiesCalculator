@@ -14,6 +14,7 @@ import type { Point } from '../../../interfaces/common/types.ts';
 import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from '../../../interfaces/sectionProperties/index.ts';
 import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from '../../../interfaces/FEMMeshOptions.ts';
 import { store } from '../../../store/store.ts';
+import { openInfoPanel } from '../../../store/infoPanel.ts';
 import { convertCSVToPoints } from './customShapeFormUntils/csvTextParser.ts';
 import { crossSectionPolygonsBuilder } from '../../../solvers/CrossSectionPolygonsBuilder.ts';
 import { femCrossSectionPropertiesSolver } from '../../../solvers/FEMCrossSectionPropertiesSolver.ts';
@@ -89,7 +90,7 @@ function importCsv() {
 }
 
 function openCsvInfo() {
-	// TODO: show what format the CSV file must have
+	openInfoPanel('whatIsCustomShapeCsvFormat');
 }
 
 function resetFemOptions() {

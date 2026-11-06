@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CustomShapeGeometry } from '../interfaces/beams/CustomShape.types';
-import { DEFAULT_FEM_MESH_OPTIONS } from '../interfaces/FEMMeshOptions';
-import { FEM_OPTION_FIELDS } from '../components/top/forms/fields/shapeFields';
+import type { CustomShapeGeometry } from '../../interfaces/beams/CustomShape.types';
+import { DEFAULT_FEM_MESH_OPTIONS } from '../../interfaces/FEMMeshOptions';
+import { FEM_OPTION_FIELDS } from '../../components/top/forms/fields/shapeFields';
 
 const props = defineProps<{
 	geometry: CustomShapeGeometry;

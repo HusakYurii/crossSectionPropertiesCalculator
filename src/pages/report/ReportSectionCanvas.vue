@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { appSessionState, store } from '../store/store';
-import type { CrossSectionProperties } from '../interfaces/sectionProperties';
-import { BeamsDrawTargetCollection } from '../components/middle/view/canvas/BeamsDrawTargetCollection';
-import { DrawTargetsCollection } from '../components/middle/view/canvas/DrawTargetsCollection';
-import { DimensionsWithTextLabel } from '../components/middle/view/canvas/annotations/DimensionsWithTextLabel';
-import { AXIS_COLORS } from '../components/middle/view/canvas/constants/axisColors';
-import { PropertyOverlays } from '../components/middle/view/canvas/propertiesHelperPreviews';
-import { createBeamView } from '../components/middle/view/beams';
-import { Grid, MainAxis } from '../components/middle/view/shapes';
+import { appSessionState, store } from '../../store/store';
+import type { CrossSectionProperties } from '../../interfaces/sectionProperties';
+import { BeamsDrawTargetCollection } from '../../components/middle/view/canvas/BeamsDrawTargetCollection';
+import { DrawTargetsCollection } from '../../components/middle/view/canvas/DrawTargetsCollection';
+import { DimensionsWithTextLabel } from '../../components/middle/view/canvas/annotations/DimensionsWithTextLabel';
+import { AXIS_COLORS } from '../../components/middle/view/canvas/constants/axisColors';
+import { PropertyOverlays } from '../../components/middle/view/canvas/propertiesHelperPreviews';
+import { createBeamView } from '../../components/middle/view/beams';
+import { Grid, MainAxis } from '../../components/middle/view/shapes';
 import { getShapesBounds, renderStaticScene } from './renderStaticScene';
 
 const props = defineProps<{

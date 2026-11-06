@@ -3,6 +3,8 @@ import TopPanel from './components/top/TopPanel.vue';
 import LeftPanel from './components/left/LeftPanel.vue';
 import View from './components/middle/view/View.vue';
 import RightPanel from './components/right/RightPanel.vue';
+import InfoPanels from './pages/info/InfoPanels.vue';
+import { infoPanelState } from './store/infoPanel.ts';
 import { useHistoryShortcuts } from './composables/useHistoryShortcuts.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
 
@@ -18,9 +20,9 @@ const {
 
 <template>
 	<div class="app">
-		<TopPanel />
+		<TopPanel :inert="infoPanelState.topic !== null" />
 
-		<div class="app-body">
+		<div class="app-body" :inert="infoPanelState.topic !== null">
 			<div class="panel-slot panel-slot--left" :style="{ width: `${leftWidth}px` }">
 				<LeftPanel class="panel-content" />
 				<div class="resize-handle resize-handle--vertical resize-handle--east" aria-hidden="true"
@@ -39,6 +41,10 @@ const {
 				<RightPanel class="panel-content" />
 			</div>
 		</div>
+
+		<div class="modals-container" :inert="infoPanelState.topic !== null"></div>
+		<div class="info-page-container"></div>
+		<InfoPanels />
 	</div>
 </template>
 
@@ -48,6 +54,19 @@ const {
 	flex-direction: column;
 	height: 100vh;
 	overflow: hidden;
+}
+
+.modals-container,
+.info-page-container {
+	position: relative;
+}
+
+.modals-container {
+	z-index: 100;
+}
+
+.info-page-container {
+	z-index: 200;
 }
 
 .app-body {

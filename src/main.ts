@@ -3,8 +3,8 @@ import 'vue3-toastify/dist/index.css';
 // after the library's own stylesheet, so where both set the same variable ours wins
 import './style.css'
 import App from './App.vue'
-import ReportPage from './report/ReportPage.vue'
-import { loadReportSnapshot } from './report/reportSnapshot'
+import ReportPage from './pages/report/ReportPage.vue'
+import { loadReportSnapshot } from './pages/report/reportSnapshot'
 import { loadProjectData } from './store/storeDataImporter'
 
 // the report opens in a new tab of the same bundle: `?report=<id>` points to a snapshot saved by File -> Show Results

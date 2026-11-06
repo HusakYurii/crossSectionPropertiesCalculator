@@ -9,9 +9,11 @@ import { importStoreData} from '../../store/storeDataImporter.ts';
 import { exportStoreData } from '../../store/storeDataExporter.ts';
 import { store } from '../../store/store.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../solvers/CompositeCrossSectionPropertiesSolver.ts';
-import { createReportSnapshot, saveReportSnapshot } from '../../report/reportSnapshot.ts';
+import { createReportSnapshot, saveReportSnapshot } from '../../pages/report/reportSnapshot.ts';
 import { toast } from 'vue3-toastify';
 import { history } from '../../store/history.ts';
+import { infoPanelState, openInfoPanel } from '../../store/infoPanel.ts';
+import type { InfoTopic } from '../../store/infoPanel.ts';
 import undoIconRaw from '../../svg/undo.svg?raw';
 import redoIconRaw from '../../svg/redo.svg?raw';
 
@@ -40,7 +42,9 @@ const ACTIONS_STRATEGIES: Record<ActionNames, () => void> = {
 		url.searchParams.set('report', id);
 		// no `noopener`: with it window.open always returns null and a blocked pop-up could not be detected
 		const tab = window.open(url, '_blank');
-		if (!tab) toast.error('The browser blocked the report tab. Allow pop-ups for this site and try again.');
+		if (!tab) {
+			toast.error('The browser blocked the report tab. Allow pop-ups for this site and try again.')
+		};
 	},
 }
 
@@ -62,6 +66,14 @@ const ADD_ITEMS: { value: ShapeType; label: string }[] = [
 	{ value: SHAPE_TYPES.CUSTOM_SHAPE, label: 'Custom Shape' },
 ];
 
+const HELP_ITEMS: { value: InfoTopic; label: string }[] = [
+	{ value: 'whatIsFEMSolver', label: 'FEM Solver' },
+	{ value: 'whatIsGreensTheoremSolver', label: "Green's Theorem Solver" },
+	{ value: 'whatIsNegativeArea', label: 'Negative / Positive Area' },
+	{ value: 'whatIsCustomShapeCsvFormat', label: 'CSV File Format' },
+	{ value: 'aboutThisApp', label: 'About This App' },
+];
+
 
 function onFileSelect(action: ActionNames) {
 	ACTIONS_STRATEGIES[action]();
@@ -75,7 +87,7 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 </script>
 
 <template>
-	<header class="top-panel">
+	<header class="top-panel" :inert="infoPanelState.topic !== null">
 		<div class="nav-item">
 			<button type="button" class="nav-button">
 				File
@@ -121,6 +133,19 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 				</li>
 			</ul>
 		</div>
+
+		<div class="nav-item">
+			<button type="button" class="nav-button">
+				Help
+			</button>
+			<ul class="nav-menu hidden">
+				<li v-for="item in HELP_ITEMS" :key="item.value">
+					<button type="button" class="nav-menu__item" @click="openInfoPanel(item.value)">
+						{{ item.label }}
+					</button>
+				</li>
+			</ul>
+		</div>
 	</header>
 
 	<CreateOrUpdateSectionDataModalWindow />
@@ -129,7 +154,6 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 <style scoped>
 .top-panel {
 	flex-shrink: 0;
-	height: 50px;
 	display: flex;
 	align-items: center;
 	gap: 0;
@@ -148,7 +172,7 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 }
 
 .nav-item:hover>.nav-button {
-	background-color: var(--color-fill);
+	background-color: var(--color-fill-hover);
 }
 
 .nav-item:hover>.nav-menu {
@@ -157,11 +181,11 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 
 .nav-button {
 	height: 90%;
-	padding: 0 16px;
+	padding: 10px 16px;
 	border: none;
 	background-color: transparent;
 	color: var(--color-text);
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
@@ -196,14 +220,14 @@ function handleAddNewSection(shapeType: (typeof ADD_ITEMS)[number]['value']) {
 	border-radius: 0;
 	background-color: transparent;
 	color: var(--color-text);
-	font-size: 16px;
+	font-size: 14px;
 	text-align: left;
 	cursor: pointer;
 	transition: background-color 0.35s;
 }
 
 .nav-menu__item:hover:not(:disabled) {
-	background-color: var(--color-fill);
+	background-color: var(--color-fill-hover);
 }
 
 .nav-menu__item:disabled {

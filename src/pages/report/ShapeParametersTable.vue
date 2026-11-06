@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { SHAPE_TYPES, type Geometry } from '../interfaces/beams/common.types';
-import { SHAPE_FIELDS } from '../components/top/forms/fields/shapeFields';
+import { SHAPE_TYPES, type Geometry } from '../../interfaces/beams/common.types';
+import { SHAPE_FIELDS } from '../../components/top/forms/fields/shapeFields';
 
 const props = defineProps<{
 	geometry: Geometry;

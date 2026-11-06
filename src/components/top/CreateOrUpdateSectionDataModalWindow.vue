@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, type Component } from 'vue';
 import { sectionModalState, closeSectionModal } from '../../store/sectionModal.ts';
 import type { ShapeType } from '../../store/sectionModal.ts';
 import { addGeometryData, updateGeometryData, getUID, store, addCrossSectionProperties, updateCrossSectionProperties, updateCrossSectionPolygon, addCrossSectionPolygon, updateGeometryExtraData, addGeometryExtraData, setCrossSectionMesh, removeCrossSectionMesh, setShowRotation } from '../../store/store.ts';
+import { openInfoPanel } from '../../store/infoPanel.ts';
 import { history } from '../../store/history.ts';
 import type { Geometry } from '../../interfaces/beams/common.types.ts';
 import ISectionForm from './forms/ISectionForm.vue';
@@ -141,13 +142,13 @@ function onModalKeydown(event: KeyboardEvent) {
 }
 
 function openSolverInfo() {
-	// TODO: open a modal or slide-in panel with solver info
+	openInfoPanel(currentSolver.value === 'fem' ? 'whatIsFEMSolver' : 'whatIsGreensTheoremSolver');
 }
 
 </script>
 
 <template>
-	<Teleport to="body">
+	<Teleport defer to=".modals-container">
 		<div v-if="sectionModalState.isOpen" ref="modalElRef" class="modal-overlay" tabindex="-1"
 			@keydown="onModalKeydown">
 			<div class="modal" role="dialog" aria-modal="true">
