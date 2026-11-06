@@ -6,6 +6,7 @@ export const INFO_TOPICS = {
 	whatIsFEMSolver: 'whatIsFEMSolver',
 	whatIsCustomShapeCsvFormat: 'whatIsCustomShapeCsvFormat',
 	aboutThisApp: 'aboutThisApp',
+	whatIsCompositeSolver: 'whatIsCompositeSolver'
 } as const;
 
 export type InfoTopic = keyof typeof INFO_TOPICS;
