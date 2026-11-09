@@ -2,6 +2,8 @@ import { createApp } from 'vue'
 import 'vue3-toastify/dist/index.css';
 // after the library's own stylesheet, so where both set the same variable ours wins
 import './style.css'
+import 'katex/dist/katex.min.css'
+import './styles/markdown.css'
 import App from './App.vue'
 import ReportPage from './pages/report/ReportPage.vue'
 import { loadReportSnapshot } from './pages/report/reportSnapshot'

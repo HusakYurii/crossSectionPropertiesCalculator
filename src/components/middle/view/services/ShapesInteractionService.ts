@@ -152,7 +152,7 @@ export class ShapesInteractionService implements Service {
 			}
 
 			if (target.isNegative) {
-				return false
+				continue;
 			}
 
 			if (target.intersect(candidatePolygon)) {

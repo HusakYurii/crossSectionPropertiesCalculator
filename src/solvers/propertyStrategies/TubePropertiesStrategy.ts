@@ -10,7 +10,7 @@ export class TubePropertiesStrategy extends AbstractPropertiesStrategy<OSectionG
 	}
 
 	execute(geometry: OSectionGeometry): CrossSectionProperties {
-		const R = geometry.d1;
+		const R = geometry.d1 / 2;
 		const R2 = R * R;
 		const R4 = R2 * R2;
 

@@ -102,7 +102,7 @@ function onKeydown(event: KeyboardEvent) {
 
 .info-backdrop-enter-active,
 .info-backdrop-leave-active {
-	transition: opacity 250ms ease;
+	transition: opacity 600ms ease;
 }
 
 .info-backdrop-enter-from,
@@ -112,7 +112,7 @@ function onKeydown(event: KeyboardEvent) {
 
 .info-panel-enter-active,
 .info-panel-leave-active {
-	transition: transform 250ms ease;
+	transition: transform 600ms ease;
 }
 
 .info-panel-enter-from,

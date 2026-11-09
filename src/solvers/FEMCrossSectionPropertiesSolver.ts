@@ -24,9 +24,8 @@ export class FEMCrossSectionPropertiesSolver {
 	/**
 	 * Section properties of a closed polygon from its mesh: every triangle is solved on its own with
 	 * the polygon (Green's theorem) solver, then the parts are combined about the centroid of the whole
-	 * with the parallel axis theorem. For now this covers the same
-	 * properties the polygon solver gives (area, centroid, inertia, principal axes, moduli);
-	 * anything that really needs FEM (torsion, shear) is still to come.
+	 * with the parallel axis theorem. For now it gives the same properties as the polygon solver
+	 * (area, centroid, inertia, principal axes, moduli); torsion and shear are still to come.
 	 * `options` are the mesh settings; whatever is not passed uses DEFAULT_FEM_MESH_OPTIONS.
 	 */
 	calculate(polygon: Point[], options: FEMMeshOptions = {}): CrossSectionProperties {
@@ -43,7 +42,7 @@ export class FEMCrossSectionPropertiesSolver {
 		// 1. every triangle on its own, with the same Green's theorem solver the polygon shapes use
 		const parts: CrossSectionProperties[] = [];
 		for (const [p1, p2, p3] of triangles) {
-			// the solver wants a closed ring: the first point is repeated at the end
+			// the triangle is passed closed like the app's other rings; the Green solver drops the repeated point
 			const part = calculateCrossSectionProperties([p1, p2, p3, p1], TRIANGLE_PRECISION);
 			if (part.A > MIN_TRIANGLE_AREA) {
 				parts.push(part);
@@ -128,25 +127,22 @@ export class FEMCrossSectionPropertiesSolver {
 	/**
 	 * Meshes a closed polygon into triangles: resample the boundary, triangulate it,
 	 * flip edges to improve the triangles, add Steiner points where they are too thin,
-	 * then optionally subdivide. Moved here as it was from the old mesh example
-	 * (textExamplesFEM.ts), nothing in the steps has changed; the numbers they use are now `options`.
+	 * then optionally subdivide.
 	 */
 	buildMesh(polygonPoints: Point[], options: FEMMeshOptions = {}): Triangle[] {
 		const settings = this._resolveOptions(options);
 
-		// NOTE: this is a squared distance (dx * dx + dy * dy), and it is used below as a length.
-		// It also skips the closing segment (last point -> first). Both are kept from the old code.
-		let minLength = Number.MAX_SAFE_INTEGER;
+		// the boundary is resampled with the shortest edge as spacing, but never finer than minSegmentLength
+		let shortestEdge = Number.MAX_SAFE_INTEGER;
 		for (let i = 0; i < polygonPoints.length - 1; i++) {
 			const curr = polygonPoints[i];
 			const next = polygonPoints[i + 1];
 			const dx = next.x - curr.x;
 			const dy = next.y - curr.y;
-			const dist = dx * dx + dy * dy;
-			minLength = Math.min(dist, minLength);
+			shortestEdge = Math.min(shortestEdge, Math.hypot(dx, dy));
 		}
 
-		const resampled = resamplePolygon(polygonPoints, Math.max(minLength, settings.minSegmentLength));
+		const resampled = resamplePolygon(polygonPoints, Math.max(shortestEdge, settings.minSegmentLength));
 		const cache: KeyCache = new WeakMap();
 		const { polygon, constrainedEdges } = buildConstrainedEdges(resampled, cache);
 		const triangulated = triangulate(polygon);

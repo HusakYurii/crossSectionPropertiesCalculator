@@ -7,6 +7,7 @@ import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
 import { useHistoryShortcuts } from './composables/useHistoryShortcuts.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
+import { computed } from 'vue';
 
 useHistoryShortcuts();
 
@@ -16,13 +17,15 @@ const {
 	startResize
 } = useEditorPanelsResize();
 
+const shouldInert = computed(() => infoPanelState.topic !== null);
+
 </script>
 
 <template>
 	<div class="app">
-		<TopPanel :inert="infoPanelState.topic !== null" />
+		<TopPanel :inert="shouldInert" />
 
-		<div class="app-body" :inert="infoPanelState.topic !== null">
+		<div class="app-body" :inert="shouldInert">
 			<div class="panel-slot panel-slot--left" :style="{ width: `${leftWidth}px` }">
 				<LeftPanel class="panel-content" />
 				<div class="resize-handle resize-handle--vertical resize-handle--east" aria-hidden="true"
@@ -42,7 +45,7 @@ const {
 			</div>
 		</div>
 
-		<div class="modals-container" :inert="infoPanelState.topic !== null"></div>
+		<div class="modals-container" :inert="shouldInert"></div>
 		<div class="info-page-container"></div>
 		<InfoPanels />
 	</div>

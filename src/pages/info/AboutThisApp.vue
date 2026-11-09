@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue';
 import InfoPanel from './InfoPanel.vue';
+import Spinner from './Spinner.vue';
+
+const AboutApp = defineAsyncComponent({
+	loader: () => import('../../docs/about_app.md'),
+	loadingComponent: Spinner
+});
 </script>
 
 <template>
 	<InfoPanel topic="aboutThisApp">
-		<h2>About this app</h2>
-		<p>TODO: explanation</p>
+		<AboutApp />
 	</InfoPanel>
 </template>

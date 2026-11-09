@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import CreateOrUpdateSectionDataModalWindow from './CreateOrUpdateSectionDataModalWindow.vue';
-import { infoPanelState } from '../../store/infoPanel.ts';
 import FilesMenu from './menu/FilesMenu.vue';
 import EditMenu from './menu/EditMenu.vue';
 import ShapesMenu from './menu/ShapesMenu.vue';
 import HelpMenu from './menu/HelpMenu.vue';
+
+defineProps<{inert: boolean}>()
 </script>
 
 <template>
-	<header class="top-panel" :inert="infoPanelState.topic !== null">
+	<header class="top-panel" :inert="inert">
 		<FilesMenu />
 		<EditMenu />
 		<ShapesMenu />

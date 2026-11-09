@@ -2,6 +2,8 @@ import { toast } from 'vue3-toastify';
 import type { Store } from "../store/store";
 import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from "../interfaces/sectionProperties";
 import { radToDeg } from "../mathUtils/anglesMath";
+import { SHAPE_TYPES } from "../interfaces/beams/common.types";
+import type { OSectionGeometry } from "../interfaces/beams/OSection.types";
 import { principalAxisAngleRad } from "./propertyStrategies/greenTheoremCalculator";
 
 const PRECISION = 2;
@@ -9,13 +11,8 @@ const PRECISION = 2;
 export class CompositeCrossSectionPropertiesSolver {
 
 	/**
-	 * Properties of the whole built-up section from every shape in the store. Each shape brings its own
-	 * centroidal A, Ix, Iy, Ixy (already for the rotated shape) and sits in the world with its centroid at
-	 * `geometryExtra.position`. The parts are summed with the parallel axis theorem about the centroid of the
-	 * whole, and a negative shape (a hole) is subtracted: its sign is -1.
-	 *
-	 * The layout is trusted, the polygons are not clipped: overlapping positive shapes are counted twice, and the
-	 * extreme fibers come from the positive shapes only (wrong only when a hole cuts away a whole outer strip).
+	 * Properties of the whole built-up section from every shape in the store. The math is in docs/composite_cross_section_properties_math.md.
+	 * The shapes are not clipped: the layout is trusted.
 	 */
 	calculate(store: Store): CrossSectionProperties {
 		const parts = Object.keys(store.geometry).flatMap((uid) => {
@@ -25,10 +22,10 @@ export class CompositeCrossSectionPropertiesSolver {
 			if (!properties || !position || !polygon) {
 				return [];
 			}
-			return [{ properties, position, polygon, sign: store.geometry[uid].isNegative ? -1 : 1 }];
+			const geometry = store.geometry[uid];
+			return [{ properties, position, polygon, geometry, sign: geometry.isNegative ? -1 : 1 }];
 		});
 
-		// 1. area and centroid of the whole: signed sums
 		let A = 0;
 		let Sx = 0;
 		let Sy = 0;
@@ -48,7 +45,6 @@ export class CompositeCrossSectionPropertiesSolver {
 		const centroid_x = Sx / A;
 		const centroid_y = Sy / A;
 
-		// 2. each part's own (centroidal) inertia moved to the centroid of the whole: I = Ic + A * d^2, Ixy = Ixy,c + A * dx * dy
 		let Ix = 0;
 		let Iy = 0;
 		let Ixy = 0;
@@ -60,24 +56,29 @@ export class CompositeCrossSectionPropertiesSolver {
 			Ixy += sign * (properties.Ixy + properties.A * dx * dy);
 		}
 
-		// 3. principal axes
 		const theta_p_rad = principalAxisAngleRad(Ix, Iy, Ixy);
 		const traceOver2 = (Ix + Iy) / 2;
 		const radius = Math.sqrt(Math.pow((Ix - Iy) / 2, 2) + Math.pow(Ixy, 2));
 		const I_u = traceOver2 + radius;
 		const I_v = traceOver2 - radius;
 
-		// a hole outside the material (or bigger than what it cuts) can leave a positive area but take away more
-		// inertia than there is, and the radii of gyration would be NaN
+		// holes can leave a positive area but take away more inertia than there is, which would make the radii NaN
 		if (Ix <= 0 || Iy <= 0 || I_v < 0) {
-			toast.error('Negative shapes must lie inside the material.');
+			toast.error('Negative shapes must lie inside the positive shapes.');
 			return { ...EMPTY_CROSS_SECTION_PROPERTIES };
 		}
 
-		// 4. extreme fibers: a hole cannot reach further out than the material around it, so only positive shapes count
 		let x_min = Infinity, x_max = -Infinity, y_min = Infinity, y_max = -Infinity;
-		for (const { properties, position, polygon, sign } of parts) {
-			if (sign < 0) {
+		for (const { properties, position, polygon, geometry, sign } of parts) {
+			if (sign < 0 || properties.A <= 0) {
+				continue;
+			}
+			if (geometry.type === SHAPE_TYPES.TUBE || geometry.type === SHAPE_TYPES.HOLLOW_TUBE) {
+				const R = (geometry as OSectionGeometry).d1 / 2;
+				x_min = Math.min(x_min, position.x - R);
+				x_max = Math.max(x_max, position.x + R);
+				y_min = Math.min(y_min, position.y - R);
+				y_max = Math.max(y_max, position.y + R);
 				continue;
 			}
 			for (const p of polygon) {
