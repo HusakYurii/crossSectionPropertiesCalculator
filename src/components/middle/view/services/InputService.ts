@@ -16,6 +16,7 @@ export class InputService implements Service {
 	private _mouseMoveCallbacks = new Set<MouseCallback>();
 	private _mouseUpCallbacks = new Set<MouseCallback>();
 	private _mouseLeaveCallbacks = new Set<VoidCallback>();
+	private _doubleClickCallbacks = new Set<MouseCallback>();
 	private _contextMenuCallbacks = new Set<MouseCallback>();
 	private _keyDownCallbacks = new Set<KeyboardCallback>();
 	private _keyUpCallbacks = new Set<KeyboardCallback>();
@@ -46,6 +47,10 @@ export class InputService implements Service {
 		return this._subscribe(this._mouseLeaveCallbacks, callback);
 	}
 
+	onDoubleClick(callback: MouseCallback): () => void {
+		return this._subscribe(this._doubleClickCallbacks, callback);
+	}
+
 	onContextMenu(callback: MouseCallback): () => void {
 		return this._subscribe(this._contextMenuCallbacks, callback);
 	}
@@ -72,6 +77,7 @@ export class InputService implements Service {
 		this._canvas.addEventListener('mousemove', this._handleMouseMove);
 		this._canvas.addEventListener('mouseup', this._handleMouseUp);
 		this._canvas.addEventListener('mouseleave', this._handleMouseLeave);
+		this._canvas.addEventListener('dblclick', this._handleDoubleClick);
 		this._canvas.addEventListener('contextmenu', this._handleContextMenu);
 		window.addEventListener('keydown', this._handleKeyDown);
 		window.addEventListener('keyup', this._handleKeyUp);
@@ -89,6 +95,7 @@ export class InputService implements Service {
 		this._canvas.removeEventListener('mousemove', this._handleMouseMove);
 		this._canvas.removeEventListener('mouseup', this._handleMouseUp);
 		this._canvas.removeEventListener('mouseleave', this._handleMouseLeave);
+		this._canvas.removeEventListener('dblclick', this._handleDoubleClick);
 		this._canvas.removeEventListener('contextmenu', this._handleContextMenu);
 		window.removeEventListener('keydown', this._handleKeyDown);
 		window.removeEventListener('keyup', this._handleKeyUp);
@@ -114,6 +121,7 @@ export class InputService implements Service {
 	private _handleMouseMove = (event: MouseEvent): void => this._dispatch(this._mouseMoveCallbacks, event);
 	private _handleMouseUp = (event: MouseEvent): void => this._dispatch(this._mouseUpCallbacks, event);
 	private _handleMouseLeave = (): void => this._dispatch(this._mouseLeaveCallbacks);
+	private _handleDoubleClick = (event: MouseEvent): void => this._dispatch(this._doubleClickCallbacks, event);
 	private _handleContextMenu = (event: MouseEvent): void => this._dispatch(this._contextMenuCallbacks, event);
 	private _handleKeyDown = (event: KeyboardEvent): void => this._dispatch(this._keyDownCallbacks, event);
 	private _handleKeyUp = (event: KeyboardEvent): void => this._dispatch(this._keyUpCallbacks, event);

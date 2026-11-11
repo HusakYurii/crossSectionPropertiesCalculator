@@ -28,6 +28,11 @@ export type DimensionGeometry = {
 	extensionLines?: [Point, Point][];
 	/** a dashed [start, end] line, e.g. back to the measured point once the dimension line is moved away from it */
 	connector?: [Point, Point];
+	/**
+	 * Unit vectors pointing away from the dimension at each end. When set, the arrow heads sit outside the
+	 * ends and point inward, the tip on the end. The subclass gives them so that a zero length stays safe.
+	 */
+	arrowsOutside?: { fromOutward: Point; toOutward: Point };
 };
 
 const DEFAULT_DASH_SIZE = 6;
@@ -82,7 +87,7 @@ export abstract class BaseDimensions implements DrawableTarget {
 		const dash = context.getLineDash();
 
 		const { color, lineWidth: screenLineWidth, arrowHeadSize, dashSize = DEFAULT_DASH_SIZE } = this._style;
-		const { from, to, extensionLines, connector } = geometry;
+		const { from, to, extensionLines, connector, arrowsOutside } = geometry;
 
 		context.strokeStyle = color;
 		context.fillStyle = color;
@@ -112,8 +117,14 @@ export abstract class BaseDimensions implements DrawableTarget {
 		context.lineTo(to.x, to.y);
 		context.stroke();
 
-		drawArrowHead(context, from, to, arrowHeadSize);
-		drawArrowHead(context, to, from, arrowHeadSize);
+		if (arrowsOutside) {
+			const { fromOutward, toOutward } = arrowsOutside;
+			drawArrowHead(context, { x: from.x + fromOutward.x, y: from.y + fromOutward.y }, from, arrowHeadSize);
+			drawArrowHead(context, { x: to.x + toOutward.x, y: to.y + toOutward.y }, to, arrowHeadSize);
+		} else {
+			drawArrowHead(context, from, to, arrowHeadSize);
+			drawArrowHead(context, to, from, arrowHeadSize);
+		}
 
 		this._drawLabel(context, geometry);
 

@@ -11,6 +11,7 @@ import {
 	setGeometryOrder,
 	setShowRotation,
 	store,
+	type DimensionLabelOffsetKey,
 	type GeometryDataExtra,
 } from './store';
 
@@ -23,7 +24,7 @@ type ShapeRecord = {
 	polygon: Point[];
 	mesh?: Triangle[];
 	showRotation?: true;
-	labelOffsets?: Partial<Record<'x' | 'y', number>>;
+	labelOffsets?: Partial<Record<DimensionLabelOffsetKey, number>>;
 };
 
 type Change = { uid: UID; before: ShapeRecord | null; after: ShapeRecord | null };

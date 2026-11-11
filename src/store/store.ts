@@ -16,12 +16,15 @@ type Payload<T> = {
 	data: T;
 }
 
+/** x / y: how far the line is moved off its axis. xAlong / yAlong: where the number sits along the line, from its midpoint. */
+export type DimensionLabelOffsetKey = 'x' | 'y' | 'xAlong' | 'yAlong';
+
 type EditorSessionState = {
 	currentSelectedShapeID: string | null;
 	currentHoveredShapeID: string | null;
 	redrawId: number;
 	showRotationFor: Record<UID, boolean>; // only `true` entries are kept
-	dimensionLabelOffsets: Record<UID, Partial<Record<'x' | 'y', number>>>;
+	dimensionLabelOffsets: Record<UID, Partial<Record<DimensionLabelOffsetKey, number>>>;
 }
 
 /** The part of the session state that is saved to the project file */
@@ -89,8 +92,9 @@ export const setShowRotation = (uid: UID, value: boolean) => {
 	}
 }
 
-export const setDimensionLabelOffset = (uid: UID, axis: 'x' | 'y', value: number) => {
-	if (value === 0) {
+export const setDimensionLabelOffset = (uid: UID, axis: DimensionLabelOffsetKey, value: number) => {
+	// a stored along of 0 means "at the midpoint", not "auto", so only x / y are dropped at 0
+	if (value === 0 && (axis === 'x' || axis === 'y')) {
 		const offsets = appSessionState.dimensionLabelOffsets[uid];
 		if (!offsets) {
 			return;
@@ -103,6 +107,18 @@ export const setDimensionLabelOffset = (uid: UID, axis: 'x' | 'y', value: number
 	}
 	const offsets = appSessionState.dimensionLabelOffsets[uid] ?? (appSessionState.dimensionLabelOffsets[uid] = {});
 	offsets[axis] = value;
+}
+
+/** Back to the automatic position along the line */
+export const clearDimensionLabelAlong = (uid: UID, axis: 'x' | 'y') => {
+	const offsets = appSessionState.dimensionLabelOffsets[uid];
+	if (!offsets) {
+		return;
+	}
+	delete offsets[axis === 'x' ? 'xAlong' : 'yAlong'];
+	if (Object.keys(offsets).length === 0) {
+		delete appSessionState.dimensionLabelOffsets[uid];
+	}
 }
 
 export const removeShapeSessionState = (uid: UID) => {

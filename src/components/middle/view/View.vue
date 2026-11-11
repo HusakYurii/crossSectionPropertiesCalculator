@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue';
+import { toast } from 'vue3-toastify';
 import {
 	ShapesInteractionService,
 	DimensionsWithTextLabelInteractionService,
@@ -18,7 +19,7 @@ import { unionBoundingBoxes } from './canvas/drawUtils.ts';
 import { AXIS_COLORS } from './canvas/constants/axisColors.ts';
 
 import { Grid, MainAxis } from './shapes';
-import { appSessionState, setSelectedShapeID, store } from '../../../store/store';
+import { appSessionState, setSelectedShapeID, store, updateGeometryExtraData } from '../../../store/store';
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
 
@@ -63,6 +64,115 @@ const canvasWrapperRef = ref<HTMLDivElement | null>(null);
 
 const requestRedraw = () => scene.requestRedraw();
 
+// the number editor over a dimension label; nothing is written to the store until it is applied
+const editorInputRef = ref<HTMLInputElement | null>(null);
+const editing = shallowRef<{ label: DimensionsWithTextLabel; prefill: string } | null>(null);
+const editText = ref('');
+const editorPosition = ref({ left: 0, top: 0 });
+const DECIMAL_PATTERN = /^[+-]?(\d+\.?\d*|\.\d+)$/;
+// the input is never narrower than this, and grows with a longer text so it always covers the drawn number
+const EDITOR_MIN_WIDTH = 72;
+
+const updateEditorPosition = () => {
+	const label = editing.value?.label;
+	if (!label) {
+		return;
+	}
+
+	// the shape was deleted (or undone away) while its number was being edited
+	if (label.value === undefined) {
+		editing.value = null;
+		return;
+	}
+
+	const { x, y } = scene.transformService.worldToScreen(label.labelAnchor);
+	editorPosition.value = { left: x, top: y };
+};
+
+const startEditing = (label: DimensionsWithTextLabel) => {
+	if (label.value === undefined) {
+		return;
+	}
+
+	// the exact value, not the rounded number on the canvas
+	const prefill = String(label.value);
+	editing.value = { label, prefill };
+	editText.value = prefill;
+	updateEditorPosition();
+	nextTick(() => {
+		editorInputRef.value?.focus({ preventScroll: true });
+		editorInputRef.value?.select();
+	});
+};
+
+const cancelEditing = () => {
+	editing.value = null;
+};
+
+const applyEditing = () => {
+	const current = editing.value;
+	// cleared first, so nothing below can run apply a second time
+	editing.value = null;
+	if (!current || editText.value === current.prefill) {
+		return;
+	}
+
+	const trimmed = editText.value.trim();
+	// checked before Number(): Number('') is 0
+	if (trimmed === '') {
+		return;
+	}
+
+	const normalized = trimmed.replace(',', '.');
+	// plain decimals only: Number() would also take '0x10' or '1e3'
+	if (!DECIMAL_PATTERN.test(normalized)) {
+		return;
+	}
+
+	const value = Number(normalized);
+	const { shapeUid, axis } = current.label;
+	const stored = store.geometryExtra[shapeUid];
+	// same number typed another way (12.50 over 12.5, -0 over 0): no write, and no false overlap warning
+	if (!Number.isFinite(value) || !stored || value === stored.position[axis]) {
+		return;
+	}
+
+	const position = { ...stored.position, [axis]: value };
+	if (!shapesInteractionService.canMoveTo(shapeUid, position)) {
+		toast.warning('The shape would overlap another shape there, so its position was not changed.');
+		return;
+	}
+
+	updateGeometryExtraData({ uid: shapeUid, data: { position } });
+	history.commit();
+};
+
+// the input opens right under the pointer, so it would otherwise swallow the zoom the canvas listens for
+const onEditorWheel = (event: WheelEvent) => {
+	canvasRef.value?.dispatchEvent(new WheelEvent('wheel', event));
+};
+
+const onEditorKeyDown = (event: KeyboardEvent) => {
+	if (event.key === 'Enter' || event.key === 'Tab') {
+		event.preventDefault();
+		applyEditing();
+	}
+	else if (event.key === 'Escape') {
+		event.preventDefault();
+		cancelEditing();
+	}
+};
+
+// Click away applies the value. This runs in the capture phase, like the flush in RightPanel: the canvas
+// handlers read the shape's position on mousedown, before a blur would fire, so a drag would overwrite the typed value.
+const onWindowMouseDown = (event: MouseEvent) => {
+	if (!editing.value || event.target === editorInputRef.value) {
+		return;
+	}
+
+	applyEditing();
+};
+
 const redraw = (context: CanvasRenderingContext2D) => {
 	//@TODO think how to refactor it and clear canvas only at shape hit boxes 
 	// and redraw them there to gain more performance
@@ -82,6 +192,7 @@ const redraw = (context: CanvasRenderingContext2D) => {
 	);
 
 	arrowLabelDrawTargets.draw(context);
+	updateEditorPosition();
 };
 
 watch(() => appSessionState.redrawId, () => {
@@ -214,15 +325,18 @@ onMounted(() => {
 		isTransformModeActive: () => transformService.isPanModeActive,
 		onChange: requestRedraw,
 		onDragEnd: () => history.commit(),
+		onEditRequest: startEditing,
 	});
 
 	scene.addService(shapesInteractionService);
 	scene.addService(dimensionsWithTextLabelInteractionService);
 	scene.initialize();
+	window.addEventListener('mousedown', onWindowMouseDown, true);
 	history.setDragProbe(() => shapesInteractionService.isDragging || dimensionsWithTextLabelInteractionService.isDragging);
 });
 
 onUnmounted(() => {
+	window.removeEventListener('mousedown', onWindowMouseDown, true);
 	history.setDragProbe(null);
 	scene?.deactivate();
 });
@@ -237,6 +351,10 @@ onUnmounted(() => {
 				<span class="quick-actions__icon" v-html="action.icon"></span>
 			</button>
 		</div>
+		<input v-if="editing" ref="editorInputRef" v-model="editText" type="text" inputmode="decimal"
+			class="dimension-editor" :class="`dimension-editor--${editing.label.axis}`"
+			:style="{ left: `${editorPosition.left}px`, top: `${editorPosition.top}px`, width: `max(${EDITOR_MIN_WIDTH}px, ${editText.length + 2}ch)` }"
+			aria-label="Dimension value" @keydown="onEditorKeyDown" @wheel.prevent="onEditorWheel" />
 		<CanvasHint :items="HINTS" />
 	</section>
 </template>
@@ -248,6 +366,29 @@ onUnmounted(() => {
 	min-height: 0;
 	overflow: hidden;
 	background: var(--color-surface-canvas);
+}
+
+/* sits over the number it edits, so the background is opaque; the translate puts the matching edge on the anchor */
+.dimension-editor {
+	position: absolute;
+	z-index: 1;
+	height: 28px;
+	padding: 0 6px;
+	border: 1px solid var(--color-border-subtle);
+	background: var(--color-surface-canvas);
+	color: var(--color-text);
+	font-size: 14px;
+	outline: none;
+	box-sizing: border-box;
+	text-align: center;
+}
+
+.dimension-editor--x {
+	transform: translate(-50%, -100%);
+}
+
+.dimension-editor--y {
+	transform: translate(-100%, -50%);
 }
 
 /* quick actions bar: a column of squares in the top left corner, over the canvas */

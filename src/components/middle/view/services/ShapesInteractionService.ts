@@ -2,6 +2,7 @@ import type { DrawTarget, Point, Service } from '../../../../interfaces/common/t
 import type { BeamsDrawTargetCollection } from '../canvas/BeamsDrawTargetCollection';
 import { GenericBeamView } from '../beams';
 import { CURSOR } from '../canvas/constants/cursors';
+import { DRAG_THRESHOLD } from '../canvas/constants/dragThreshold';
 import { getSnapStep, snapValue } from '../canvas/gridSnap';
 import type { InputService } from './InputService';
 
@@ -37,6 +38,9 @@ export class ShapesInteractionService implements Service {
 	private _mouseWorldPosition?: Point;
 	private _draggedShape: GenericBeamView | null = null;
 	private _dragOffset: Point = { x: 0, y: 0 };
+	// where the press happened in screen pixels; the shape stays put until the mouse has travelled past the threshold
+	private _dragStartScreenPosition: Point = { x: 0, y: 0 };
+	private _hasPassedThreshold = false;
 	private _unsubscribeHandlers: Array<() => void> = [];
 	private _active = false;
 	// this is what we have after doing hit test when a user hovers / drags shapes
@@ -163,6 +167,16 @@ export class ShapesInteractionService implements Service {
 		return false;
 	}
 
+	/** whether a shape can sit at this position: a negative shape goes anywhere, a solid one must not overlap another solid one */
+	canMoveTo(uid: string, position: Point): boolean {
+		const shape = this._drawTargets.getTargets().find((target) => target.uid === uid);
+		if (!shape) {
+			return false;
+		}
+
+		return shape.isNegative || !this._wouldCollideAt(shape, position);
+	}
+
 	private _onMouseDown = (event: MouseEvent): void => {
 		if (event.button !== 0 || this._isTransformModeActive()) {
 			return;
@@ -190,6 +204,9 @@ export class ShapesInteractionService implements Service {
 			y: worldPosition.y - shape.position.y,
 		};
 
+		this._dragStartScreenPosition = { x: event.offsetX, y: event.offsetY };
+		this._hasPassedThreshold = false;
+
 		this._setSelectedShapeID(shape.uid);
 		this._canvas.style.cursor = CURSOR.GRABBING;
 	};
@@ -198,7 +215,13 @@ export class ShapesInteractionService implements Service {
 		const worldPosition = this._screenToWorld({ x: event.offsetX, y: event.offsetY });
 		this._mouseWorldPosition = worldPosition;
 
-		if (this._draggedShape) {
+		if (this._draggedShape && !this._hasPassedThreshold) {
+			const dx = event.offsetX - this._dragStartScreenPosition.x;
+			const dy = event.offsetY - this._dragStartScreenPosition.y;
+			this._hasPassedThreshold = Math.hypot(dx, dy) >= DRAG_THRESHOLD;
+		}
+
+		if (this._draggedShape && this._hasPassedThreshold) {
 			// whole numbers while dragging; Shift snaps the shape's position to the grid lines
 			const step = getSnapStep(event);
 			const nextPosition = {

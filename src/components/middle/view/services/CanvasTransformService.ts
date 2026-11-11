@@ -61,6 +61,16 @@ export class CanvasTransformService implements Service {
 		};
 	}
 
+	/** The inverse of `screenToWorld`: where a world point lands on the canvas, in screen pixels. */
+	worldToScreen(point: Point): Point {
+		const { width, height } = this._getDisplaySize();
+
+		return {
+			x: point.x * this._currentTransforms.zoom + this._currentTransforms.panX + width / 2,
+			y: this._currentTransforms.panY - point.y * this._currentTransforms.zoom + height / 2,
+		};
+	}
+
 	/** Centers a world-space box in the canvas and zooms so it fits, leaving `margin` screen pixels around it. */
 	fitToBounds(bounds: BoundingBox, margin: number): void {
 		const zoom = this._clamp(this._getFitZoom(bounds, margin), this._minZoom, this._maxZoom);

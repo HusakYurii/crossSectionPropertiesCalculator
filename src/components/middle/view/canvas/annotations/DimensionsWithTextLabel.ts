@@ -1,5 +1,5 @@
 import type { BoundingBox, Point } from "../../../../../interfaces/common/types";
-import { setDimensionLabelOffset, type AppSessionState, type Store } from "../../../../../store/store";
+import { clearDimensionLabelAlong, setDimensionLabelOffset, type AppSessionState, type DimensionLabelOffsetKey, type Store } from "../../../../../store/store";
 import {
 	PIVOT,
 	drawUprightText,
@@ -13,6 +13,10 @@ const ARROW_HEAD_SIZE = 13.5;
 const DASH_SIZE = 6.5;
 const LABEL_FONT_SIZE = 22;
 const LABEL_PADDING = 6;
+// a dimension shorter than this (world mm) gets its arrow heads outside the ends, so they don't cover the number
+const SMALL_DIMENSION = 20;
+// length of the tails the outside arrow heads sit on, in arrow heads
+const TAIL_FACTOR = 1.5;
 
 export type ArrowAxis = 'x' | 'y';
 
@@ -33,9 +37,14 @@ export type DimensionsWithTextLabelParams = {
  * label. Dragging offsets the whole arrow line perpendicular to its own
  * axis (an X-axis arrow slides along Y, a Y-axis arrow slides along X);
  * when offset, a dashed connector is drawn back to the shape center so the
- * reference point is never lost.
+ * reference point is never lost. The number can also slide along the line, even past its ends; a solid
+ * line then runs under or beside it. Its position along the line is `along`: the world offset of the number's
+ * center from the line's midpoint. Without a stored value it is automatic.
  *
- * The lines come from BaseDimensions; this class adds the number next to the line and its hit box.
+ * A dimension shorter than SMALL_DIMENSION has its arrow heads outside the ends, on short tails, pointing
+ * inward, and its automatic number sits outside too.
+ *
+ * The lines come from BaseDimensions; this class lays out the number next to the line and keeps its hit box.
  */
 export class DimensionsWithTextLabel extends BaseDimensions {
 	private _shapeUid: string;
@@ -43,6 +52,9 @@ export class DimensionsWithTextLabel extends BaseDimensions {
 	private _store: Store;
 	private _sessionState: AppSessionState;
 	private _cachedHitBox: BoundingBox = { x: 0, y: 0, width: 0, height: 0 };
+	// where the number goes, worked out by the last layout in _getGeometry
+	private _labelAt: Point = { x: 0, y: 0 };
+	private _autoAlong = 0;
 	// hovered or dragged: the number is drawn bold to show it can be grabbed
 	private _isHighlighted = false;
 
@@ -71,6 +83,25 @@ export class DimensionsWithTextLabel extends BaseDimensions {
 		return this._sessionState.dimensionLabelOffsets[this._shapeUid]?.[this._axis] ?? 0;
 	}
 
+	private get _alongKey(): DimensionLabelOffsetKey {
+		return this._axis === 'x' ? 'xAlong' : 'yAlong';
+	}
+
+	/** the stored position along the line; undefined means automatic */
+	private get _storedAlong(): number | undefined {
+		return this._sessionState.dimensionLabelOffsets[this._shapeUid]?.[this._alongKey];
+	}
+
+	/** where the number is along the line, from its midpoint: the stored value or else the automatic one of the last layout */
+	get along(): number {
+		return this._storedAlong ?? this._autoAlong;
+	}
+
+	/** the automatic position along the line as of the last layout; dropping a number near it makes it automatic again */
+	get autoAlong(): number {
+		return this._autoAlong;
+	}
+
 	get isHighlighted(): boolean {
 		return this._isHighlighted;
 	}
@@ -79,8 +110,32 @@ export class DimensionsWithTextLabel extends BaseDimensions {
 		this._isHighlighted = value;
 	}
 
+	/** the exact position on this axis, not the rounded number the label shows; undefined once the shape is deleted */
+	get value(): number | undefined {
+		const position = this._shapePosition;
+		return position && (this._axis === 'x' ? position.x : position.y);
+	}
+
+	/**
+	 * World point of the number's box edge that sits on the arrow: bottom center for an X label, right
+	 * center for a Y label. Read from the measured box, so it is valid after the first draw.
+	 */
+	get labelAnchor(): Point {
+		const { x, y, width, height } = this._cachedHitBox;
+		return this._axis === 'x' ? { x: x + width / 2, y } : { x: x + width, y: y + height / 2 };
+	}
+
 	setOffset(value: number): void {
 		setDimensionLabelOffset(this._shapeUid, this._axis, value);
+	}
+
+	setAlong(value: number): void {
+		setDimensionLabelOffset(this._shapeUid, this._alongKey, value);
+	}
+
+	/** back to the automatic position */
+	resetAlong(): void {
+		clearDimensionLabelAlong(this._shapeUid, this._axis);
 	}
 
 	/** undefined once the shape is deleted from the store */
@@ -88,52 +143,101 @@ export class DimensionsWithTextLabel extends BaseDimensions {
 		return this._store.geometryExtra[this._shapeUid]?.position;
 	}
 
-	private _lineFor({ x, y }: Point): { from: Point; to: Point } {
-		if (this._axis === 'x') {
-			const lineY = y + this.offset;
-			return { from: { x: 0, y: lineY }, to: { x, y: lineY } };
-		}
-
-		const lineX = x + this.offset;
-		return { from: { x: lineX, y: 0 }, to: { x: lineX, y } };
-	}
-
 	private _labelFor({ x, y }: Point): string {
-		return this._axis === 'x' ? `${Math.round(x)}` : `${Math.round(y)}`;
+		// up to 2 decimals; + 0 turns a rounded -0 into 0
+		const v = this._axis === 'x' ? x : y;
+		return `${parseFloat(v.toFixed(2)) + 0}`;
 	}
 
-	protected _getGeometry(): DimensionGeometry | null {
+	private get _pivot() {
+		return this._axis === 'x' ? PIVOT.BOTTOM_CENTER : PIVOT.RIGHT_CENTER;
+	}
+
+	protected _getGeometry(context: CanvasRenderingContext2D): DimensionGeometry | null {
 		const shapePosition = this._shapePosition;
 		// the shape was deleted and this label is waiting to be removed: there is nothing to draw
 		if (!shapePosition) {
 			return null;
 		}
 
-		const { from, to } = this._lineFor(shapePosition);
-		// once the line is dragged away, a dashed line keeps the shape center it measures from in sight
-		return { from, to, connector: this.offset !== 0 ? [shapePosition, to] : undefined };
+		const isX = this._axis === 'x';
+		const value = isX ? shapePosition.x : shapePosition.y;
+		// the line runs from 0 to value along the axis; the other coordinate is where the line is moved to
+		const lineCoord = (isX ? shapePosition.y : shapePosition.x) + this.offset;
+		const pointAt = (coord: number): Point => isX ? { x: coord, y: lineCoord } : { x: lineCoord, y: coord };
+		const unit: Point = isX ? { x: 1, y: 0 } : { x: 0, y: 1 };
+
+		// ends by position along the axis, not by from / to, so value 0 and negative values stay right
+		const lo = Math.min(0, value);
+		const hi = Math.max(0, value);
+		const mid = (lo + hi) / 2;
+		const isSmall = Math.abs(value) < SMALL_DIMENSION;
+		const tail = isSmall ? getScaledSize(context, TAIL_FACTOR * this._style.arrowHeadSize) : 0;
+
+		// layout is measured at normal weight so hovering (bold) can't move the number or flicker the extension line
+		const label = this._labelFor(shapePosition);
+		const box = measureUprightTextBox(context, label, { x: 0, y: 0 }, LABEL_FONT_SIZE, this._pivot, 'normal');
+		const extent = isX ? box.width : box.height;
+
+		if (!isSmall) {
+			this._autoAlong = 0;
+		} else if (isX) {
+			// above the line, the number's right edge at the left tail tip
+			this._autoAlong = lo - tail - extent / 2 - mid;
+		} else {
+			// beside the top arrow head, its top edge at the tail tip, but never lower than the end itself:
+			// the X dimension line or the X axis runs through hi and would strike the number through
+			this._autoAlong = hi + Math.max(tail, extent) - extent / 2 - mid;
+		}
+
+		const center = mid + this.along;
+		// the pivot puts the label's edge right on the line, so push it away from it:
+		// an X arrow's label sits above the line, a Y arrow's label sits left of it
+		const padding = getScaledSize(context, LABEL_PADDING);
+		this._labelAt = isX ? { x: center, y: lineCoord + padding } : { x: lineCoord - padding, y: center };
+
+		const extensionLines: [Point, Point][] = [];
+		const loEnd = isSmall ? lo - tail : lo;
+		const hiEnd = isSmall ? hi + tail : hi;
+		if (isSmall) {
+			extensionLines.push([pointAt(lo), pointAt(loEnd)], [pointAt(hi), pointAt(hiEnd)]);
+		}
+		// the number is outside the line: carry the line to its far edge
+		if (center + extent / 2 > hiEnd) {
+			extensionLines.push([pointAt(hiEnd), pointAt(center + extent / 2)]);
+		}
+		if (center - extent / 2 < loEnd) {
+			extensionLines.push([pointAt(loEnd), pointAt(center - extent / 2)]);
+		}
+
+		const from = pointAt(0);
+		const to = pointAt(value);
+		const fromIsLo = value >= 0;
+		const negate = ({ x, y }: Point): Point => ({ x: -x, y: -y });
+		const arrowsOutside = isSmall
+			? { fromOutward: fromIsLo ? negate(unit) : unit, toOutward: fromIsLo ? unit : negate(unit) }
+			: undefined;
+
+		return {
+			from,
+			to,
+			extensionLines: extensionLines.length > 0 ? extensionLines : undefined,
+			// once the line is dragged away, a dashed line keeps the shape center it measures from in sight
+			connector: this.offset !== 0 ? [shapePosition, to] : undefined,
+			arrowsOutside,
+		};
 	}
 
-	protected _drawLabel(context: CanvasRenderingContext2D, { from, to }: DimensionGeometry): void {
+	protected _drawLabel(context: CanvasRenderingContext2D): void {
 		const shapePosition = this._shapePosition;
 		if (!shapePosition) {
 			return;
 		}
 
-		const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-		const pivot = this._axis === 'x' ? PIVOT.BOTTOM_CENTER : PIVOT.RIGHT_CENTER;
 		const label = this._labelFor(shapePosition);
-
-		// the pivot puts the label's edge right on the line, so push it away from it:
-		// an X arrow's label sits above the line, a Y arrow's label sits left of it
-		const padding = getScaledSize(context, LABEL_PADDING);
-		const labelAt = this._axis === 'x'
-			? { x: mid.x, y: mid.y + padding }
-			: { x: mid.x - padding, y: mid.y };
-
 		const fontWeight = this._isHighlighted ? 'bold' : 'normal';
-		drawUprightText(context, label, labelAt, this._style.color, LABEL_FONT_SIZE, pivot, fontWeight);
-		this._cachedHitBox = measureUprightTextBox(context, label, labelAt, LABEL_FONT_SIZE, pivot, fontWeight);
+		drawUprightText(context, label, this._labelAt, this._style.color, LABEL_FONT_SIZE, this._pivot, fontWeight);
+		this._cachedHitBox = measureUprightTextBox(context, label, this._labelAt, LABEL_FONT_SIZE, this._pivot, fontWeight);
 	}
 
 	contains(point: Point): boolean {
