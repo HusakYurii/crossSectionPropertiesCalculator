@@ -50,6 +50,8 @@ const DEDUPE_EPSILON = 1e-6;
 const DEDUPE_EPSILON_SQ = DEDUPE_EPSILON * DEDUPE_EPSILON;
 /** Triangles below this area are treated as invisible/degenerate rather than "thin" — see refineMesh. */
 const AREA_EPSILON = 1e-4;
+/** Relative tolerance (cross product vs squared edge length) for "this point lies on this edge" — see insertPoint. */
+const COLLINEAR_EPS = 1e-12;
 
 /** Squared distance — for threshold comparisons only, avoids a sqrt when the actual length isn't needed. */
 function getDistanceSqrt(a: Point, b: Point): number {
@@ -483,7 +485,10 @@ function insertPoint(
 	}
 
 	const remaining = triangles.filter((_, idx) => !cavity.has(idx));
-	const fan: Triangle[] = boundaryEdges.map(([a, b]) => [a, b, p]);
+	// a rim edge the new point lies on (the edge being split) would give a flat triangle
+	const fan: Triangle[] = boundaryEdges
+		.filter(([a, b]) => Math.abs(cross(a, b, p)) > COLLINEAR_EPS * getDistanceSqrt(a, b))
+		.map(([a, b]) => [a, b, p]);
 	return [...remaining, ...fan];
 }
 
