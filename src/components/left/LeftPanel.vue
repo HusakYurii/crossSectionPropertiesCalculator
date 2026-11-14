@@ -1,18 +1,35 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { store, appSessionState, setSelectedShapeID, removeGeometryData, removeCrossSectionProperties, removeCrossSectionPolygon, removeCrossSectionMesh, removeGeometryExtraData, setHoveredShapeID, removeShapeSessionState, setGeometryOrder } from '../../store/store';
+import { computed } from 'vue';
+import { store, appSessionState, setSelectedShapeID, removeGeometryData, removeCrossSectionProperties, removeCrossSectionPolygon, removeCrossSectionMesh, removeGeometryExtraData, setHoveredShapeID, removeShapeSessionState, setGeometryOrder, updateGeometryExtraData } from '../../store/store';
 import { history } from '../../store/history';
 import { openSectionModal } from '../../store/sectionModal';
 import trashIconRaw from '../../svg/trash.svg?raw';
 import editIconRaw from '../../svg/edit.svg?raw';
 import type { SHAPE_TYPES } from '../../interfaces/beams/common.types';
+import { useListItemDrag } from './composables/useListItemDrag';
+import { useRenameListItem } from './composables/useRenameListItem';
 
 const geometryList = computed(() => Object.entries(store.geometry));
 const geometryExtraData = computed(() => store.geometryExtra);
 
-const draggedUid = ref<string | null>(null);
-// insert position 0..n in the full list (the dragged row included), null when the pointer is outside the list
-const dropIndex = ref<number | null>(null);
+const { onDragStart, onDragOver, onDrop, onDragEnd, onListDragLeave, isDragging, isDropBefore, isDropAfter } = useListItemDrag({
+	getOrder: () => Object.keys(store.geometry),
+	onReorder: (order) => {
+		setGeometryOrder(order);
+		history.commit();
+	},
+	onDragStart: () => setHoveredShapeID(null),
+});
+
+const { draftName, isRenaming, startRename, commitRename, onRenameKeydown, vRenameFocus } = useRenameListItem({
+	getName: (uid) => store.geometryExtra[uid]?.name,
+	onRename: (uid, name) => {
+		updateGeometryExtraData({ uid, data: { name } });
+		history.commit();
+	},
+	// a double-click first sends two clicks, which toggle the selection off again
+	onRenameStart: (uid) => setSelectedShapeID(uid),
+});
 
 function onSelect(uid: string) {
 	if (appSessionState.currentSelectedShapeID === uid) {
@@ -53,92 +70,24 @@ function onMouseLeave(_event: MouseEvent) {
 	setHoveredShapeID(null);
 }
 
-function onDragStart(event: DragEvent, uid: string) {
-	draggedUid.value = uid;
-	// Firefox does not start a drag without data; a private type, because text/plain could be dropped into a text input
-	event.dataTransfer?.setData('application/x-shape-uid', uid);
-	if (event.dataTransfer) {
-		event.dataTransfer.effectAllowed = 'move';
-	}
-	setHoveredShapeID(null);
-}
-
-function onDragOver(event: DragEvent, index: number) {
-	if (draggedUid.value === null) {
-		return;
-	}
-	event.preventDefault();
-	const row = event.currentTarget as HTMLElement;
-	const rect = row.getBoundingClientRect();
-	dropIndex.value = event.clientY < rect.top + rect.height / 2 ? index : index + 1;
-}
-
-function onDrop(event: DragEvent) {
-	if (draggedUid.value === null || dropIndex.value === null) {
-		return;
-	}
-	event.preventDefault();
-	const uid = draggedUid.value;
-	const slot = dropIndex.value;
-	// dragend may not fire once the row has moved in the DOM, so clear the state here too
-	onDragEnd();
-	const order = Object.keys(store.geometry);
-	const from = order.indexOf(uid);
-	if (from === -1) {
-		return;
-	}
-	// the dragged row is removed first, so a position after it moves up by one
-	const to = slot > from ? slot - 1 : slot;
-	if (to === from) {
-		return;
-	}
-	order.splice(from, 1);
-	order.splice(to, 0, uid);
-	setGeometryOrder(order);
-	history.commit();
-}
-
-function onDragEnd() {
-	draggedUid.value = null;
-	dropIndex.value = null;
-}
-
-function onListDragLeave(event: DragEvent) {
-	// relatedTarget can be null in Safari between rows, so compare the pointer with the list bounds instead
-	const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-	const { clientX, clientY } = event;
-	// (0, 0) is what browsers report when the pointer left the window
-	const leftWindow = clientX === 0 && clientY === 0;
-	const outside = clientX < rect.left || clientX >= rect.right || clientY < rect.top || clientY >= rect.bottom;
-	if (leftWindow || outside) {
-		dropIndex.value = null;
-	}
-}
-
-// the insertion line is hidden on the two slots around the dragged row, where a drop does nothing
-function isDropSlot(slot: number) {
-	if (dropIndex.value !== slot || draggedUid.value === null) {
-		return false;
-	}
-	const from = geometryList.value.findIndex(([uid]) => uid === draggedUid.value);
-	return slot !== from && slot !== from + 1;
-}
-
 </script>
 
 <template>
 	<aside class="left-panel">
 		<ul class="shape-list" @dragleave="onListDragLeave">
 			<li v-for="([uid, shape], index) in geometryList" :key="uid" :id="uid" class="shape-list__item"
-				draggable="true" :class="{
+				:draggable="!isRenaming(uid)" :class="{
 					'shape-list__item--selected': uid === appSessionState.currentSelectedShapeID,
-					'shape-list__item--dragging': uid === draggedUid,
-					'shape-list__item--drop-before': isDropSlot(index),
-					'shape-list__item--drop-after': isDropSlot(index + 1) && index === geometryList.length - 1,
+					'shape-list__item--dragging': isDragging(uid),
+					'shape-list__item--drop-before': isDropBefore(index),
+					'shape-list__item--drop-after': isDropAfter(index),
 				}" @click="onSelect(uid)" @mouseenter="onMouseEnter" @mouseleave="onMouseLeave"
 				@dragstart="onDragStart($event, uid)" @dragover="onDragOver($event, index)" @drop="onDrop"
 				@dragend="onDragEnd">
-				<span class="shape-list__name">{{ geometryExtraData[uid].name }}</span>
+				<input v-if="isRenaming(uid)" v-rename-focus v-model="draftName"
+					class="shape-list__name shape-list__name-input" @keydown="onRenameKeydown"
+					@blur="commitRename" @click.stop @dblclick.stop>
+				<span v-else class="shape-list__name" @dblclick="startRename(uid)">{{ geometryExtraData[uid].name }}</span>
 				<span class="shape-list__actions">
 					<button type="button" class="icon-button icon-button--edit" aria-label="Edit shape"
 						@click.stop="onEdit(uid, shape.type)">
@@ -176,7 +125,7 @@ function isDropSlot(slot: number) {
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
-	padding: 6px 10px;
+	padding: 4px 10px;
 	border-bottom: 1px solid var(--color-border-subtle);
 	color: var(--color-text);
 	font-size: 13px;
@@ -229,7 +178,17 @@ function isDropSlot(slot: number) {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-size: 16px;
+	font-size: 14px;
+}
+
+.shape-list__name-input {
+	font: inherit;
+	font-size: 14px;
+	color: inherit;
+	background: transparent;
+	border: 1px solid var(--color-accent);
+	padding: 0 2px;
+	margin: 0;
 }
 
 .shape-list__actions {
@@ -242,8 +201,8 @@ function isDropSlot(slot: number) {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 30px;
-	height: 30px;
+	width: 28px;
+	height: 28px;
 	border: none;
 	border-radius: 0;
 	background: transparent;

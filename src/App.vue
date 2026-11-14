@@ -2,7 +2,7 @@
 import TopPanel from './components/top/TopPanel.vue';
 import LeftPanel from './components/left/LeftPanel.vue';
 import View from './components/middle/view/View.vue';
-import RightPanel from './components/right/RightPanel.vue';
+// import RightPanel from './components/right/RightPanel.vue';
 import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
 import { useHistoryShortcuts } from './composables/useHistoryShortcuts.ts';
@@ -13,7 +13,7 @@ useHistoryShortcuts();
 
 const {
 	leftWidth,
-	rightWidth,
+	// rightWidth,
 	startResize
 } = useEditorPanelsResize();
 
@@ -38,11 +38,11 @@ const shouldInert = computed(() => infoPanelState.topic !== null);
 				</div>
 			</div>
 
-			<div class="panel-slot panel-slot--right" :style="{ width: `${rightWidth}px` }">
+			<!-- <div class="panel-slot panel-slot--right" :style="{ width: `${rightWidth}px` }">
 				<div class="resize-handle resize-handle--vertical resize-handle--west" aria-hidden="true"
 					@mousedown="startResize(RESIZE_TARGETS.RIGHT, $event)" />
 				<RightPanel class="panel-content" />
-			</div>
+			</div> -->
 		</div>
 
 		<div class="modals-container" :inert="shouldInert"></div>

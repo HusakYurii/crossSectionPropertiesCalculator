@@ -8,9 +8,9 @@ import {
 } from "../drawUtils";
 import { BaseDimensions, type DimensionGeometry } from "./BaseDimensions";
 
-const LINE_WIDTH = 2.7;
+const LINE_WIDTH = 2;
 const ARROW_HEAD_SIZE = 13.5;
-const DASH_SIZE = 6.5;
+const DASH_SIZE = 16;
 const LABEL_FONT_SIZE = 22;
 const LABEL_PADDING = 6;
 // a dimension shorter than this (world mm) gets its arrow heads outside the ends, so they don't cover the number
