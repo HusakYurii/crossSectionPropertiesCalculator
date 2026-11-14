@@ -21,6 +21,7 @@ export class InputService implements Service {
 	private _keyDownCallbacks = new Set<KeyboardCallback>();
 	private _keyUpCallbacks = new Set<KeyboardCallback>();
 	private _windowBlurCallbacks = new Set<VoidCallback>();
+	private _windowMouseDownCallbacks = new Set<MouseCallback>();
 	private _active = false;
 
 	constructor(props: InputServiceProps) {
@@ -67,6 +68,10 @@ export class InputService implements Service {
 		return this._subscribe(this._windowBlurCallbacks, callback);
 	}
 
+	onWindowMouseDown(callback: MouseCallback): () => void {
+		return this._subscribe(this._windowMouseDownCallbacks, callback);
+	}
+
 	initialize(): void {
 		if (this._active) {
 			return;
@@ -82,6 +87,9 @@ export class InputService implements Service {
 		window.addEventListener('keydown', this._handleKeyDown);
 		window.addEventListener('keyup', this._handleKeyUp);
 		window.addEventListener('blur', this._handleWindowBlur);
+		// capture phase: fires for a press anywhere on the page, before the canvas mousedown callbacks,
+		// so a subscriber can finish something (such as applying a typed value) before a canvas handler reads state
+		window.addEventListener('mousedown', this._handleWindowMouseDown, true);
 		this._active = true;
 	}
 
@@ -100,7 +108,25 @@ export class InputService implements Service {
 		window.removeEventListener('keydown', this._handleKeyDown);
 		window.removeEventListener('keyup', this._handleKeyUp);
 		window.removeEventListener('blur', this._handleWindowBlur);
+		window.removeEventListener('mousedown', this._handleWindowMouseDown, true);
 		this._active = false;
+	}
+
+	/** drops every subscriber, for the owner tearing the canvas down */
+	cleanup(): void {
+		[
+			this._wheelCallbacks,
+			this._mouseDownCallbacks,
+			this._mouseMoveCallbacks,
+			this._mouseUpCallbacks,
+			this._mouseLeaveCallbacks,
+			this._doubleClickCallbacks,
+			this._contextMenuCallbacks,
+			this._keyDownCallbacks,
+			this._keyUpCallbacks,
+			this._windowBlurCallbacks,
+			this._windowMouseDownCallbacks,
+		].forEach((callbacks) => callbacks.clear());
 	}
 
 	private _subscribe<T>(callbacks: Set<T>, callback: T): () => void {
@@ -126,4 +152,5 @@ export class InputService implements Service {
 	private _handleKeyDown = (event: KeyboardEvent): void => this._dispatch(this._keyDownCallbacks, event);
 	private _handleKeyUp = (event: KeyboardEvent): void => this._dispatch(this._keyUpCallbacks, event);
 	private _handleWindowBlur = (): void => this._dispatch(this._windowBlurCallbacks);
+	private _handleWindowMouseDown = (event: MouseEvent): void => this._dispatch(this._windowMouseDownCallbacks, event);
 }

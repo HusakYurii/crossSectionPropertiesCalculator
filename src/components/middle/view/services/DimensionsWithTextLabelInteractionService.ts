@@ -4,6 +4,11 @@ import type { DimensionsWithTextLabel } from '../canvas/annotations/DimensionsWi
 import { DRAG_THRESHOLD } from '../canvas/constants/dragThreshold';
 import type { InputService } from './InputService';
 
+/** whatever can open the number editor for a label; passed in, not owned */
+export interface DimensionsWithTextLabelEditor {
+	startEditing(label: DimensionsWithTextLabel): void;
+}
+
 type DimensionsWithTextLabelInteractionServiceProps = {
 	drawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
 	inputService: InputService;
@@ -14,8 +19,8 @@ type DimensionsWithTextLabelInteractionServiceProps = {
 	 *  A drag of a label ended (mouse up or mouse leave), switching windows mid-drag sends no mouse up or leave
 	 * */
 	onDragEnd: () => void;
-	/** A label was double clicked, so its number can be edited */
-	onEditRequest: (label: DimensionsWithTextLabel) => void;
+	/** Opens the number editor when a label is double clicked */
+	editor: DimensionsWithTextLabelEditor;
 };
 
 // a dropped number this close (screen px) to its automatic spot goes back to automatic
@@ -33,7 +38,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 	private _isTransformModeActive: () => boolean;
 	private _onChange: () => void;
 	private _onDragEnd: () => void;
-	private _onEditRequest: (label: DimensionsWithTextLabel) => void;
+	private _editor: DimensionsWithTextLabelEditor;
 
 	private _unsubscribeHandlers: Array<() => void> = [];
 	private _active = false;
@@ -55,7 +60,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 		this._isTransformModeActive = props.isTransformModeActive;
 		this._onChange = props.onChange;
 		this._onDragEnd = props.onDragEnd;
-		this._onEditRequest = props.onEditRequest;
+		this._editor = props.editor;
 	}
 
 	get isDragging(): boolean {
@@ -199,7 +204,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 		}
 
 		const label = this._findLabelAt(this._screenToWorld({ x: event.offsetX, y: event.offsetY }));
-		label && this._onEditRequest(label);
+		label && this._editor.startEditing(label);
 	};
 
 	private _onMouseLeave = (): void => {

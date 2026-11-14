@@ -7,7 +7,7 @@ import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
 import { useHistoryShortcuts } from './composables/useHistoryShortcuts.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
 useHistoryShortcuts();
 
@@ -18,6 +18,12 @@ const {
 } = useEditorPanelsResize();
 
 const shouldInert = computed(() => infoPanelState.topic !== null);
+
+onMounted(() => {
+	document.addEventListener('contextmenu', (e) => {
+		e.preventDefault()
+	})
+})
 
 </script>
 
