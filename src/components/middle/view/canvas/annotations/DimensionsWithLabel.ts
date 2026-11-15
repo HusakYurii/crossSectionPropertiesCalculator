@@ -5,16 +5,8 @@ import {
 	getScaledSize,
 	measureUprightTextBox,
 } from "../drawUtils";
+import { CANVAS_FONT, DIMENSION_STYLE } from "../../../../../constants/canvasStyle";
 import { BaseDimensions, type DimensionGeometry } from "./BaseDimensions";
-
-const LINE_WIDTH = 1.89;
-const ARROW_HEAD_SIZE = 9.45;
-const LABEL_FONT_SIZE = 22;
-const EXTENSION_OVERSHOOT = 8;
-const LABEL_PADDING = 6;
-const MIN_ARROW_SPAN = 40;
-// the canvas background (--color-surface-canvas), so the box that sits on the line leaves no visible edge
-const DEFAULT_LABEL_BACKGROUND = '#fafbfc';
 
 export type DimensionsWithLabelParams = {
 	uid: string;
@@ -53,8 +45,8 @@ export class DimensionsWithLabel extends BaseDimensions {
 	constructor(params: DimensionsWithLabelParams) {
 		super(params.uid, {
 			color: params.color ?? 'black',
-			lineWidth: LINE_WIDTH,
-			arrowHeadSize: ARROW_HEAD_SIZE,
+			lineWidth: DIMENSION_STYLE.LINE_WIDTH,
+			arrowHeadSize: DIMENSION_STYLE.ARROW_HEAD_SIZE,
 		});
 		this._start = params.start;
 		this._end = params.end;
@@ -62,7 +54,7 @@ export class DimensionsWithLabel extends BaseDimensions {
 		this._rotation = params.rotation ?? 0;
 		this._offset = params.offset;
 		this._label = params.label;
-		this._labelBackground = params.labelBackground ?? DEFAULT_LABEL_BACKGROUND;
+		this._labelBackground = params.labelBackground ?? DIMENSION_STYLE.LABEL_BACKGROUND;
 	}
 
 	/** the unit vector the offset runs along (perpendicular to the line), and which side of the shape it is on */
@@ -77,7 +69,7 @@ export class DimensionsWithLabel extends BaseDimensions {
 	protected _getGeometry(context: CanvasRenderingContext2D): DimensionGeometry {
 		const { normal, side } = this._normalAndSide();
 		const offset = getScaledSize(context, this._offset);
-		const overshoot = getScaledSize(context, EXTENSION_OVERSHOOT) * side;
+		const overshoot = getScaledSize(context, DIMENSION_STYLE.EXTENSION_OVERSHOOT) * side;
 
 		// dimension line endpoints: anchors pushed along the normal
 		const from = { x: this._start.x + normal.x * offset, y: this._start.y + normal.y * offset };
@@ -94,20 +86,20 @@ export class DimensionsWithLabel extends BaseDimensions {
 
 	protected _drawLabel(context: CanvasRenderingContext2D, { from, to }: DimensionGeometry): void {
 		const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-		const box = measureUprightTextBox(context, this._label, mid, LABEL_FONT_SIZE, PIVOT.CENTER);
-		const padding = getScaledSize(context, LABEL_PADDING);
+		const box = measureUprightTextBox(context, this._label, mid, CANVAS_FONT.LABEL_SIZE, PIVOT.CENTER);
+		const padding = getScaledSize(context, DIMENSION_STYLE.LABEL_PADDING);
 
 		const length = Math.hypot(to.x - from.x, to.y - from.y);
 		const dir = length ? { x: (to.x - from.x) / length, y: (to.y - from.y) / length } : { x: 1, y: 0 };
 		// half the label's extent measured along the line, so a tilted line still leaves room for the box
 		const halfGap = (Math.abs(dir.x) * box.width + Math.abs(dir.y) * box.height) / 2 + padding;
 
-		if (length >= 2 * halfGap + getScaledSize(context, MIN_ARROW_SPAN)) {
+		if (length >= 2 * halfGap + getScaledSize(context, DIMENSION_STYLE.MIN_ARROW_SPAN)) {
 			// the text is centered on the line, on top of a box in the canvas color that hides the line behind it
 			context.fillStyle = this._labelBackground;
 			context.fillRect(box.x - padding, box.y - padding, box.width + 2 * padding, box.height + 2 * padding);
 
-			drawUprightText(context, this._label, mid, this._style.color, LABEL_FONT_SIZE, PIVOT.CENTER);
+			drawUprightText(context, this._label, mid, this._style.color, CANVAS_FONT.LABEL_SIZE, PIVOT.CENTER);
 			return;
 		}
 
@@ -115,6 +107,6 @@ export class DimensionsWithLabel extends BaseDimensions {
 		const { normal, side } = this._normalAndSide();
 		const outward = { x: normal.x * side, y: normal.y * side };
 		const pivot = { x: 0.5 - 0.5 * outward.x, y: 0.5 + 0.5 * outward.y };
-		drawUprightText(context, this._label, mid, this._style.color, LABEL_FONT_SIZE, pivot);
+		drawUprightText(context, this._label, mid, this._style.color, CANVAS_FONT.LABEL_SIZE, pivot);
 	}
 }

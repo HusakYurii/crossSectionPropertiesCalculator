@@ -1,5 +1,5 @@
 import type { BoundingBox, Point } from "../../../../interfaces/common/types";
-import { FONT_FAMILY } from "./constants/fontFamily";
+import { CANVAS_FONT } from "../../../../constants/canvasStyle";
 
 /**
  * Sizes passed to the canvas are in world units, so a fixed value gets
@@ -36,7 +36,7 @@ export function unionBoundingBoxes(boxes: Iterable<BoundingBox | null>): Boundin
 export type FontWeight = 'normal' | 'bold';
 
 function getFont(context: CanvasRenderingContext2D, fontSize: number, fontWeight: FontWeight = 'normal'): string {
-	return `${fontWeight} ${getScaledSize(context, fontSize)}px ${FONT_FAMILY}`;
+	return `${fontWeight} ${getScaledSize(context, fontSize)}px ${CANVAS_FONT.FAMILY}`;
 }
 
 /**

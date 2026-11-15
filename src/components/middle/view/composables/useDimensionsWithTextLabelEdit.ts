@@ -39,7 +39,7 @@ export const useDimensionsWithTextLabelEdit = (props: DimensionsWithTextLabelEdi
 	};
 
 	const startEditing = (label: DimensionsWithTextLabel) => {
-		if (label.value === undefined) {
+		if (!label.isEditable || label.shapeUid === undefined || label.value === undefined) {
 			return;
 		}
 
@@ -80,6 +80,9 @@ export const useDimensionsWithTextLabelEdit = (props: DimensionsWithTextLabelEdi
 
 		const value = Number(normalized);
 		const { shapeUid, axis } = current.label;
+		if (shapeUid === undefined) {
+			return;
+		}
 		const stored = store.geometryExtra[shapeUid];
 		// same number typed another way (12.50 over 12.5, -0 over 0): no write, and no false overlap warning
 		if (!Number.isFinite(value) || !stored || value === stored.position[axis]) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NestedMenuLevel } from './menu.types.ts';
+import type { NestedMenuLevel } from '../../../interfaces/menu/menu.types.ts';
 
 defineProps<{
 	level: NestedMenuLevel;

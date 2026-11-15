@@ -5,7 +5,9 @@ import type { CrossSectionProperties } from '../../interfaces/sectionProperties'
 import { BeamsDrawTargetCollection } from '../../components/middle/view/canvas/BeamsDrawTargetCollection';
 import { DrawTargetsCollection } from '../../components/middle/view/canvas/DrawTargetsCollection';
 import { DimensionsWithTextLabel } from '../../components/middle/view/canvas/annotations/DimensionsWithTextLabel';
-import { AXIS_COLORS } from '../../components/middle/view/canvas/constants/axisColors';
+import { ShapeDimensionSource } from '../../components/middle/view/canvas/annotations/dimensionSources/ShapeDimensionSource';
+import { AXIS_STYLE, DIMENSION_STYLE } from '../../constants/canvasStyle';
+import { REPORT_SECTION_CANVAS } from '../../constants/canvasFit';
 import { PropertyOverlays } from '../../components/middle/view/canvas/propertiesHelperPreviews';
 import { createBeamView } from '../../components/middle/view/beams';
 import { Grid, MainAxis } from '../../components/middle/view/shapes';
@@ -16,13 +18,8 @@ const props = defineProps<{
 	composite: CrossSectionProperties;
 }>();
 
-const WIDTH = 680;
-const HEIGHT = 420;
-const FIT_MARGIN = 0.75;
 // the sizes of the annotations on the part drawings (DimensionsWithLabel): at the editor's 2.7 the position lines
 // are as heavy as the shape outlines, which is too much in a drawing this small
-const DIMENSION_LINE_WIDTH = 1.89;
-const DIMENSION_ARROW_HEAD_SIZE = 9.45;
 
 const src = ref('');
 
@@ -51,11 +48,11 @@ const draw = (context: CanvasRenderingContext2D) => {
 	overlayTargets.draw();
 
 	const labels = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
-	const labelStyle = { store, sessionState: appSessionState, lineWidth: DIMENSION_LINE_WIDTH, arrowHeadSize: DIMENSION_ARROW_HEAD_SIZE };
+	const labelStyle = { lineWidth: DIMENSION_STYLE.LINE_WIDTH, arrowHeadSize: DIMENSION_STYLE.ARROW_HEAD_SIZE };
 	props.uids.forEach(uid => {
 		labels.add(
-			new DimensionsWithTextLabel({ uid: `${uid}_x`, shapeUid: uid, axis: 'x', color: AXIS_COLORS.x, ...labelStyle }),
-			new DimensionsWithTextLabel({ uid: `${uid}_y`, shapeUid: uid, axis: 'y', color: AXIS_COLORS.y, ...labelStyle }),
+			new DimensionsWithTextLabel({ uid: `${uid}_x`, axis: 'x', source: new ShapeDimensionSource(uid, store, appSessionState), color: AXIS_STYLE.COLORS.x, ...labelStyle }),
+			new DimensionsWithTextLabel({ uid: `${uid}_y`, axis: 'y', source: new ShapeDimensionSource(uid, store, appSessionState), color: AXIS_STYLE.COLORS.y, ...labelStyle }),
 		);
 	});
 	labels.draw();
@@ -63,9 +60,9 @@ const draw = (context: CanvasRenderingContext2D) => {
 
 onMounted(() => {
 	src.value = renderStaticScene({
-		width: WIDTH,
-		height: HEIGHT,
-		margin: FIT_MARGIN,
+		width: REPORT_SECTION_CANVAS.WIDTH,
+		height: REPORT_SECTION_CANVAS.HEIGHT,
+		margin: REPORT_SECTION_CANVAS.FIT_MARGIN,
 		bounds: getShapesBounds(store, props.uids, { includeOrigin: true }),
 		draw,
 	});
@@ -73,5 +70,5 @@ onMounted(() => {
 </script>
 
 <template>
-	<img v-if="src" :src="src" class="report-figure" :width="WIDTH" :height="HEIGHT" alt="Cross section">
+	<img v-if="src" :src="src" class="report-figure" :width="REPORT_SECTION_CANVAS.WIDTH" :height="REPORT_SECTION_CANVAS.HEIGHT" alt="Cross section">
 </template>

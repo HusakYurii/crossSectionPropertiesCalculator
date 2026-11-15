@@ -1,6 +1,5 @@
 import type { Point } from "../../interfaces/common/types";
-
-const DEFAULT_EPSILON = 1e-9;
+import { POLYGON_TOLERANCES } from "../../constants/geometryTolerances";
 
 /**
  * Drops points that sit on top of the point just before them, which happens where an
@@ -8,7 +7,7 @@ const DEFAULT_EPSILON = 1e-9;
  * Only neighbours are compared, so a polygon that is closed by repeating its first point
  * as its last one keeps that closing point. Running it twice changes nothing.
  */
-export const removeDuplicatePoints = (points: Point[], epsilon: number = DEFAULT_EPSILON): Point[] => {
+export const removeDuplicatePoints = (points: Point[], epsilon: number = POLYGON_TOLERANCES.DUPLICATE_POINT_EPS): Point[] => {
 	const result: Point[] = [];
 
 	for (const point of points) {

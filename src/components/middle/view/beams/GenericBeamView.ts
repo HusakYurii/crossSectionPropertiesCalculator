@@ -4,11 +4,9 @@ import { isPointInPolygon, doPolygonsIntersect } from "../../../../solvers/polig
 import type { Geometry } from "../../../../interfaces/beams/common.types";
 import type { Store } from "../../../../store/store";
 import { drawOriginCross, getScaledSize } from "../canvas/drawUtils";
+import { BEAM_STYLE, ORIGIN_CROSS_STYLE } from "../../../../constants/canvasStyle";
 
 export { getScaledSize } from "../canvas/drawUtils";
-
-const SCREEN_LINE_WIDTH = 2.7;
-const ORIGIN_CROSS_SIZE = 6;
 
 /**
  * lineWidth is in world units, so a fixed value gets thicker/thinner on screen
@@ -16,25 +14,13 @@ const ORIGIN_CROSS_SIZE = 6;
  * current transform's scale keeps the stroke a constant screen-pixel width.
  */
 export function getScaledLineWidth(context: CanvasRenderingContext2D): number {
-	return getScaledSize(context, SCREEN_LINE_WIDTH);
+	return getScaledSize(context, BEAM_STYLE.LINE_WIDTH);
 }
 
 export interface GenericBeamViewParams {
 	uid: string;
 	store: Store;
 	// we take all we need tom
-}
-
-const FILL_STYLE = {
-	HOVER: "rgb(196 236 254)",
-	SELECTED: "rgb(72 183 255)",
-	NONE: "#ffffff"
-}
-
-const NEGATIVE_FILL_STYLE = {
-	HOVER: "#fcbba1",
-	SELECTED: "#fc9272",
-	NONE: "#ffffff"
 }
 
 export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarget {
@@ -118,7 +104,7 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 		props.context.fillStyle = fillStyle;
 		props.context.lineWidth = lineWidth;
 
-		drawOriginCross(props.context, this.position, 'rgba(0, 0, 0, 0.6)', ORIGIN_CROSS_SIZE, SCREEN_LINE_WIDTH);
+		drawOriginCross(props.context, this.position, ORIGIN_CROSS_STYLE.COLOR, ORIGIN_CROSS_STYLE.SIZE, ORIGIN_CROSS_STYLE.LINE_WIDTH);
 	}
 
 	drawDebug(props: { context: CanvasRenderingContext2D }): void {
@@ -126,7 +112,7 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 		const strokeStyle = props.context.strokeStyle;
 		const lineWidth = props.context.lineWidth;
 
-		props.context.strokeStyle = 'rgba(59, 0, 253, 1)';
+		props.context.strokeStyle = BEAM_STYLE.DEBUG_STROKE;
 		props.context.lineWidth = 1;
 		props.context.strokeRect(x, y, width, height);
 
@@ -214,16 +200,16 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 		isSelected?: boolean;
 		isHovered?: boolean;
 	}) => {
-		return props.isSelected ? FILL_STYLE.SELECTED :
-			props.isHovered ? FILL_STYLE.HOVER : FILL_STYLE.NONE;
+		return props.isSelected ? BEAM_STYLE.FILL.SELECTED :
+			props.isHovered ? BEAM_STYLE.FILL.HOVER : BEAM_STYLE.FILL.NONE;
 	}
 
 	static getNegativeAreaFillStyle = (props: {
 		isSelected?: boolean;
 		isHovered?: boolean;
 	}) => {
-		return props.isSelected ? NEGATIVE_FILL_STYLE.SELECTED :
-			props.isHovered ? NEGATIVE_FILL_STYLE.HOVER : NEGATIVE_FILL_STYLE.NONE;
+		return props.isSelected ? BEAM_STYLE.NEGATIVE_FILL.SELECTED :
+			props.isHovered ? BEAM_STYLE.NEGATIVE_FILL.HOVER : BEAM_STYLE.NEGATIVE_FILL.NONE;
 	}
 
 }

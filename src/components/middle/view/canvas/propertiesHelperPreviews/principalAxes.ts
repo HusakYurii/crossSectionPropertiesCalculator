@@ -1,7 +1,4 @@
-import { degToRad } from "../../../../../mathUtils/anglesMath";
-
-// principal axes closer than this to the shape's own x / y axes (mod 90deg) would be drawn on top of them
-export const PRINCIPAL_COINCIDE_EPS = degToRad(0.5);
+import { PRINCIPAL_COINCIDE_EPS } from "../../../../../constants/geometryTolerances";
 
 /**
  * True when the principal axes are turned away from the shape's own x / y axes by more than the

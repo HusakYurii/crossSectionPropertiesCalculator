@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string">
-import type { MenuItem } from './menu.types.ts';
+import type { MenuItem } from '../../../interfaces/menu/menu.types.ts';
 
 defineProps<{
 	title: string;

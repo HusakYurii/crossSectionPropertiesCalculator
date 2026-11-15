@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends string">
 import NestedMenuList from './NestedMenuList.vue';
-import type { NestedMenuLevel } from './menu.types.ts';
+import type { NestedMenuLevel } from '../../../interfaces/menu/menu.types.ts';
 
 defineProps<{
 	title: string;

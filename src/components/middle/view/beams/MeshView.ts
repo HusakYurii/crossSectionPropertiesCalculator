@@ -1,6 +1,7 @@
 import type { DrawTarget, Point } from "../../../../interfaces/common/types";
 import type { Triangle } from "../../../../solvers/femTriangulator/triangulate";
 import { getScaledSize } from "../canvas/drawUtils";
+import { MESH_STYLE } from "../../../../constants/canvasStyle";
 
 export class MeshView implements DrawTarget {
 
@@ -30,7 +31,7 @@ export class MeshView implements DrawTarget {
 		const strokeStyle = context.strokeStyle;
 		const lineWidth = context.lineWidth;
 
-		context.strokeStyle = 'rgba(0, 110, 255, 1)';
+		context.strokeStyle = MESH_STYLE.STROKE;
 		context.lineWidth = this._screenLineWidth === undefined ? 0.2 : getScaledSize(context, this._screenLineWidth);
 
 		for (const [a, b, c] of this._triangles) {

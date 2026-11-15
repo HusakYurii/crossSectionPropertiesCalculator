@@ -1,13 +1,7 @@
 import type { Point } from "../../../../../interfaces/common/types";
 import type { DrawableTarget } from "../DrawTargetsCollection";
 import { PIVOT, drawUprightText, getScaledSize } from "../drawUtils";
-
-const LINE_WIDTH = 1.5;
-const DASH_SIZE = 8;
-const GAP_SIZE = 6;
-const LABEL_FONT_SIZE = 18;
-const LABEL_INSET = 40;
-const LABEL_GAP = 12;
+import { AXIS_STYLE } from "../../../../../constants/canvasStyle";
 
 export type PreviewAxisParams = {
 	uid: string;
@@ -17,6 +11,8 @@ export type PreviewAxisParams = {
 	yColor: string;
 	/** dash pattern in screen px, [dash, gap, dash, gap, ...] */
 	dash?: number[];
+	/** font size of the two labels in screen px; 18 when left out */
+	labelFontSize?: number;
 };
 
 /**
@@ -33,6 +29,7 @@ export class PreviewAxis implements DrawableTarget {
 	private _xColor: string;
 	private _yColor: string;
 	private _dash: number[];
+	private _labelFontSize: number;
 	private _rotation = 0;
 	private _center: Point = { x: 0, y: 0 };
 	private _visible = true;
@@ -43,7 +40,8 @@ export class PreviewAxis implements DrawableTarget {
 		this._yLabel = params.yLabel;
 		this._xColor = params.xColor;
 		this._yColor = params.yColor;
-		this._dash = params.dash ?? [DASH_SIZE, GAP_SIZE];
+		this._dash = params.dash ?? [...AXIS_STYLE.DASH];
+		this._labelFontSize = params.labelFontSize ?? AXIS_STYLE.LABEL_FONT_SIZE;
 	}
 
 	setVisible(visible: boolean): void {
@@ -100,7 +98,7 @@ export class PreviewAxis implements DrawableTarget {
 		const lineWidth = context.lineWidth;
 		const dash = context.getLineDash();
 
-		context.lineWidth = getScaledSize(context, LINE_WIDTH);
+		context.lineWidth = getScaledSize(context, AXIS_STYLE.LINE_WIDTH);
 		context.setLineDash(this._dash.map((value) => getScaledSize(context, value)));
 
 		const xPos = PreviewAxis._rayLength(xDir, rect);
@@ -123,8 +121,9 @@ export class PreviewAxis implements DrawableTarget {
 		context.setLineDash([]);
 
 		// labels sit near the positive end of each axis, nudged off the line toward the other axis
-		const inset = getScaledSize(context, LABEL_INSET);
-		const gap = getScaledSize(context, LABEL_GAP);
+		const inset = getScaledSize(context, AXIS_STYLE.LABEL_INSET);
+		// the gap grows with the font, so a bigger label does not touch its line
+		const gap = getScaledSize(context, AXIS_STYLE.LABEL_GAP * this._labelFontSize / AXIS_STYLE.LABEL_FONT_SIZE);
 		const xLabelAt: Point = {
 			x: cx + xDir.x * (xPos - inset) + yDir.x * gap,
 			y: cy + xDir.y * (xPos - inset) + yDir.y * gap,
@@ -133,8 +132,8 @@ export class PreviewAxis implements DrawableTarget {
 			x: cx + yDir.x * (yPos - inset) + xDir.x * gap,
 			y: cy + yDir.y * (yPos - inset) + xDir.y * gap,
 		};
-		drawUprightText(context, this._xLabel, xLabelAt, this._xColor, LABEL_FONT_SIZE, PIVOT.CENTER);
-		drawUprightText(context, this._yLabel, yLabelAt, this._yColor, LABEL_FONT_SIZE, PIVOT.CENTER);
+		drawUprightText(context, this._xLabel, xLabelAt, this._xColor, this._labelFontSize, PIVOT.CENTER);
+		drawUprightText(context, this._yLabel, yLabelAt, this._yColor, this._labelFontSize, PIVOT.CENTER);
 
 		context.strokeStyle = strokeStyle;
 		context.fillStyle = fillStyle;

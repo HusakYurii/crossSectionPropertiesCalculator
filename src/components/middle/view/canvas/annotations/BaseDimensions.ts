@@ -1,6 +1,7 @@
 import type { BoundingBox, Point } from "../../../../../interfaces/common/types";
 import type { DrawableTarget } from "../DrawTargetsCollection";
 import { drawArrowHead, getScaledSize } from "../drawUtils";
+import { DIMENSION_STYLE } from "../../../../../constants/canvasStyle";
 
 /**
  * How a dimension looks. Sizes are in screen pixels and are scaled by the current zoom when drawn,
@@ -11,7 +12,7 @@ export type DimensionStyle = {
 	lineWidth: number;
 	/** length of each arrow head */
 	arrowHeadSize: number;
-	/** dash and gap length of the connector line; defaults to DEFAULT_DASH_SIZE */
+	/** dash and gap length of the connector line; defaults to DIMENSION_STYLE.DASH_SIZE */
 	dashSize?: number;
 };
 
@@ -34,8 +35,6 @@ export type DimensionGeometry = {
 	 */
 	arrowsOutside?: { fromOutward: Point; toOutward: Point };
 };
-
-const DEFAULT_DASH_SIZE = 6;
 
 /**
  * Everything it takes to draw the lines of a dimension: extension lines, an optional dashed connector, the
@@ -86,7 +85,7 @@ export abstract class BaseDimensions implements DrawableTarget {
 		const lineWidth = context.lineWidth;
 		const dash = context.getLineDash();
 
-		const { color, lineWidth: screenLineWidth, arrowHeadSize, dashSize = DEFAULT_DASH_SIZE } = this._style;
+		const { color, lineWidth: screenLineWidth, arrowHeadSize, dashSize = DIMENSION_STYLE.DASH_SIZE } = this._style;
 		const { from, to, extensionLines, connector, arrowsOutside } = geometry;
 
 		context.strokeStyle = color;

@@ -2,8 +2,7 @@ import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
 import type { Geometry } from "../../interfaces/beams/common.types";
 import type { CustomShapeGeometry } from "../../interfaces/beams/CustomShape.types";
 import { AbstractPolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
-
-const MIN_POINTS = 3;
+import { POLYGON_LIMITS } from "../../constants/geometryTolerances";
 
 /**
  * User drawn polygon. The points are used as they are and the polygon is closed by repeating the
@@ -18,7 +17,7 @@ export class CustomShapeStrategy extends AbstractPolygonBuildStrategy<CustomShap
 	execute(geometry: CustomShapeGeometry) {
 		const points = (geometry.points ?? []).map(({ x, y }) => ({ x, y }));
 
-		if (points.length < MIN_POINTS) {
+		if (points.length < POLYGON_LIMITS.MIN_OPEN_POINTS) {
 			return [];
 		}
 

@@ -1,14 +1,12 @@
 import type { Point } from "../../../../interfaces/common/types";
-
-/** distance between two grid lines, in world units */
-export const GRID_CELL_SIZE = 10;
+import { GRID } from "../../../../constants/canvasInteraction";
 
 /**
  * Dragging always lands on whole numbers; holding Shift snaps to the grid lines instead.
  * Shared by every canvas that drags things around (shapes, polygon points).
  */
 export function getSnapStep(event: { shiftKey: boolean }): number {
-	return event.shiftKey ? GRID_CELL_SIZE : 1;
+	return event.shiftKey ? GRID.CELL_SIZE : 1;
 }
 
 /** nearest multiple of `step`; `|| 0` turns -0 into 0 so nothing ever shows up as "-0" */

@@ -1,11 +1,7 @@
 import type { CrossSectionProperties } from "../../interfaces/sectionProperties";
 import { radToDeg } from "../../mathUtils/anglesMath";
 import type { Polygon } from "../../interfaces/common/types";
-
-// Ixy and Ix - Iy this small, next to the size of Ix / Iy, are floating point noise and not a real asymmetry
-const SYMMETRY_EPS = 1e-9;
-// the closing point of a ring may differ from the first one by rounding in the last digits (a circle built from cos / sin)
-const CLOSING_POINT_EPS = 1e-9;
+import { GREEN_THEOREM_TOLERANCES } from "../../constants/geometryTolerances";
 
 /**
  * Angle of the principal axis of maximum inertia (U), counterclockwise from the X axis, in radians.
@@ -18,8 +14,8 @@ const CLOSING_POINT_EPS = 1e-9;
  */
 export function principalAxisAngleRad(Ix: number, Iy: number, Ixy: number): number {
 	const scale = Math.max(Math.abs(Ix), Math.abs(Iy));
-	if (Math.abs(Ixy) <= SYMMETRY_EPS * scale) {
-		return Ix - Iy >= -SYMMETRY_EPS * scale ? 0 : Math.PI / 2;
+	if (Math.abs(Ixy) <= GREEN_THEOREM_TOLERANCES.SYMMETRY_EPS * scale) {
+		return Ix - Iy >= -GREEN_THEOREM_TOLERANCES.SYMMETRY_EPS * scale ? 0 : Math.PI / 2;
 	}
 	return 0.5 * Math.atan2(-2 * Ixy, Ix - Iy);
 }
@@ -38,7 +34,7 @@ export function calculateCrossSectionProperties(polygon: Polygon, precision = 2)
 	// that is not closed, dropping the last point would silently cut a real corner off the shape.
 	const first = polygon[0];
 	const last = polygon[polygon.length - 1];
-	if (Math.abs(first.x - last.x) <= CLOSING_POINT_EPS && Math.abs(first.y - last.y) <= CLOSING_POINT_EPS) {
+	if (Math.abs(first.x - last.x) <= GREEN_THEOREM_TOLERANCES.CLOSING_POINT_EPS && Math.abs(first.y - last.y) <= GREEN_THEOREM_TOLERANCES.CLOSING_POINT_EPS) {
 		polygon.pop();
 	}
 	const n = polygon.length;

@@ -1,8 +1,7 @@
 import type { Sizes, Service, Point, BoundingBox } from "../../../../interfaces/common/types";
 import type { CanvasTransformState } from "../canvas/Canvas";
 import type { InputService } from "./InputService";
-
-const PAN_MOUSE_BUTTON = 2; // right mouse button
+import { MOUSE_BUTTON } from "../../../../constants/canvasInteraction";
 
 type CanvasTransformServiceProps = {
 	canvas: HTMLCanvasElement;
@@ -154,7 +153,7 @@ export class CanvasTransformService implements Service {
 	};
 
 	private _onMouseDown = (event: MouseEvent): void => {
-		if (event.button !== PAN_MOUSE_BUTTON) {
+		if (event.button !== MOUSE_BUTTON.PAN) {
 			return;
 		}
 
@@ -182,7 +181,7 @@ export class CanvasTransformService implements Service {
 	};
 
 	private _onMouseUp = (event: MouseEvent): void => {
-		if (event.button === PAN_MOUSE_BUTTON) {
+		if (event.button === MOUSE_BUTTON.PAN) {
 			this._stopPanning();
 			this._updateCursor();
 		}

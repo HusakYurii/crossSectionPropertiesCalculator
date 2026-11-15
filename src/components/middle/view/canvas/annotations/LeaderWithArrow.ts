@@ -1,14 +1,14 @@
 import type { Point } from "../../../../../interfaces/common/types";
 import type { DrawableTarget } from "../DrawTargetsCollection";
+import { CANVAS_FONT, LEADER_STYLE } from "../../../../../constants/canvasStyle";
 import { drawArrowHead, drawLeader, type LeaderSide, type LeaderStyle, type LeaderVertical } from "../drawUtils";
 
-const ARROW_HEAD_SIZE = 9.45;
-const LEADER_STYLE: LeaderStyle = {
-	lineWidth: 1.89,
-	fontSize: 22,
-	diagonal: 30,
-	shelf: 50,
-	labelGap: 4,
+const LEADER_DRAW_STYLE: LeaderStyle = {
+	lineWidth: LEADER_STYLE.LINE_WIDTH,
+	fontSize: CANVAS_FONT.LABEL_SIZE,
+	diagonal: LEADER_STYLE.DIAGONAL,
+	shelf: LEADER_STYLE.SHELF,
+	labelGap: LEADER_STYLE.LABEL_GAP,
 };
 
 export type LeaderWithArrowParams = {
@@ -53,8 +53,8 @@ export class LeaderWithArrow implements DrawableTarget {
 
 		context.fillStyle = this._color;
 
-		const { elbow } = drawLeader(context, this._anchor, this._side, this._label, this._color, LEADER_STYLE, this._vertical);
-		drawArrowHead(context, elbow, this._anchor, ARROW_HEAD_SIZE);
+		const { elbow } = drawLeader(context, this._anchor, this._side, this._label, this._color, LEADER_DRAW_STYLE, this._vertical);
+		drawArrowHead(context, elbow, this._anchor, LEADER_STYLE.ARROW_HEAD_SIZE);
 
 		context.strokeStyle = strokeStyle;
 		context.fillStyle = fillStyle;

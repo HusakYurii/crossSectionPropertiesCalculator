@@ -12,12 +12,7 @@ import type { KeyCache, Triangle } from "./femTriangulator/triangulate";
 import type { Point } from "../interfaces/common/types";
 import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from "../interfaces/FEMMeshOptions";
 import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from "../interfaces/sectionProperties";
-
-const PRECISION = 2;
-// each triangle is solved with many more decimals than the result shows, so rounding does not add up over thousands of triangles
-const TRIANGLE_PRECISION = 10;
-// a triangle with less area than this is a sliver with nothing to add
-const MIN_TRIANGLE_AREA = 1e-9;
+import { POLYGON_TOLERANCES, RESULT_PRECISION } from "../constants/geometryTolerances";
 
 export class FEMCrossSectionPropertiesSolver {
 
@@ -43,8 +38,8 @@ export class FEMCrossSectionPropertiesSolver {
 		const parts: CrossSectionProperties[] = [];
 		for (const [p1, p2, p3] of triangles) {
 			// the triangle is passed closed like the app's other rings; the Green solver drops the repeated point
-			const part = calculateCrossSectionProperties([p1, p2, p3, p1], TRIANGLE_PRECISION);
-			if (part.A > MIN_TRIANGLE_AREA) {
+			const part = calculateCrossSectionProperties([p1, p2, p3, p1], RESULT_PRECISION.FEM_TRIANGLE);
+			if (part.A > POLYGON_TOLERANCES.MIN_TRIANGLE_AREA) {
 				parts.push(part);
 			}
 		}
@@ -98,7 +93,7 @@ export class FEMCrossSectionPropertiesSolver {
 		const c_rt = x_max - centroid_x;
 		const c_lf = centroid_x - x_min;
 
-		const round = (value: number) => parseFloat(value.toFixed(PRECISION));
+		const round = (value: number) => parseFloat(value.toFixed(RESULT_PRECISION.SECTION_PROPERTIES));
 
 		const properties: CrossSectionProperties = {
 			A: round(A),

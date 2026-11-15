@@ -5,8 +5,10 @@ import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CustomShapeGeometry } from '../../../interfaces/beams/CustomShape.types.ts';
 import type { CanvasSize } from '../../middle/view/canvas/Canvas.ts';
 import { CanvasScene } from '../../middle/view/canvas/CanvasScene.ts';
-import { CURSOR } from '../../middle/view/canvas/constants/cursors.ts';
-import { NAVIGATION_HINTS } from '../../middle/view/canvas/constants/canvasHints.ts';
+import { CURSOR, NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
+import { CANVAS_FONT } from '../../../constants/canvasStyle.ts';
+import { CUSTOM_SHAPE_EDITOR_VIEW } from '../../../constants/canvasFit.ts';
+import { POLYGON_LIMITS } from '../../../constants/geometryTolerances.ts';
 import CanvasHint from '../../middle/view/CanvasHint.vue';
 import { DrawTargetsCollection, type DrawableTarget } from '../../middle/view/canvas/DrawTargetsCollection.ts';
 import { Grid, MainAxis } from '../../middle/view/shapes/index.ts';
@@ -29,14 +31,6 @@ import { PropertyOverlays } from '../../middle/view/canvas/propertiesHelperPrevi
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from './composables/useStoreGeometryWatcher.ts';
 import { uploadCsv } from '../../../fileLoader/uploadFile.ts';
 import { FEM_OPTION_FIELDS } from './fields/shapeFields.ts';
-
-const MIN_POINTS = 3;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 20;
-// the zoom a new, empty shape starts with, so the 10 unit grid is easy to hit
-const START_ZOOM = 3;
-// share of the canvas an existing shape fills when it is fitted
-const FIT_MARGIN = 0.8;
 
 // the form starts empty: the user draws the polygon
 const getDefault = (): CustomShapeGeometry => ({
@@ -110,7 +104,7 @@ const crossSectionMesh = shallowRef<Triangle[]>(storedMesh ?? []);
 const isStale = ref(!stored);
 const isCalculating = ref(false);
 
-const hasEnoughPoints = computed(() => geometry.points.length >= MIN_POINTS);
+const hasEnoughPoints = computed(() => geometry.points.length >= POLYGON_LIMITS.MIN_OPEN_POINTS);
 // a shape can only be saved with results that belong to the polygon on screen
 const OUTDATED_HINT = 'The shape or the mesh settings changed. Calculate again to update the results before saving.';
 // the button is only active while there is something to calculate: enough points, and results that
@@ -135,7 +129,7 @@ let overlayTargets: DrawTargetsCollection<DrawableTarget>;
 
 // The polygon is drawn where the points are, so the centroid is not the world origin and every overlay is
 // centered on it. The shape is never rotated, so its own axes are the world axes.
-const overlays = new PropertyOverlays({ drawCentroid: true });
+const overlays = new PropertyOverlays({ drawCentroid: true, style: { labelFontSize: CANVAS_FONT.LABEL_SIZE } });
 // overlays only mean something for results that belong to the polygon on screen, like the mesh
 const hasResults = computed(() => !isStale.value && crossSectionProperties.value.A > 0);
 
@@ -188,9 +182,9 @@ function fitViewToPoints(size: CanvasSize) {
 		? Math.min(
 			width > 0 ? size.displayWidth / width : Infinity,
 			height > 0 ? size.displayHeight / height : Infinity,
-		) * FIT_MARGIN
-		: START_ZOOM;
-	const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fitted));
+		) * CUSTOM_SHAPE_EDITOR_VIEW.FIT_MARGIN
+		: CUSTOM_SHAPE_EDITOR_VIEW.START_ZOOM;
+	const zoom = Math.min(CUSTOM_SHAPE_EDITOR_VIEW.MAX_ZOOM, Math.max(CUSTOM_SHAPE_EDITOR_VIEW.MIN_ZOOM, fitted));
 
 	const view = scene.transformService.transforms;
 	view.zoom = zoom;
@@ -311,9 +305,9 @@ onMounted(() => {
 		canvasEl,
 		wrapper: wrapperRef.value!,
 		minSize: { width: 100, height: 100 },
-		minZoom: MIN_ZOOM,
-		maxZoom: MAX_ZOOM,
-		startZoom: START_ZOOM,
+		minZoom: CUSTOM_SHAPE_EDITOR_VIEW.MIN_ZOOM,
+		maxZoom: CUSTOM_SHAPE_EDITOR_VIEW.MAX_ZOOM,
+		startZoom: CUSTOM_SHAPE_EDITOR_VIEW.START_ZOOM,
 		draw: redraw,
 		onResize,
 	});
@@ -381,7 +375,7 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 			</div>
 
 			<p v-if="geometry.points.length > 0 && !hasEnoughPoints" class="custom-shape__empty">
-				A shape needs at least {{ MIN_POINTS }} points.
+				A shape needs at least {{ POLYGON_LIMITS.MIN_OPEN_POINTS }} points.
 			</p>
 
 			<ol class="custom-shape__list">

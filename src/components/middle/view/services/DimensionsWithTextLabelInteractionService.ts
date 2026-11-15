@@ -1,7 +1,6 @@
 import type { Point, Service } from '../../../../interfaces/common/types';
-import type { DrawTargetsCollection } from '../canvas/DrawTargetsCollection';
 import type { DimensionsWithTextLabel } from '../canvas/annotations/DimensionsWithTextLabel';
-import { DRAG_THRESHOLD } from '../canvas/constants/dragThreshold';
+import { DRAG_THRESHOLD } from '../../../../constants/canvasInteraction';
 import type { InputService } from './InputService';
 
 /** whatever can open the number editor for a label; passed in, not owned */
@@ -10,7 +9,8 @@ export interface DimensionsWithTextLabelEditor {
 }
 
 type DimensionsWithTextLabelInteractionServiceProps = {
-	drawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
+	/** every label that can be grabbed, in drawing order: the last one is on top and wins the hit test */
+	getTargets: () => ReadonlyArray<DimensionsWithTextLabel>;
 	inputService: InputService;
 	screenToWorld: (point: Point) => Point;
 	isTransformModeActive: () => boolean;
@@ -32,7 +32,7 @@ const SNAP_TO_AUTO = 4;
  * ShapesInteractionService's subscribe/hit-test/drag lifecycle.
  */
 export class DimensionsWithTextLabelInteractionService implements Service {
-	private _drawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
+	private _getTargets: () => ReadonlyArray<DimensionsWithTextLabel>;
 	private _inputService: InputService;
 	private _screenToWorld: (point: Point) => Point;
 	private _isTransformModeActive: () => boolean;
@@ -54,7 +54,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 	private _hasMovedAcross = false;
 
 	constructor(props: DimensionsWithTextLabelInteractionServiceProps) {
-		this._drawTargets = props.drawTargets;
+		this._getTargets = props.getTargets;
 		this._inputService = props.inputService;
 		this._screenToWorld = props.screenToWorld;
 		this._isTransformModeActive = props.isTransformModeActive;
@@ -98,7 +98,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 	}
 
 	private _findLabelAt(point: Point): DimensionsWithTextLabel | undefined {
-		const targets = this._drawTargets.getTargets();
+		const targets = this._getTargets();
 
 		for (let i = targets.length - 1; i >= 0; i--) {
 			if (targets[i].contains(point)) {
@@ -204,7 +204,7 @@ export class DimensionsWithTextLabelInteractionService implements Service {
 		}
 
 		const label = this._findLabelAt(this._screenToWorld({ x: event.offsetX, y: event.offsetY }));
-		label && this._editor.startEditing(label);
+		label?.isEditable && this._editor.startEditing(label);
 	};
 
 	private _onMouseLeave = (): void => {

@@ -8,10 +8,7 @@ import { calculateCrossSectionProperties } from "./greenTheoremCalculator";
 import { getHollowRectangleRingLengths } from "../polygonStrategies/HollowRectangleStrategy";
 import { principalAxisAngleRad } from "./greenTheoremCalculator";
 import { AbstractPropertiesStrategy } from "./AbstractPropertiesStrategy";
-
-const PRECISION = 2;
-// the two rings are solved at a higher precision so the subtraction below doesn't lose digits
-const RING_PRECISION = 8;
+import { RESULT_PRECISION } from "../../constants/geometryTolerances";
 
 /**
  * Hollow rectangle: properties of the outer ring minus properties of the inner ring.
@@ -40,8 +37,8 @@ export class HollowRectanglePropertiesStrategy extends AbstractPropertiesStrateg
 		const outerRing = polygon.slice(0, outerLength);
 		const innerRing = polygon.slice(outerLength);
 
-		const outer = calculateCrossSectionProperties(outerRing, RING_PRECISION);
-		const inner = calculateCrossSectionProperties(innerRing, RING_PRECISION);
+		const outer = calculateCrossSectionProperties(outerRing, RESULT_PRECISION.HOLLOW_RECTANGLE_RING);
+		const inner = calculateCrossSectionProperties(innerRing, RESULT_PRECISION.HOLLOW_RECTANGLE_RING);
 
 		const A = outer.A - inner.A;
 		const centroid_x = (outer.A * outer.centroid_x - inner.A * inner.centroid_x) / A;
@@ -101,6 +98,6 @@ export class HollowRectanglePropertiesStrategy extends AbstractPropertiesStrateg
 	}
 
 	private _round(value: number): number {
-		return parseFloat(value.toFixed(PRECISION));
+		return parseFloat(value.toFixed(RESULT_PRECISION.SECTION_PROPERTIES));
 	}
 }

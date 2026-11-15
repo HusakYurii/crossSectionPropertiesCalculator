@@ -8,42 +8,49 @@ import {
 import { BeamsDrawTargetCollection } from './canvas/BeamsDrawTargetCollection.ts';
 import { DrawTargetsCollection } from './canvas/DrawTargetsCollection.ts';
 import { CanvasScene } from './canvas/CanvasScene';
-import { NAVIGATION_HINTS } from './canvas/constants/canvasHints.ts';
+import { NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
 import CanvasHint from './CanvasHint.vue';
 import QuickActions from './quickActions/QuickActions.vue';
+import QuickSolverActions from './quickActions/QuickSolverActions.vue';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
+import { ShapeDimensionSource } from './canvas/annotations/dimensionSources/ShapeDimensionSource';
+import { CompositeSectionOverlays } from './canvas/compositeSection/CompositeSectionOverlays.ts';
 import { unionBoundingBoxes } from './canvas/drawUtils.ts';
-import { AXIS_COLORS } from './canvas/constants/axisColors.ts';
+import { AXIS_STYLE, CANVAS_FONT } from '../../../constants/canvasStyle.ts';
+import { MAIN_VIEW_FIT } from '../../../constants/canvasFit.ts';
 
 import { Grid, MainAxis } from './shapes';
 import { appSessionState, setSelectedShapeID, store } from '../../../store/store';
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
 import { useDimensionsWithTextLabelEdit, EDITOR_MIN_WIDTH } from './composables/useDimensionsWithTextLabelEdit';
+import { useQuickSolverOverlays } from './composables/useQuickSolverOverlays';
 
 let scene: CanvasScene;
 let gridDrawTargets: DrawTargetsCollection<Grid>;
 let axisDrawTargets: DrawTargetsCollection<MainAxis>;
 let beamsDrawTargets: BeamsDrawTargetCollection;
 let arrowLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
+// labels of the whole section (the centroid coordinates). They must never go into arrowLabelDrawTargets: its
+// redrawId watcher below deletes the labels whose uid is not a shape. Being in this collection is what makes them visible.
+let compositeLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
+let compositeOverlays: CompositeSectionOverlays;
 let shapesInteractionService: ShapesInteractionService;
 let dimensionsWithTextLabelInteractionService: DimensionsWithTextLabelInteractionService;
 
 const HINTS = ['Drag a beam to move it', ...NAVIGATION_HINTS];
-// screen pixels left between the shapes and the canvas edges by "Fit to screen"; it also leaves
-// room for the dimension numbers, which are not part of the fitted bounds
-const FIT_MARGIN = 72;
 
 const fitToScreen = () => {
 	const beamBounds = unionBoundingBoxes(beamsDrawTargets.getTargets().map(beam => beam.boundingBox));
 	const allBounds = unionBoundingBoxes([
 		beamBounds,
 		...arrowLabelDrawTargets.getTargets().map(label => label.boundingBox),
+		...compositeLabelDrawTargets.getTargets().map(label => label.boundingBox),
 	]);
 	// the dimension lines reach back to the world axes, so a shape far out may not fit together with them: then the shape wins
-	const bounds = allBounds && scene.transformService.canFit(allBounds, FIT_MARGIN) ? allBounds : beamBounds;
+	const bounds = allBounds && scene.transformService.canFit(allBounds, MAIN_VIEW_FIT.MARGIN) ? allBounds : beamBounds;
 	if (bounds) {
-		scene.transformService.fitToBounds(bounds, FIT_MARGIN);
+		scene.transformService.fitToBounds(bounds, MAIN_VIEW_FIT.MARGIN);
 	}
 };
 
@@ -54,6 +61,11 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 const canvasWrapperRef = ref<HTMLDivElement | null>(null);
 
 const requestRedraw = () => scene.requestRedraw();
+
+// every label that can be grabbed; the composite ones are last, so they are drawn last and win the hit test
+const getAllLabels = () => [...arrowLabelDrawTargets.getTargets(), ...compositeLabelDrawTargets.getTargets()];
+
+const quickSolver = useQuickSolverOverlays();
 
 const labelEditor = useDimensionsWithTextLabelEdit({
 	worldToScreen: (point) => scene.transformService.worldToScreen(point),
@@ -80,7 +92,9 @@ const redraw = (context: CanvasRenderingContext2D) => {
 		}
 	);
 
+	compositeOverlays.draw({ context });
 	arrowLabelDrawTargets.draw(context);
+	compositeLabelDrawTargets.draw(context);
 	labelEditor.updateEditorPosition();
 };
 
@@ -135,7 +149,7 @@ watch(() => appSessionState.redrawId, () => {
 });
 
 watch(() => appSessionState.redrawId, () => {
-	const currentLabelShapeIds = new Set(arrowLabelDrawTargets.getTargets().map(val => val.shapeUid));
+	const currentLabelShapeIds = new Set(arrowLabelDrawTargets.getTargets().map(val => val.sourceId));
 	const allGeometryIds = new Set(Object.keys(store.geometryExtra));
 	const toAdd: Set<string> = new Set();
 	const toDelete: Set<string> = new Set();
@@ -160,13 +174,25 @@ watch(() => appSessionState.redrawId, () => {
 
 	toAdd.forEach(uid => {
 		arrowLabelDrawTargets.add(
-			new DimensionsWithTextLabel({ uid: `${uid}_x`, shapeUid: uid, axis: 'x', store, sessionState: appSessionState, color: AXIS_COLORS.x }),
-			new DimensionsWithTextLabel({ uid: `${uid}_y`, shapeUid: uid, axis: 'y', store, sessionState: appSessionState, color: AXIS_COLORS.y }),
+			new DimensionsWithTextLabel({ uid: `${uid}_x`, axis: 'x', source: new ShapeDimensionSource(uid, store, appSessionState), color: AXIS_STYLE.COLORS.x }),
+			new DimensionsWithTextLabel({ uid: `${uid}_y`, axis: 'y', source: new ShapeDimensionSource(uid, store, appSessionState), color: AXIS_STYLE.COLORS.y }),
 		);
 	});
 
 	requestRedraw();
 });
+
+const syncCompositeOverlays = () => {
+	compositeOverlays.update(quickSolver.properties.value, quickSolver.toggles);
+	// a label that is hidden while hovered must not stay bold
+	const shownLabels = new Set(compositeOverlays.labels);
+	compositeLabelDrawTargets.getTargets().forEach(label => !shownLabels.has(label) && label.setHighlighted(false));
+	compositeLabelDrawTargets.cleanUp();
+	compositeLabelDrawTargets.add(...compositeOverlays.labels);
+	requestRedraw();
+};
+
+watch([quickSolver.properties, () => ({ ...quickSolver.toggles })], syncCompositeOverlays);
 
 watch(() => [
 	appSessionState.currentSelectedShapeID,
@@ -190,9 +216,11 @@ onMounted(() => {
 	gridDrawTargets = new DrawTargetsCollection<Grid>({ context });
 	axisDrawTargets = new DrawTargetsCollection<MainAxis>({ context });
 	arrowLabelDrawTargets = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
+	compositeLabelDrawTargets = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
+	compositeOverlays = new CompositeSectionOverlays();
 
 	gridDrawTargets.add(new Grid());
-	axisDrawTargets.add(new MainAxis());
+	axisDrawTargets.add(new MainAxis({ showLabels: true, labelFontSize: CANVAS_FONT.LABEL_SIZE }));
 
 	shapesInteractionService = new ShapesInteractionService({
 		canvas: canvasRef.value!,
@@ -200,7 +228,7 @@ onMounted(() => {
 		inputService,
 		screenToWorld: (point) => transformService.screenToWorld(point),
 		isTransformModeActive: () => transformService.isPanModeActive,
-		isOverOtherInteractive: (point) => arrowLabelDrawTargets.getTargets().some((label) => label.contains(point)),
+		isOverOtherInteractive: (point) => getAllLabels().some((label) => label.contains(point)),
 		isOtherInteractiveDragging: () => dimensionsWithTextLabelInteractionService.isDragging,
 		onChange: requestRedraw,
 		onDragEnd: () => history.commit(),
@@ -208,7 +236,7 @@ onMounted(() => {
 	});
 
 	dimensionsWithTextLabelInteractionService = new DimensionsWithTextLabelInteractionService({
-		drawTargets: arrowLabelDrawTargets,
+		getTargets: getAllLabels,
 		inputService,
 		screenToWorld: (point) => transformService.screenToWorld(point),
 		isTransformModeActive: () => transformService.isPanModeActive,
@@ -222,6 +250,8 @@ onMounted(() => {
 	scene.addService(shapesInteractionService);
 	scene.addService(dimensionsWithTextLabelInteractionService);
 	scene.initialize();
+	// the toggles may already be on when the view is mounted
+	syncCompositeOverlays();
 	history.setDragProbe(() => shapesInteractionService.isDragging || dimensionsWithTextLabelInteractionService.isDragging);
 });
 
@@ -236,6 +266,7 @@ onUnmounted(() => {
 	<section class="canvas" ref="canvasWrapperRef">
 		<canvas ref="canvasRef"></canvas>
 		<QuickActions @center="scene.centerView()" @reset-zoom="scene.resetZoom()" @fit-to-screen="fitToScreen" />
+		<QuickSolverActions :toggles="quickSolver.toggles" @toggle="quickSolver.toggle" />
 		<input v-if="editing" :ref="labelEditor.editorInputRef" v-model="editText" type="text" inputmode="decimal"
 			class="dimension-editor" :class="`dimension-editor--${editing.label.axis}`"
 			:style="{ left: `${editorPosition.left}px`, top: `${editorPosition.top}px`, width: `max(${EDITOR_MIN_WIDTH}px, ${editText.length + 2}ch)` }"

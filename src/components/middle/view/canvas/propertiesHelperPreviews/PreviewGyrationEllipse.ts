@@ -1,10 +1,7 @@
 import type { Point } from "../../../../../interfaces/common/types";
 import type { DrawableTarget } from "../DrawTargetsCollection";
 import { getScaledSize } from "../drawUtils";
-import { GYRATION_ELLIPSE_COLOR } from "../constants/axisColors";
-
-const LINE_WIDTH = 1.5;
-const DASH = [7, 5];
+import { GYRATION_STYLE } from "../../../../../constants/canvasStyle";
 
 export type GyrationEllipseParams = {
 	/** semi-axis along the principal U axis, in world units */
@@ -33,6 +30,11 @@ export class PreviewGyrationEllipse implements DrawableTarget {
 	private _semiAxisV = 0;
 	private _rotation = 0;
 	private _center: Point = { x: 0, y: 0 };
+	private _visible = true;
+
+	setVisible(visible: boolean): void {
+		this._visible = visible;
+	}
 
 	setEllipse(params: GyrationEllipseParams): void {
 		this._semiAxisU = params.semiAxisU;
@@ -42,6 +44,10 @@ export class PreviewGyrationEllipse implements DrawableTarget {
 	}
 
 	draw(props: { context: CanvasRenderingContext2D }): void {
+		if (!this._visible) {
+			return;
+		}
+
 		const { context } = props;
 
 		// nothing to draw before the first calculation, or for a shape without area (a negative radius would throw)
@@ -53,9 +59,9 @@ export class PreviewGyrationEllipse implements DrawableTarget {
 		const lineWidth = context.lineWidth;
 		const dash = context.getLineDash();
 
-		context.strokeStyle = GYRATION_ELLIPSE_COLOR;
-		context.lineWidth = getScaledSize(context, LINE_WIDTH);
-		context.setLineDash(DASH.map((value) => getScaledSize(context, value)));
+		context.strokeStyle = GYRATION_STYLE.COLOR;
+		context.lineWidth = getScaledSize(context, GYRATION_STYLE.LINE_WIDTH);
+		context.setLineDash(GYRATION_STYLE.DASH.map((value) => getScaledSize(context, value)));
 
 		context.beginPath();
 		context.ellipse(this._center.x, this._center.y, this._semiAxisU, this._semiAxisV, this._rotation, 0, Math.PI * 2);

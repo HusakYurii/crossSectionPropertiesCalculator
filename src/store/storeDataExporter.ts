@@ -11,6 +11,8 @@ export const buildProjectFile = (): ProjectFile => ({
         appSessionState: {
             showRotationFor: appSessionState.showRotationFor,
             dimensionLabelOffsets: appSessionState.dimensionLabelOffsets,
+            quickSolverToggles: appSessionState.quickSolverToggles,
+            compositeLabelOffsets: appSessionState.compositeLabelOffsets,
         },
         state: {
             geometry: store.geometry,

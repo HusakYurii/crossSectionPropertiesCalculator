@@ -3,6 +3,7 @@ import type { Geometry } from '../interfaces/beams/common.types';
 import type { Point } from '../interfaces/common/types';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';
 import type { CrossSectionProperties } from '../interfaces/sectionProperties';
+import { DEFAULT_QUICK_SOLVER_TOGGLES, type QuickSolverToggleKey, type QuickSolverToggles } from '../interfaces/quickSolverToggles';
 
 type UID = string;
 
@@ -25,10 +26,14 @@ type EditorSessionState = {
 	redrawId: number;
 	showRotationFor: Record<UID, boolean>; // only `true` entries are kept
 	dimensionLabelOffsets: Record<UID, Partial<Record<DimensionLabelOffsetKey, number>>>;
+	/** which of the section overlays (centroid, principal axes, gyration) are shown on the canvas */
+	quickSolverToggles: QuickSolverToggles;
+	/** where the Cx / Cy labels of the section centroid were dragged to; like dimensionLabelOffsets, for the one label pair */
+	compositeLabelOffsets: Partial<Record<DimensionLabelOffsetKey, number>>;
 }
 
 /** The part of the session state that is saved to the project file */
-export type PersistedSessionState = Pick<EditorSessionState, 'showRotationFor' | 'dimensionLabelOffsets'>;
+export type PersistedSessionState = Pick<EditorSessionState, 'showRotationFor' | 'dimensionLabelOffsets' | 'quickSolverToggles' | 'compositeLabelOffsets'>;
 
 export const store = reactive({
 	/**
@@ -62,6 +67,8 @@ export const appSessionState = reactive<EditorSessionState>({
 	redrawId: 0,
 	showRotationFor: {},
 	dimensionLabelOffsets: {},
+	quickSolverToggles: { ...DEFAULT_QUICK_SOLVER_TOGGLES },
+	compositeLabelOffsets: {},
 });
 
 export type AppSessionState = typeof appSessionState;
@@ -92,21 +99,32 @@ export const setShowRotation = (uid: UID, value: boolean) => {
 	}
 }
 
+type LabelOffsets = Partial<Record<DimensionLabelOffsetKey, number>>;
+
+// a stored along of 0 means "at the midpoint", not "auto", so only x / y are dropped at 0
+const writeLabelOffset = (offsets: LabelOffsets, key: DimensionLabelOffsetKey, value: number) => {
+	if (value === 0 && (key === 'x' || key === 'y')) {
+		delete offsets[key];
+		return;
+	}
+	offsets[key] = value;
+}
+
+const dropLabelAlong = (offsets: LabelOffsets, axis: 'x' | 'y') => {
+	delete offsets[axis === 'x' ? 'xAlong' : 'yAlong'];
+}
+
 export const setDimensionLabelOffset = (uid: UID, axis: DimensionLabelOffsetKey, value: number) => {
-	// a stored along of 0 means "at the midpoint", not "auto", so only x / y are dropped at 0
-	if (value === 0 && (axis === 'x' || axis === 'y')) {
-		const offsets = appSessionState.dimensionLabelOffsets[uid];
-		if (!offsets) {
-			return;
-		}
-		delete offsets[axis];
-		if (Object.keys(offsets).length === 0) {
-			delete appSessionState.dimensionLabelOffsets[uid];
-		}
+	// dropping an offset of a shape that has none changes nothing
+	if (value === 0 && (axis === 'x' || axis === 'y') && !appSessionState.dimensionLabelOffsets[uid]) {
 		return;
 	}
 	const offsets = appSessionState.dimensionLabelOffsets[uid] ?? (appSessionState.dimensionLabelOffsets[uid] = {});
-	offsets[axis] = value;
+	writeLabelOffset(offsets, axis, value);
+	// an empty record is not kept
+	if (Object.keys(offsets).length === 0) {
+		delete appSessionState.dimensionLabelOffsets[uid];
+	}
 }
 
 /** Back to the automatic position along the line */
@@ -115,10 +133,22 @@ export const clearDimensionLabelAlong = (uid: UID, axis: 'x' | 'y') => {
 	if (!offsets) {
 		return;
 	}
-	delete offsets[axis === 'x' ? 'xAlong' : 'yAlong'];
+	dropLabelAlong(offsets, axis);
 	if (Object.keys(offsets).length === 0) {
 		delete appSessionState.dimensionLabelOffsets[uid];
 	}
+}
+
+export const setCompositeLabelOffset = (key: DimensionLabelOffsetKey, value: number) => {
+	writeLabelOffset(appSessionState.compositeLabelOffsets, key, value);
+}
+
+export const clearCompositeLabelAlong = (axis: 'x' | 'y') => {
+	dropLabelAlong(appSessionState.compositeLabelOffsets, axis);
+}
+
+export const toggleQuickSolver = (key: QuickSolverToggleKey) => {
+	appSessionState.quickSolverToggles[key] = !appSessionState.quickSolverToggles[key];
 }
 
 export const removeShapeSessionState = (uid: UID) => {

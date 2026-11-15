@@ -1,5 +1,6 @@
 import type { Point } from '../../interfaces/common/types';
 import { isPointInPolygon, doSegmentsIntersect } from '../poligonUtils/polygonIntersectionMath';
+import { TRIANGULATION_TOLERANCES } from '../../constants/geometryTolerances';
 
 export type Triangle = [Point, Point, Point];
 
@@ -38,11 +39,6 @@ function triangleMinAngle(a: Point, b: Point, c: Point): number {
 	return Math.min(angleA, angleB, angleC);
 }
 
-const DEDUPE_EPSILON = 1e-6;
-const DEDUPE_EPSILON_SQ = DEDUPE_EPSILON * DEDUPE_EPSILON;
-/** Triangles below this area are treated as invisible/degenerate rather than "thin" — see refineMesh. */
-const AREA_EPSILON = 1e-4;
-
 /** Squared distance — for threshold comparisons only, avoids a sqrt when the actual length isn't needed. */
 function distSq(a: Point, b: Point): number {
 	const dx = a.x - b.x;
@@ -61,7 +57,7 @@ function dedupeClosedLoop(points: Point[]): Point[] {
 
 	for (const p of points) {
 		const last = result[result.length - 1];
-		if (!last || distSq(p, last) > DEDUPE_EPSILON_SQ) {
+		if (!last || distSq(p, last) > TRIANGULATION_TOLERANCES.DEDUPE_EPSILON_SQ) {
 			result.push(p);
 		}
 	}
@@ -69,7 +65,7 @@ function dedupeClosedLoop(points: Point[]): Point[] {
 	while (result.length > 1) {
 		const first = result[0];
 		const last = result[result.length - 1];
-		if (distSq(first, last) <= DEDUPE_EPSILON_SQ) {
+		if (distSq(first, last) <= TRIANGULATION_TOLERANCES.DEDUPE_EPSILON_SQ) {
 			result.pop();
 		} else {
 			break;
@@ -318,7 +314,7 @@ function edgeKey(p: Point, q: Point): string {
 
 /** Coordinate-distance equality (vs. `key`'s string-rounding equality) — used where two points must be recognized as "the same corner" before they've been run through toFixed(5). */
 function pointsEqual(p: Point, q: Point): boolean {
-	return distSq(p, q) <= DEDUPE_EPSILON_SQ;
+	return distSq(p, q) <= TRIANGULATION_TOLERANCES.DEDUPE_EPSILON_SQ;
 }
 
 /**
@@ -621,7 +617,7 @@ export function refineMesh(
 			// straight line is still a straight line), burning the whole
 			// Steiner budget without ever converging. Treat it as already
 			// resolved instead of chasing an angle that can't be fixed.
-			if (Math.abs(cross(a, b, c)) / 2 < AREA_EPSILON) {
+			if (Math.abs(cross(a, b, c)) / 2 < TRIANGULATION_TOLERANCES.AREA_EPSILON) {
 				unfixable.add(key);
 				continue;
 			}
@@ -813,7 +809,6 @@ function findShortestBridge(outerRing: Point[], hole: Point[], otherHoles: Point
  * The nudge is far below any visual or meshing tolerance in this domain.
  */
 export function mergeHoles(shape: PolygonWithHoles): MergedPolygon {
-	const BRIDGE_EPSILON = 1e-4;
 	const holesInput = shape.holes ?? [];
 
 	const constrainedEdges: ConstrainedEdges = new Map();
@@ -861,8 +856,8 @@ export function mergeHoles(shape: PolygonWithHoles): MergedPolygon {
 		const len = Math.hypot(dx, dy) || 1;
 		const nx = dx / len;
 		const ny = dy / len;
-		const oReturn: Point = { x: o.x + nx * BRIDGE_EPSILON, y: o.y + ny * BRIDGE_EPSILON };
-		const hReturn: Point = { x: h.x - nx * BRIDGE_EPSILON, y: h.y - ny * BRIDGE_EPSILON };
+		const oReturn: Point = { x: o.x + nx * TRIANGULATION_TOLERANCES.BRIDGE_EPSILON, y: o.y + ny * TRIANGULATION_TOLERANCES.BRIDGE_EPSILON };
+		const hReturn: Point = { x: h.x - nx * TRIANGULATION_TOLERANCES.BRIDGE_EPSILON, y: h.y - ny * TRIANGULATION_TOLERANCES.BRIDGE_EPSILON };
 
 		// Splice: ..., o, h, <hole ring starting at h>, hReturn, oReturn, ...
 		// — o and h (approximately) each appear twice, forming the slit.

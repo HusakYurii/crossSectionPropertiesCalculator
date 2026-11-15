@@ -5,16 +5,20 @@ import { radToDeg } from "../mathUtils/anglesMath";
 import { SHAPE_TYPES } from "../interfaces/beams/common.types";
 import type { OSectionGeometry } from "../interfaces/beams/OSection.types";
 import { principalAxisAngleRad } from "./propertyStrategies/greenTheoremCalculator";
+import { RESULT_PRECISION } from "../constants/geometryTolerances";
 
-const PRECISION = 2;
+export type CompositeSolveErrorCode = 'no-shapes' | 'no-area' | 'holes-outside';
+
+export type CompositeSolveResult = { properties: CrossSectionProperties } | { error: string; code: CompositeSolveErrorCode };
 
 export class CompositeCrossSectionPropertiesSolver {
 
 	/**
-	 * Properties of the whole built-up section from every shape in the store. The math is in docs/composite_cross_section_properties_math.md.
-	 * The shapes are not clipped: the layout is trusted.
+	 * Properties of the whole built-up section from every shape in the store, or the reason there are none.
+	 * It has no side effects (no toast), so it is safe to call inside a computed.
+	 * The math is in docs/composite_cross_section_properties_math.md. The shapes are not clipped: the layout is trusted.
 	 */
-	calculate(store: Store): CrossSectionProperties {
+	solve(store: Store): CompositeSolveResult {
 		const parts = Object.keys(store.geometry).flatMap((uid) => {
 			const properties = store.crossSectionProperties[uid];
 			const position = store.geometryExtra[uid]?.position;
@@ -36,10 +40,9 @@ export class CompositeCrossSectionPropertiesSolver {
 		}
 
 		if (!(A > 0)) {
-			toast.error(parts.length === 0
-				? 'There are no shapes to calculate the results for.'
-				: 'The negative shapes take away all the area: the total area must be positive.');
-			return { ...EMPTY_CROSS_SECTION_PROPERTIES };
+			return parts.length === 0
+				? { error: 'There are no shapes to calculate the results for.', code: 'no-shapes' }
+				: { error: 'The negative shapes take away all the area: the total area must be positive.', code: 'no-area' };
 		}
 
 		const centroid_x = Sx / A;
@@ -64,8 +67,7 @@ export class CompositeCrossSectionPropertiesSolver {
 
 		// holes can leave a positive area but take away more inertia than there is, which would make the radii NaN
 		if (Ix <= 0 || Iy <= 0 || I_v < 0) {
-			toast.error('Negative shapes must lie inside the positive shapes.');
-			return { ...EMPTY_CROSS_SECTION_PROPERTIES };
+			return { error: 'Negative shapes must lie inside the positive shapes.', code: 'holes-outside' };
 		}
 
 		let x_min = Infinity, x_max = -Infinity, y_min = Infinity, y_max = -Infinity;
@@ -95,9 +97,9 @@ export class CompositeCrossSectionPropertiesSolver {
 		const c_rt = x_max - centroid_x;
 		const c_lf = centroid_x - x_min;
 
-		const round = (value: number) => parseFloat(value.toFixed(PRECISION)) + 0;
+		const round = (value: number) => parseFloat(value.toFixed(RESULT_PRECISION.SECTION_PROPERTIES)) + 0;
 
-		return {
+		const properties: CrossSectionProperties = {
 			A: round(A),
 			centroid_x: round(centroid_x),
 			centroid_y: round(centroid_y),
@@ -117,6 +119,17 @@ export class CompositeCrossSectionPropertiesSolver {
 			Wy_rt: round(c_rt > 0 ? Iy / c_rt : 0),
 			Wy_lf: round(c_lf > 0 ? Iy / c_lf : 0),
 		};
+		return { properties };
+	}
+
+	/** Same as solve, but a failure is shown as an error toast and gives empty properties. */
+	calculate(store: Store): CrossSectionProperties {
+		const result = this.solve(store);
+		if ('error' in result) {
+			toast.error(result.error);
+			return { ...EMPTY_CROSS_SECTION_PROPERTIES };
+		}
+		return result.properties;
 	}
 }
 

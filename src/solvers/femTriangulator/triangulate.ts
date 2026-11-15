@@ -1,6 +1,7 @@
 import type { Point } from '../../interfaces/common/types';
 import { degToRad } from '../../mathUtils/anglesMath';
 import { isPointInPolygon } from '../poligonUtils/polygonIntersectionMath';
+import { TRIANGULATION_TOLERANCES } from '../../constants/geometryTolerances';
 
 export type Triangle = [Point, Point, Point];
 
@@ -46,13 +47,6 @@ function getTriangleMinAngle(a: Point, b: Point, c: Point): number {
 	return Math.min(angleA, angleB, angleC);
 }
 
-const DEDUPE_EPSILON = 1e-6;
-const DEDUPE_EPSILON_SQ = DEDUPE_EPSILON * DEDUPE_EPSILON;
-/** Triangles below this area are treated as invisible/degenerate rather than "thin" — see refineMesh. */
-const AREA_EPSILON = 1e-4;
-/** Relative tolerance (cross product vs squared edge length) for "this point lies on this edge" — see insertPoint. */
-const COLLINEAR_EPS = 1e-12;
-
 /** Squared distance — for threshold comparisons only, avoids a sqrt when the actual length isn't needed. */
 function getDistanceSqrt(a: Point, b: Point): number {
 	const dx = a.x - b.x;
@@ -71,7 +65,7 @@ function dedupeClosedLoop(points: Point[]): Point[] {
 
 	for (const p of points) {
 		const last = result[result.length - 1];
-		if (!last || getDistanceSqrt(p, last) > DEDUPE_EPSILON_SQ) {
+		if (!last || getDistanceSqrt(p, last) > TRIANGULATION_TOLERANCES.DEDUPE_EPSILON_SQ) {
 			result.push(p);
 		}
 	}
@@ -79,7 +73,7 @@ function dedupeClosedLoop(points: Point[]): Point[] {
 	while (result.length > 1) {
 		const first = result[0];
 		const last = result[result.length - 1];
-		if (getDistanceSqrt(first, last) <= DEDUPE_EPSILON_SQ) {
+		if (getDistanceSqrt(first, last) <= TRIANGULATION_TOLERANCES.DEDUPE_EPSILON_SQ) {
 			result.pop();
 		} else {
 			break;
@@ -487,7 +481,7 @@ function insertPoint(
 	const remaining = triangles.filter((_, idx) => !cavity.has(idx));
 	// a rim edge the new point lies on (the edge being split) would give a flat triangle
 	const fan: Triangle[] = boundaryEdges
-		.filter(([a, b]) => Math.abs(cross(a, b, p)) > COLLINEAR_EPS * getDistanceSqrt(a, b))
+		.filter(([a, b]) => Math.abs(cross(a, b, p)) > TRIANGULATION_TOLERANCES.COLLINEAR_EPS * getDistanceSqrt(a, b))
 		.map(([a, b]) => [a, b, p]);
 	return [...remaining, ...fan];
 }
@@ -646,7 +640,7 @@ export function refineMesh(
 			// straight line is still a straight line), burning the whole
 			// Steiner budget without ever converging. Treat it as already
 			// resolved instead of chasing an angle that can't be fixed.
-			if (Math.abs(cross(a, b, c)) / 2 < AREA_EPSILON) {
+			if (Math.abs(cross(a, b, c)) / 2 < TRIANGULATION_TOLERANCES.AREA_EPSILON) {
 				unfixable.add(key);
 				continue;
 			}

@@ -15,13 +15,12 @@ import { buildAnnotations } from './annotations';
 import { PropertyOverlays } from '../../middle/view/canvas/propertiesHelperPreviews';
 import { degToRad } from '../../../mathUtils/anglesMath';
 import { Grid } from '../../middle/view/shapes';
+import { SHAPE_PREVIEW_FIT } from '../../../constants/canvasFit';
 
 const props = defineProps<{
 	geometry: Geometry;
 }>();
 
-const PREVIEW_UID = 'preview';
-const FIT_MARGIN = 0.8;
 // when unchecked the preview always shows the shape unrotated; annotations follow either way
 const showRotation = computed({
 	get: () => sectionModalState.showRotation,
@@ -41,10 +40,10 @@ const wrapperRef = ref<HTMLDivElement | null>(null);
 const { crossSectionProperties, crossSectionPolygon, calculateProperties } = useCrossSectionPropertiesSolver();
 
 const shadowStore = reactive({
-	geometry: { [PREVIEW_UID]: props.geometry },
-	geometryExtra: { [PREVIEW_UID]: { name: '', position: { x: 0, y: 0 } } },
-	crossSectionProperties: { [PREVIEW_UID]: crossSectionProperties.value },
-	crossSectionPolygon: { [PREVIEW_UID]: crossSectionPolygon.value },
+	geometry: { [SHAPE_PREVIEW_FIT.UID]: props.geometry },
+	geometryExtra: { [SHAPE_PREVIEW_FIT.UID]: { name: '', position: { x: 0, y: 0 } } },
+	crossSectionProperties: { [SHAPE_PREVIEW_FIT.UID]: crossSectionProperties.value },
+	crossSectionPolygon: { [SHAPE_PREVIEW_FIT.UID]: crossSectionPolygon.value },
 });
 
 let canvas: Canvas;
@@ -58,7 +57,7 @@ let resizeService: ResizeService;
 let beam: GenericBeamView;
 
 const buildBeam = () => {
-	return createBeamView(PREVIEW_UID, shadowStore as unknown as Store);
+	return createBeamView(SHAPE_PREVIEW_FIT.UID, shadowStore as unknown as Store);
 };
 
 const computeFitTransform = (): CanvasTransformState => {
@@ -82,7 +81,7 @@ const computeFitTransform = (): CanvasTransformState => {
 	const cx = minX + width / 2;
 	const cy = minY + height / 2;
 
-	const zoom = Math.min(displayWidth / width, displayHeight / height) * FIT_MARGIN;
+	const zoom = Math.min(displayWidth / width, displayHeight / height) * SHAPE_PREVIEW_FIT.MARGIN;
 
 	return { zoom, panX: -cx * zoom, panY: cy * zoom };
 };
@@ -117,10 +116,10 @@ const recalc = () => {
 	// The polygon is already rotated before the solver runs, so theta_p is relative to the screen axes.
 	overlays.update({ properties: crossSectionProperties.value, shapeRotation });
 
-	shadowStore.crossSectionProperties[PREVIEW_UID] = crossSectionProperties.value;
-	shadowStore.crossSectionPolygon[PREVIEW_UID] = crossSectionPolygon.value;
+	shadowStore.crossSectionProperties[SHAPE_PREVIEW_FIT.UID] = crossSectionProperties.value;
+	shadowStore.crossSectionPolygon[SHAPE_PREVIEW_FIT.UID] = crossSectionPolygon.value;
 
-	drawTargets.delete(PREVIEW_UID);
+	drawTargets.delete(SHAPE_PREVIEW_FIT.UID);
 	beam = buildBeam();
 	drawTargets.add(beam);
 

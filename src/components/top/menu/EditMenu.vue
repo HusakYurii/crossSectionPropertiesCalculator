@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import MenuWithDropDown from './MenuWithDropDown.vue';
-import type { MenuItem } from './menu.types.ts';
+import type { MenuItem } from '../../../interfaces/menu/menu.types.ts';
 import { history } from '../../../store/history.ts';
 import undoIconRaw from '../../../svg/undo.svg?raw';
 import redoIconRaw from '../../../svg/redo.svg?raw';

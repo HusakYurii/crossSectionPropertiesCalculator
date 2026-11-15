@@ -9,6 +9,8 @@ import { Grid } from '../../components/middle/view/shapes';
 import { buildAnnotations } from '../../components/top/form/annotations';
 import { degToRad } from '../../mathUtils/anglesMath';
 import { getShapesBounds, renderStaticScene } from './renderStaticScene';
+import { SHAPE_PREVIEW_FIT } from '../../constants/canvasFit';
+import { MESH_STYLE } from '../../constants/canvasStyle';
 
 const props = defineProps<{
 	uid: string;
@@ -16,10 +18,6 @@ const props = defineProps<{
 	height: number;
 }>();
 
-const PREVIEW_UID = 'preview';
-const FIT_MARGIN = 0.8;
-// in device pixels, like every size getScaledSize() returns: half a CSS pixel at RENDER_SCALE 2
-const MESH_LINE_WIDTH = 1;
 
 const src = ref('');
 
@@ -30,10 +28,10 @@ onMounted(() => {
 
 	// the shape alone, centered on its centroid, as the form preview does it
 	const shadowStore = reactive({
-		geometry: { [PREVIEW_UID]: geometry },
-		geometryExtra: { [PREVIEW_UID]: { name: '', position: { x: 0, y: 0 } } },
-		crossSectionProperties: { [PREVIEW_UID]: properties },
-		crossSectionPolygon: { [PREVIEW_UID]: store.crossSectionPolygon[props.uid] },
+		geometry: { [SHAPE_PREVIEW_FIT.UID]: geometry },
+		geometryExtra: { [SHAPE_PREVIEW_FIT.UID]: { name: '', position: { x: 0, y: 0 } } },
+		crossSectionProperties: { [SHAPE_PREVIEW_FIT.UID]: properties },
+		crossSectionPolygon: { [SHAPE_PREVIEW_FIT.UID]: store.crossSectionPolygon[props.uid] },
 	}) as unknown as Store;
 
 	// same order as ShapeCanvasPreview: grid, beam, axes and ellipse, then the size annotations; the mesh goes over the beam's fill
@@ -43,14 +41,14 @@ onMounted(() => {
 		gridTargets.draw();
 
 		const beams = new BeamsDrawTargetCollection({ context });
-		beams.add(createBeamView(PREVIEW_UID, shadowStore));
+		beams.add(createBeamView(SHAPE_PREVIEW_FIT.UID, shadowStore));
 		beams.draw([], { hoveredShapeID: '', selectedShapeID: '' });
 
 		if (mesh) {
 			// the mesh is in the solver's frame and the beam is drawn with its centroid on the origin
 			context.save();
 			context.translate(-properties.centroid_x, -properties.centroid_y);
-			new MeshView(mesh, { screenLineWidth: MESH_LINE_WIDTH }).draw({ context });
+			new MeshView(mesh, { screenLineWidth: MESH_STYLE.REPORT_LINE_WIDTH }).draw({ context });
 			context.restore();
 		}
 
@@ -68,8 +66,8 @@ onMounted(() => {
 	src.value = renderStaticScene({
 		width: props.width,
 		height: props.height,
-		margin: FIT_MARGIN,
-		bounds: getShapesBounds(shadowStore, [PREVIEW_UID]),
+		margin: SHAPE_PREVIEW_FIT.MARGIN,
+		bounds: getShapesBounds(shadowStore, [SHAPE_PREVIEW_FIT.UID]),
 		draw,
 	});
 });

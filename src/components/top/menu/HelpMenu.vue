@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { INFO_TOPICS, openInfoPanel } from '../../../store/infoPanel.ts';
 import MenuWithNestedDropDown from './MenuWithNestedDropDown.vue';
-import type { NestedMenuLevel } from './menu.types.ts';
+import type { NestedMenuLevel } from '../../../interfaces/menu/menu.types.ts';
 
 const HELP_ITEMS: NestedMenuLevel<string> = {
 		items: [

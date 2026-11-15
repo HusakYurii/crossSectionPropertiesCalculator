@@ -1,13 +1,7 @@
 import type { DrawTarget, Point } from "../../../../interfaces/common/types";
 import { getScaledSize } from "../canvas/drawUtils";
-import { GRID_CELL_SIZE } from "../canvas/gridSnap";
-
-// every MAJOR_EVERY-th line is drawn thicker/darker, forming MAJOR_EVERY x MAJOR_EVERY cells
-const MAJOR_EVERY = 10;
-const MINOR_LINE_WIDTH = 1.5;
-const MAJOR_LINE_WIDTH = 2.5;
-const MINOR_COLOR = '#e2e2e2';
-const MAJOR_COLOR = '#c8c8c8';
+import { GRID } from "../../../../constants/canvasInteraction";
+import { GRID_STYLE } from "../../../../constants/canvasStyle";
 
 /**
  * Grid covering the whole visible canvas. Lines are laid out in world units,
@@ -53,30 +47,30 @@ export class Grid implements DrawTarget {
 		const strokeStyle = context.strokeStyle;
 		const lineWidth = context.lineWidth;
 
-		const firstX = Math.floor(minX / GRID_CELL_SIZE);
-		const lastX = Math.ceil(maxX / GRID_CELL_SIZE);
-		const firstY = Math.floor(minY / GRID_CELL_SIZE);
-		const lastY = Math.ceil(maxY / GRID_CELL_SIZE);
+		const firstX = Math.floor(minX / GRID.CELL_SIZE);
+		const lastX = Math.ceil(maxX / GRID.CELL_SIZE);
+		const firstY = Math.floor(minY / GRID.CELL_SIZE);
+		const lastY = Math.ceil(maxY / GRID.CELL_SIZE);
 
 		// minor lines first, then major ones on top so they are never covered
 		for (const major of [false, true]) {
-			context.strokeStyle = major ? MAJOR_COLOR : MINOR_COLOR;
-			context.lineWidth = getScaledSize(context, major ? MAJOR_LINE_WIDTH : MINOR_LINE_WIDTH);
+			context.strokeStyle = major ? GRID_STYLE.MAJOR_COLOR : GRID_STYLE.MINOR_COLOR;
+			context.lineWidth = getScaledSize(context, major ? GRID_STYLE.MAJOR_LINE_WIDTH : GRID_STYLE.MINOR_LINE_WIDTH);
 
 			context.beginPath();
 			for (let i = firstX; i <= lastX; i++) {
-				if ((i % MAJOR_EVERY === 0) !== major) {
+				if ((i % GRID_STYLE.MAJOR_EVERY === 0) !== major) {
 					continue;
 				}
-				const x = i * GRID_CELL_SIZE;
+				const x = i * GRID.CELL_SIZE;
 				context.moveTo(x, minY);
 				context.lineTo(x, maxY);
 			}
 			for (let i = firstY; i <= lastY; i++) {
-				if ((i % MAJOR_EVERY === 0) !== major) {
+				if ((i % GRID_STYLE.MAJOR_EVERY === 0) !== major) {
 					continue;
 				}
-				const y = i * GRID_CELL_SIZE;
+				const y = i * GRID.CELL_SIZE;
 				context.moveTo(minX, y);
 				context.lineTo(maxX, y);
 			}

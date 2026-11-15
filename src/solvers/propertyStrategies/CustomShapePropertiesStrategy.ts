@@ -5,9 +5,7 @@ import type { Point } from "../../interfaces/common/types";
 import { EMPTY_CROSS_SECTION_PROPERTIES } from "../../interfaces/sectionProperties";
 import { femCrossSectionPropertiesSolver } from "../FEMCrossSectionPropertiesSolver";
 import { AbstractPropertiesStrategy } from "./AbstractPropertiesStrategy";
-
-// 3 distinct points plus the one that closes the polygon
-const MIN_POLYGON_POINTS = 4;
+import { POLYGON_LIMITS } from "../../constants/geometryTolerances";
 
 /**
  * The only shape that uses the FEM solver: it meshes the drawn polygon, which is much slower than
@@ -20,7 +18,7 @@ export class CustomShapePropertiesStrategy extends AbstractPropertiesStrategy<Cu
 	}
 
 	execute(geometry: CustomShapeGeometry, polygon: Point[]) {
-		if (polygon.length < MIN_POLYGON_POINTS) {
+		if (polygon.length < POLYGON_LIMITS.MIN_CLOSED_POINTS) {
 			return { ...EMPTY_CROSS_SECTION_PROPERTIES };
 		}
 

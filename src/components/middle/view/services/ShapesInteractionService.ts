@@ -1,8 +1,7 @@
 import type { DrawTarget, Point, Service } from '../../../../interfaces/common/types';
 import type { BeamsDrawTargetCollection } from '../canvas/BeamsDrawTargetCollection';
 import { GenericBeamView } from '../beams';
-import { CURSOR } from '../canvas/constants/cursors';
-import { DRAG_THRESHOLD } from '../canvas/constants/dragThreshold';
+import { CURSOR, DRAG_THRESHOLD } from '../../../../constants/canvasInteraction';
 import { getSnapStep, snapValue } from '../canvas/gridSnap';
 import type { InputService } from './InputService';
 

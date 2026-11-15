@@ -1,14 +1,8 @@
 import type { Point, Service } from "../../../../interfaces/common/types";
 import type { CanvasTransformService } from "../../../middle/view/services/CanvasTransformService";
 import type { InputService } from "../../../middle/view/services/InputService";
-import { CURSOR } from "../../../middle/view/canvas/constants/cursors";
+import { CURSOR, MOUSE_BUTTON, POLYGON_EDITOR_INTERACTION } from "../../../../constants/canvasInteraction";
 import { getSnapStep, snapPoint } from "../../../middle/view/canvas/gridSnap";
-
-// how close (screen px) the cursor has to be to a point to grab it
-const HIT_RADIUS = 10;
-// a press that moves less than this (screen px) is a click, not a drag
-const CLICK_TOLERANCE = 4;
-const LEFT_BUTTON = 0;
 
 type PolygonEditorProps = {
 	canvas: HTMLCanvasElement;
@@ -87,7 +81,7 @@ export class PolygonEditor implements Service {
 		const points = this._getPoints();
 		for (let i = points.length - 1; i >= 0; i--) {
 			const s = this._worldToScreen(points[i]);
-			if (Math.hypot(s.x - screen.x, s.y - screen.y) <= HIT_RADIUS) {
+			if (Math.hypot(s.x - screen.x, s.y - screen.y) <= POLYGON_EDITOR_INTERACTION.HIT_RADIUS) {
 				return i;
 			}
 		}
@@ -114,7 +108,7 @@ export class PolygonEditor implements Service {
 	}
 
 	private _onMouseDown = (event: MouseEvent): void => {
-		if (event.button !== LEFT_BUTTON) {
+		if (event.button !== MOUSE_BUTTON.LEFT) {
 			return;
 		}
 
@@ -140,7 +134,7 @@ export class PolygonEditor implements Service {
 			return;
 		}
 
-		if (this._pressScreen && Math.hypot(event.offsetX - this._pressScreen.x, event.offsetY - this._pressScreen.y) > CLICK_TOLERANCE) {
+		if (this._pressScreen && Math.hypot(event.offsetX - this._pressScreen.x, event.offsetY - this._pressScreen.y) > POLYGON_EDITOR_INTERACTION.CLICK_TOLERANCE) {
 			this._moved = true;
 		}
 
@@ -156,7 +150,7 @@ export class PolygonEditor implements Service {
 	};
 
 	private _onMouseUp = (event: MouseEvent): void => {
-		if (event.button !== LEFT_BUTTON) {
+		if (event.button !== MOUSE_BUTTON.LEFT) {
 			return;
 		}
 

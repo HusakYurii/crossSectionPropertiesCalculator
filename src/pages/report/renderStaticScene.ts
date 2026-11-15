@@ -1,9 +1,6 @@
 import { Canvas, type CanvasTransformState } from '../../components/middle/view/canvas/Canvas';
 import type { Store } from '../../store/store';
-
-// getScaledSize() divides by the transform scale, which includes the dpr, so line widths and label fonts are in
-// device pixels: at 2 they come out as in the editor on a retina screen. A higher scale would make labels smaller.
-export const RENDER_SCALE = 2;
+import { RENDER_SCALE } from '../../constants/canvasFit';
 
 export type Bounds = { minX: number; minY: number; maxX: number; maxY: number };
 
