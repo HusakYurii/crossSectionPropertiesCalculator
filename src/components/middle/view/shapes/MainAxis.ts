@@ -1,6 +1,5 @@
 import type { DrawTarget } from "../../../../interfaces/common/types";
 import type { Point } from "../../../../interfaces/common/types";
-import { getScaledLineWidth } from "../beams";
 import { PIVOT, drawUprightText, getScaledSize } from "../canvas/drawUtils";
 import { AXIS_STYLE } from "../../../../constants/canvasStyle";
 
@@ -62,7 +61,7 @@ export class MainAxis implements DrawTarget {
 		const minY = Math.min(worldY1, worldY2);
 		const maxY = Math.max(worldY1, worldY2);
 
-		props.context.lineWidth = getScaledLineWidth(props.context);
+		props.context.lineWidth = getScaledSize(props.context, AXIS_STYLE.MAIN_LINE_WIDTH);
 
 		props.context.strokeStyle = AXIS_STYLE.COLORS.x;
 		props.context.beginPath();

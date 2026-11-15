@@ -18,9 +18,6 @@ const props = defineProps<{
 	composite: CrossSectionProperties;
 }>();
 
-// the sizes of the annotations on the part drawings (DimensionsWithLabel): at the editor's 2.7 the position lines
-// are as heavy as the shape outlines, which is too much in a drawing this small
-
 const src = ref('');
 
 // same order as View.vue: grid, axes, beams, then what the properties add, then the dimension labels
@@ -48,6 +45,8 @@ const draw = (context: CanvasRenderingContext2D) => {
 	overlayTargets.draw();
 
 	const labels = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
+	// the report uses the thinner DIMENSION_STYLE instead of the editor's EDITABLE_DIMENSION_STYLE: at the editor's weight
+	// the position lines are too heavy for a drawing this small
 	const labelStyle = { lineWidth: DIMENSION_STYLE.LINE_WIDTH, arrowHeadSize: DIMENSION_STYLE.ARROW_HEAD_SIZE };
 	props.uids.forEach(uid => {
 		labels.add(

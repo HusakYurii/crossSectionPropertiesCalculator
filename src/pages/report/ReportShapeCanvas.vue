@@ -18,7 +18,6 @@ const props = defineProps<{
 	height: number;
 }>();
 
-
 const src = ref('');
 
 onMounted(() => {

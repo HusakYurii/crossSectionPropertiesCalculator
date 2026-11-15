@@ -26,8 +26,12 @@ export const AXIS_STYLE = {
 	},
 	/** line width of the axes in screen px */
 	LINE_WIDTH: 1.5,
+	/** line width of the main x / y axes through the origin, in screen px */
+	MAIN_LINE_WIDTH: 2,
 	/** dash pattern in screen px, [dash, gap] */
 	DASH: [8, 6],
+	/** dash-dot pattern of the principal u / v axes, so they read as a different kind of axis than x / y */
+	PRINCIPAL_DASH: [10, 4, 2, 4],
 	/** default font size of the labels in screen px */
 	LABEL_FONT_SIZE: 18,
 	/** how far the label sits in from the far end of its axis, in screen px */

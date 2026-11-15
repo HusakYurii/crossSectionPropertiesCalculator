@@ -84,7 +84,7 @@ export class PropertyOverlays {
 			yLabel: 'V',
 			xColor: AXIS_STYLE.PRINCIPAL_COLORS.u,
 			yColor: AXIS_STYLE.PRINCIPAL_COLORS.v,
-			dash: [10, 4, 2, 4],
+			dash: [...AXIS_STYLE.PRINCIPAL_DASH],
 			labelFontSize: options.style?.labelFontSize,
 		});
 		this._ellipse = new PreviewGyrationEllipse();

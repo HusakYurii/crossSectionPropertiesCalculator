@@ -1,7 +1,7 @@
 import type { CrossSectionProperties } from "../../interfaces/sectionProperties";
 import { radToDeg } from "../../mathUtils/anglesMath";
 import type { Polygon } from "../../interfaces/common/types";
-import { GREEN_THEOREM_TOLERANCES } from "../../constants/geometryTolerances";
+import { GREEN_THEOREM_TOLERANCES, RESULT_PRECISION } from "../../constants/geometryTolerances";
 
 /**
  * Angle of the principal axis of maximum inertia (U), counterclockwise from the X axis, in radians.
@@ -23,7 +23,7 @@ export function principalAxisAngleRad(Ix: number, Iy: number, Ixy: number): numb
 /**
  * Section properties of a closed polygon from its vertices. The math is in docs/green_theorem_cross_section_properties_math.md.
  */
-export function calculateCrossSectionProperties(polygon: Polygon, precision = 2): CrossSectionProperties {
+export function calculateCrossSectionProperties(polygon: Polygon, precision: number = RESULT_PRECISION.SECTION_PROPERTIES): CrossSectionProperties {
 
 	if (polygon.length < 3) {
 		throw new Error("A valid polygon cross-section requires at least 3 vertices.");
