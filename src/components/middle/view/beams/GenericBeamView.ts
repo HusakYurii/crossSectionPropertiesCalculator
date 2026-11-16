@@ -1,6 +1,6 @@
 import type { BoundingBox, DrawTarget } from "../../../../interfaces/common/types";
 import type { Point } from "../../../../interfaces/common/types";
-import { isPointInPolygon, doPolygonsIntersect } from "../../../../solvers/poligonUtils/polygonIntersectionMath";
+import { isPointInPolygon } from "../../../../solvers/poligonUtils/polygonIntersectionMath";
 import type { Geometry } from "../../../../interfaces/beams/common.types";
 import type { Store } from "../../../../store/store";
 import { drawOriginCross, getScaledSize } from "../canvas/drawUtils";
@@ -131,20 +131,6 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 
 	contains(point: Point): boolean {
 		return isPointInPolygon(point, this._cachedPathPoints);
-	}
-
-	intersect(polygon: Point[]): boolean {
-		return doPolygonsIntersect(this._cachedPathPoints, polygon);
-	}
-
-	getPathPointsAtPosition(position: Point): Point[] {
-		const dx = position.x - this.position.x;
-		const dy = position.y - this.position.y;
-
-		return this._cachedPathPoints.map((point) => ({
-			x: point.x + dx,
-			y: point.y + dy,
-		}));
 	}
 
 	protected _centerPathPoints(): void {

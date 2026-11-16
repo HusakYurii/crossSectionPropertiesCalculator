@@ -69,7 +69,6 @@ const quickSolver = useQuickSolverOverlays();
 
 const labelEditor = useDimensionsWithTextLabelEdit({
 	worldToScreen: (point) => scene.transformService.worldToScreen(point),
-	canMoveTo: (uid, position) => shapesInteractionService.canMoveTo(uid, position),
 	getCanvas: () => canvasRef.value,
 });
 const { editing, editText, editorPosition, onEditorKeyDown, onEditorWheel } = labelEditor;

@@ -1,5 +1,4 @@
 import { nextTick, ref, shallowRef } from 'vue';
-import { toast } from 'vue3-toastify';
 import type { Point } from '../../../../interfaces/common/types';
 import type { DimensionsWithTextLabel } from '../canvas/annotations/DimensionsWithTextLabel';
 import { store, updateGeometryExtraData } from '../../../../store/store';
@@ -7,7 +6,6 @@ import { history } from '../../../../store/history';
 
 type DimensionsWithTextLabelEditProps = {
 	worldToScreen: (point: Point) => Point;
-	canMoveTo: (shapeUid: string, position: Point) => boolean;
 	getCanvas: () => HTMLCanvasElement | null;
 };
 
@@ -84,17 +82,12 @@ export const useDimensionsWithTextLabelEdit = (props: DimensionsWithTextLabelEdi
 			return;
 		}
 		const stored = store.geometryExtra[shapeUid];
-		// same number typed another way (12.50 over 12.5, -0 over 0): no write, and no false overlap warning
+		// same number typed another way (12.50 over 12.5, -0 over 0): no write
 		if (!Number.isFinite(value) || !stored || value === stored.position[axis]) {
 			return;
 		}
 
 		const position = { ...stored.position, [axis]: value };
-		if (!props.canMoveTo(shapeUid, position)) {
-			toast.warning('The shape would overlap another shape there, so its position was not changed.');
-			return;
-		}
-
 		updateGeometryExtraData({ uid: shapeUid, data: { position } });
 		history.commit();
 	};

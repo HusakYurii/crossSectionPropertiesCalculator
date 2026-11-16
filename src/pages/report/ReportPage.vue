@@ -4,7 +4,7 @@ import { compositeCrossSectionPropertiesSolver } from '../../solvers/CompositeCr
 import { SHAPE_TYPES } from '../../interfaces/beams/common.types';
 import type { CustomShapeGeometry } from '../../interfaces/beams/CustomShape.types';
 import { FEM_SHAPE_TYPES, SHAPE_LABELS } from '../../interfaces/beams/shapeLabels';
-import SectionPropertiesTable from '../../components/top/forms/SectionPropertiesTable.vue';
+import SectionPropertiesTable from '../../components/forms/components/SectionPropertiesTable.vue';
 import ReportSectionCanvas from './ReportSectionCanvas.vue';
 import ReportShapeCanvas from './ReportShapeCanvas.vue';
 import ShapeParametersTable from './ShapeParametersTable.vue';

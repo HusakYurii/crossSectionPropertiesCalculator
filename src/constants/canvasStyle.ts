@@ -162,4 +162,8 @@ export const POLYGON_EDITOR_STYLE = {
 	SELECTED: 'rgba(220, 60, 60, 1)',
 	SELECTED_FILL: 'rgba(220, 60, 60, 0.25)',
 	LABEL: 'rgba(0, 0, 0, 0.7)',
+	SELECTION_BOX_STROKE: 'rgba(40, 110, 220, 0.9)',
+	SELECTION_BOX_FILL: 'rgba(40, 110, 220, 0.12)',
+	/** dash and gap in px */
+	SELECTION_BOX_DASH: [6, 4],
 } as const;

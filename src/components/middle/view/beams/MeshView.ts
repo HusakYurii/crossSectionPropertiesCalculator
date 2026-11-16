@@ -22,10 +22,6 @@ export class MeshView implements DrawTarget {
 		return false;
 	}
 
-	intersect(_polygon: Point[]): boolean {
-		return false;
-	}
-
 	draw(props: { context: CanvasRenderingContext2D; }): void {
 		const { context } = props;
 		const strokeStyle = context.strokeStyle;

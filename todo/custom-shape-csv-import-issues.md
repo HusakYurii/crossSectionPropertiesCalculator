@@ -1,13 +1,14 @@
 # Problems found in the custom shape CSV import
 
-These came up while writing `custom_shape_csv_format.md`. Nothing is fixed yet. The doc describes the current behaviour, so update it along with any fix.
+These came up while writing `custom_shape_csv_format.md`. Item 1 is fixed, the rest are not. The doc describes the current behaviour, so update it along with any fix.
 
 Parser and solver results were measured by running the real code in Node. Canvas effects and the file picker behaviour come from reading the code and the HTML spec, not from a browser run.
 
-## 1. Overflowing numbers are imported as Infinity (medium)
+## 1. Overflowing numbers are imported as Infinity (medium) - FIXED
+Fixed: `parseNumber` in `csvTextParser.ts` now refuses a value that is not finite, so `1e400` gives the `is not a pair of numbers` error.
 `1e400,1` passes `NUMBER_PATTERN` in `csvTextParser.ts`, and `Number('1e400')` is `Infinity`. `Math.round(Infinity) || 0` stays `Infinity`, so the point is accepted. The literal text `Infinity` is refused, but this path gets around that check.
 
-The point then reaches `fitViewToPoints` in `CustomShapeForm.vue`, where the bounding box and `panX` / `panY` stop being finite, so the view breaks right after the import.
+The point then reaches `fitViewToPoints` in `src/components/forms/customShape/useCustomShapeCanvas.ts`, where the bounding box and `panX` / `panY` stop being finite, so the view breaks right after the import.
 
 ### Proposed fix
 In `parseNumber`, refuse a value that is not finite:
@@ -33,12 +34,12 @@ In semicolon and tab files a comma is always a decimal mark.
 The shape comes out silently the wrong size, and a user may not notice.
 
 ### Proposed fix
-This needs a decision, because `1,250` can also be a real decimal. In semicolon and tab files, refuse a cell that matches `^[+-]?\d{1,3},\d{3}$` with a message that names the line and asks for the number without a separator. The cost is that values with exactly three decimals after a comma are refused too, but the import rounds to whole numbers, so such precision is lost anyway.
+This needs a decision, because `1,250` can also be a real decimal. In semicolon and tab files, refuse a cell that matches `^[+-]?\d{1,3},\d{3}$` with a message that names the line and asks for the number without a separator. The cost is that values with exactly three decimals after a comma are refused too, and the import keeps 3 decimals, so real 3-decimal values are refused too. This makes the trade-off worse.
 
 A comma file can't be fixed this way: `1,000` there is a valid pair of values. If the rule above is added, update the note in section 3 of the doc and the list of refused values in section 4.
 
 ## 3. "No file was attached" probably never shows (low)
-`uploadFile` in `src/fileLoader/uploadFile.ts` makes a new input on every call and listens only for `change`. Closing the picker fires `cancel` instead, so `onLoaded` is not called and the `if (!file)` branch in `importCsv` in `CustomShapeForm.vue` is effectively dead code.
+`uploadFile` in `src/fileLoader/uploadFile.ts` makes a new input on every call and listens only for `change`. Closing the picker fires `cancel` instead, so `onLoaded` is not called and the `if (!file)` branch in `src/components/forms/customShape/csv/pickCsvPoints.ts` is effectively dead code.
 
 ### Proposed fix
 Doing nothing on cancel is the right behaviour, since a user who closes the picker doesn't need an error. Remove the dead branch: call `onLoaded` only when there is a file and change its parameter to `File`. `uploadJSON` shares this function, so check its callers too. Don't add a `cancel` listener that shows the toast.
@@ -51,7 +52,7 @@ Neither the importer nor the FEM solver checks that the edges don't cross. The s
 | Bowtie `(0,0),(40,20),(40,0),(0,20)` | `A = 0`, all properties 0, 0 triangles, no error |
 | Uneven bowtie | `A = 666.8`, 83 triangles, no error |
 
-The second case is the worst: the numbers look fine but are wrong. The first one can also be saved, because `isValid` in `CustomShapeForm.vue` only looks at the point count and `isStale`, so a shape with all-zero results passes. A polygon drawn by hand has the same problem, so this is not only about CSV files.
+The second case is the worst: the numbers look fine but are wrong. The first one can also be saved, because `isValid` in `useFemCalculation.ts` (`src/components/forms/customShape/`) only looks at the point count and `isStale`, so a shape with all-zero results passes. A polygon drawn by hand has the same problem, so this is not only about CSV files.
 
 ### Proposed fix
 Add an `isSimplePolygon` check (no two non-adjacent edges intersect or touch) and call it in `calculateWithFem` before solving, so it covers both imported and drawn points. On failure show a toast naming the two crossing edges and leave the results empty and stale.

@@ -6,7 +6,7 @@ import { DrawTargetsCollection, type DrawableTarget } from '../../components/mid
 import { PropertyOverlays } from '../../components/middle/view/canvas/propertiesHelperPreviews';
 import { MeshView, createBeamView } from '../../components/middle/view/beams';
 import { Grid } from '../../components/middle/view/shapes';
-import { buildAnnotations } from '../../components/top/form/annotations';
+import { buildAnnotations } from '../../components/forms/components/shapeRegistry';
 import { degToRad } from '../../mathUtils/anglesMath';
 import { getShapesBounds, renderStaticScene } from './renderStaticScene';
 import { SHAPE_PREVIEW_FIT } from '../../constants/canvasFit';

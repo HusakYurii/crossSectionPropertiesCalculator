@@ -78,7 +78,7 @@ Found by reading the code, not reproduced.
 
 1. **Stale beams:** `GenericBeamView.ts:59` keeps a reference to the geometry object, so restoring a replacement object leaves the old one on screen. Re-importing a project with the same uids should already trigger this. A getter that reads from the store fixes both.
 2. **Order after undoing a delete:** the shape would come back at the end of the list and on top of the others. Each history entry stores the order, and the beam collection gets re-sorted to match. That should also fix a beam jumping to the top when its shape changes kind.
-3. **Wasted mesh copies:** `CustomShapeForm.vue:113` copies the mesh when the form opens, so a rename-only Save would keep a full duplicate in history. Dropping the copy is safe because nothing edits meshes.
+3. **Wasted mesh copies:** `useFemCalculation.ts` copies the mesh when the form opens, so a rename-only Save would keep a full duplicate in history. Dropping the copy is safe because nothing edits meshes.
 4. **Late panel writes:** a pending `RightPanel.vue` write can land after an undo. It can also crash if the shape has been deleted, which is possible today too. `useDebounce` needs a `flush`.
 5. **Empty number inputs:** clearing a position field stores `NaN`, which exports as `null`. The panel should skip that write, and history should copy values with a recursive function rather than a JSON round trip.
 6. **Restoring must copy:** the store edits objects in place, so it gets a copy of each history record, except the mesh.

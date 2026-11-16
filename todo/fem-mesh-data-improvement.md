@@ -52,7 +52,7 @@ Export drops from 4,078 KB to 2,048 KB, and the report snapshot from 1,361 KB to
 ### Test helpers (in the test file)
 - `toFlat(mesh)` accepts `Triangle[]` or `number[]` and always returns flat coordinates. This lets the same tests run before and after the rewrite.
 - `hashCoordinates(flat)` is a small FNV-1a over each number's 8 bytes (`DataView`). It keeps the snapshot tiny and still detects any change to a value, the order or the winding.
-- `shapeFromCsv(raw)` builds the polygon the way the form does: `convertCSVToPoints(raw, { round: true, dropClosingPoint: true })`, then `crossSectionPolygonsBuilder.calculate(...)`.
+- `shapeFromCsv(raw)` builds the polygon the way the form does: `convertCSVToPoints(raw, { decimals: 3, dropClosingPoint: true })`, then `crossSectionPolygonsBuilder.calculate(...)`.
 
 ### `buildMesh` tests
 
@@ -113,7 +113,7 @@ Export drops from 4,078 KB to 2,048 KB, and the report snapshot from 1,361 KB to
 | File | Change |
 |---|---|
 | `src/components/middle/view/beams/MeshView.ts` | Takes `Mesh`; the draw loop steps by 6 |
-| `src/components/top/forms/CustomShapeForm.vue` | `Mesh` types; read `mesh` from `solve()` |
+| `src/components/forms/customShape/useFemCalculation.ts` | `Mesh` types; read `mesh` from `solve()` |
 | `src/components/top/CreateOrUpdateSectionDataModalWindow.vue` | `Mesh` types |
 | `src/store/store.ts` | `Mesh` types and the mesh comment. Keep `markRaw`: a plain array would otherwise get a deep reactive proxy |
 | `src/store/history.ts` | `Mesh` types. **`_countOldMeshTriangles` must use `mesh.length / COORDS_PER_TRIANGLE`** |

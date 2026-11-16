@@ -19,10 +19,6 @@ export class Grid implements DrawTarget {
 		return false;
 	}
 
-	intersect(_polygon: Point[]): boolean {
-		return false;
-	}
-
 	draw(props: { context: CanvasRenderingContext2D }) {
 		const { context } = props;
 

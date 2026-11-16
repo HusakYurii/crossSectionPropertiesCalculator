@@ -146,36 +146,6 @@ export class ShapesInteractionService implements Service {
 		}
 	}
 
-	private _wouldCollideAt(shape: GenericBeamView, position: Point): boolean {
-		const candidatePolygon = shape.getPathPointsAtPosition(position);
-
-		for (const target of this._drawTargets.getTargets()) {
-			if (target === shape) {
-				continue;
-			}
-
-			if (target.isNegative) {
-				continue;
-			}
-
-			if (target.intersect(candidatePolygon)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/** whether a shape can sit at this position: a negative shape goes anywhere, a solid one must not overlap another solid one */
-	canMoveTo(uid: string, position: Point): boolean {
-		const shape = this._drawTargets.getTargets().find((target) => target.uid === uid);
-		if (!shape) {
-			return false;
-		}
-
-		return shape.isNegative || !this._wouldCollideAt(shape, position);
-	}
-
 	private _onMouseDown = (event: MouseEvent): void => {
 		if (event.button !== 0 || this._isTransformModeActive()) {
 			return;
@@ -228,13 +198,7 @@ export class ShapesInteractionService implements Service {
 				y: snapValue(worldPosition.y - this._dragOffset.y, step),
 			};
 
-			if (this._draggedShape.isNegative) {
-				this._draggedShape.setPosition(nextPosition);
-			}
-			else if (!this._wouldCollideAt(this._draggedShape, nextPosition)) {
-				this._draggedShape.setPosition(nextPosition);
-			}
-
+			this._draggedShape.setPosition(nextPosition);
 		}
 
 		this._updateCursor(worldPosition);

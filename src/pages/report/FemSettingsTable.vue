@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { CustomShapeGeometry } from '../../interfaces/beams/CustomShape.types';
 import { DEFAULT_FEM_MESH_OPTIONS } from '../../interfaces/FEMMeshOptions';
-import { FEM_OPTION_FIELDS } from '../../components/top/forms/fields/shapeFields';
+import { FEM_OPTION_FIELDS } from '../../components/forms/customShape/fields';
 
 const props = defineProps<{
 	geometry: CustomShapeGeometry;

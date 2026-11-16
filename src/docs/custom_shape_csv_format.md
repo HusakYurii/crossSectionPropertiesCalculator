@@ -111,6 +111,7 @@ A value must be a plain number:
 The app **refuses** these:
 
 *   hexadecimal numbers (`0x1F`), `Infinity` and `NaN`,
+*   numbers too large to store, such as `1e400`,
 *   empty cells in a point row,
 *   numbers with a unit (`12 mm`),
 *   thousands separators made of a space or an apostrophe (`1 000`, `1'000`).
@@ -156,12 +157,10 @@ An empty row in your table is different. Excel saves it as `,` or `;`, not as a 
 
 When the app accepts the file, it does these steps in this order:
 
-1.  **Rounding.** Every value is rounded to a whole number, because the custom shape editor works with whole numbers. Halves round up: $2.5$ becomes $3$ and $-2.5$ becomes $-2$. A value such as $-0.3$ becomes $0$, never $-0$.
+1.  **Rounding.** Every value is rounded to 0.001 mm, because the custom shape editor keeps three decimals. Halves round up, toward $+\infty$: $2.0005$ becomes $2.001$, and $-2.0005$ becomes $-2$. A value such as $-0.0003$ becomes $0$, never $-0$.
 2.  **The closing point is dropped.** If the last point equals the first point, the app removes the last point, because a shape closes itself. The app compares the points **after** rounding. So a last point that rounds to the first point is removed too.
 3.  **The points replace the ones on the canvas.** The app clears the earlier points, the selection, the old results and the old mesh.
 4.  **The view is fitted** to the imported shape.
-
-The rounding removes detail from a shape in small units, such as meters. So the outline must be made of larger numbers.
 
 <small>**Note: units.** The calculation does not depend on units. But the app labels every length as mm, and the other shapes on the canvas are entered in mm. Write the file in millimeters. If the file uses another unit, the results are in that unit but still labelled mm, and the shape will not match shapes entered in mm.</small>
 
@@ -200,7 +199,7 @@ If you close the file picker without choosing a file, nothing happens.
 1.  Put one point per row, $x$ and $y$, in the order around the outline (section 2).
 2.  Separate the values with a comma, a semicolon or a tab. The first row decides (section 3).
 3.  Use plain numbers (section 4). A header, blank lines and quotes are fine (section 5).
-4.  Expect whole numbers and no closing point after import (section 6).
+4.  Expect values rounded to 0.001 mm and no closing point after import (section 6).
 5.  Make sure the outline is one simple polygon of 3 or more points (section 7).
 
 ### Worked example: L-shape
@@ -219,7 +218,7 @@ An L-shape with a header row, decimal values, and a last row that closes the out
 <tr><th>5</th><td>20</td><td>20</td></tr>
 <tr><th>6</th><td>20</td><td>80</td></tr>
 <tr><th>7</th><td>0</td><td>80</td></tr>
-<tr><th>8</th><td>0.4</td><td>-0.3</td></tr>
+<tr><th>8</th><td>0.0004</td><td>-0.0003</td></tr>
 </table>
 <pre class="csv-raw">x,y
 0,0
@@ -228,12 +227,12 @@ An L-shape with a header row, decimal values, and a last row that closes the out
 20,20
 20,80
 0,80
-0.4,-0.3</pre>
+0.0004,-0.0003</pre>
 </div>
 
 *   The first row is `x,y`. Neither value is a number, so it is the header. The app skips it.
 *   The separator is a comma, because the first row has no semicolon and no tab. There are 7 point rows.
-*   After rounding, the last row `0.4,-0.3` becomes $(0,\ 0)$, because $0.4$ rounds to $0$ and $-0.3$ rounds to $0$.
+*   After rounding, the last row `0.0004,-0.0003` becomes $(0,\ 0)$, because $0.0004$ rounds to $0$ and $-0.0003$ rounds to $0$.
 *   That equals the first point $(0,\ 0)$, so the app removes the last point.
 
 **Result:** these are the 6 points the app imports. The header row and the closing row are gone.
@@ -255,7 +254,7 @@ An L-shape with a header row, decimal values, and a last row that closes the out
 | Header row | skipped when it is the first non-blank row and neither value is a number |
 | Separator | from the first non-blank row: `;`, else tab, else `,` |
 | Decimal comma | only in semicolon and tab files |
-| Rounding | to whole numbers, before the closing point is checked |
+| Rounding | to 0.001 mm, before the closing point is checked |
 | Closing point | dropped when the last point equals the first |
 | Point limit | 10000, header not counted |
 | Minimum to calculate | 3 points |

@@ -9,7 +9,7 @@ Canvases that fit the view to the shape with no minimum zoom:
 
 Not affected, because a minimum zoom keeps the lines apart:
 - Main editor canvas: `View.vue` (`minZoom` 0.7). The limit also means a big section can't be zoomed out far enough to fit.
-- Custom shape form: `CustomShapeForm.vue` (`MIN_ZOOM` 0.5)
+- Custom shape form: `CustomShapeForm.vue` (`MIN_ZOOM` 0.5, passed in `useCustomShapeCanvas.ts`)
 
 ## Possible fix
 Make `Grid` skip lines based on zoom, for example draw only every 10th line once cells get smaller than a few pixels. For the report, another option is to hide the grid.

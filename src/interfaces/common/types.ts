@@ -24,7 +24,6 @@ export interface Drawable {
 
 export interface Detectable {
 	contains: (point: Point) => boolean;
-	intersect: (polygon: Point[]) => boolean;
 }
 
 export type DrawTarget = Identifiable & Drawable & Detectable;

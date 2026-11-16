@@ -33,10 +33,6 @@ export class MainAxis implements DrawTarget {
 		return false
 	}
 
-	intersect(_polygon: Point[]): boolean {
-		return false;
-	}
-
 	draw(props: { context: CanvasRenderingContext2D; }) {
 
 		const strokeStyle = props.context.strokeStyle;
