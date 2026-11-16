@@ -2,7 +2,7 @@ import type { Store } from "./store";
 import type { PersistedSessionState } from "./appSessionState";
 
 export const PROJECT_SOURCE = 'CrossSectionPropertiesCalculator';
-export const PROJECT_FILE_VERSION = 2;
+export const PROJECT_FILE_VERSION = 1;
 
 /** The store groups that are saved to the project file (everything but `meta`) */
 export type ProjectState = Omit<Store, 'meta'>;

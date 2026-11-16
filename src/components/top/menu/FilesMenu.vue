@@ -2,16 +2,24 @@
 import MenuWithDropDown from './MenuWithDropDown.vue';
 import {  uploadJSON } from '../../../fileLoader/uploadFile.ts';
 
-import { importStoreData} from '../../../store/storeDataImporter.ts';
-import { exportStoreData } from '../../../store/storeDataExporter.ts';
+import { importStoreData, loadProjectData} from '../../../store/storeDataImporter.ts';
+import { EMPTY_PROJECT, exportStoreData } from '../../../store/storeDataExporter.ts';
 import { store } from '../../../store/store.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../../solvers/CompositeCrossSectionPropertiesSolver.ts';
 import { createReportSnapshot, saveReportSnapshot } from '../../../pages/report/reportSnapshot.ts';
 import { toast } from 'vue3-toastify';
 
-type ActionNames = "import" | "export" | "results";
+type ActionNames = "import" | "export" | "results" | 'new';
 
 const ACTIONS_STRATEGIES: Record<ActionNames, () => void> = {
+	new: () => {
+		const hasShapes = Object.keys(store.geometry).length > 0;
+		if (hasShapes && !window.confirm('Start a new project? Unsaved changes and the undo history will be lost.')) {
+			return;
+		}
+		loadProjectData(EMPTY_PROJECT);
+		toast.info('New project created');
+	},
 	import: () => {
 		uploadJSON((file ) => {
 			importStoreData(file)
@@ -41,6 +49,7 @@ const ACTIONS_STRATEGIES: Record<ActionNames, () => void> = {
 }
 
 const MAIN_MENU_ITEMS: Array<{ value: ActionNames, label: string }> = [
+	{ value: 'new', label: 'New Project' },
 	{ value: 'import', label: 'Import Project' },
 	{ value: 'export', label: 'Export Project' },
 	{ value: 'results', label: 'Show Results' },

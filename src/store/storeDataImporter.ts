@@ -64,26 +64,16 @@ const sanitizeShapeLabelOffsets = (value: unknown): PersistedSessionState['dimen
     return result;
 }
 
-/** Turns a supported file version into the current shape, undefined if the version is unknown */
-const normalizeProject = (data: Record<string, any>): NormalizedProject | undefined => {
-    if (data.meta.version === 2) {
-        return {
-            state: data.state ?? {},
-            session: {
-                showRotationFor: data.appSessionState?.showRotationFor ?? {},
-                dimensionLabelOffsets: sanitizeShapeLabelOffsets(data.appSessionState?.dimensionLabelOffsets),
-                quickSolverToggles: sanitizeToggles(data.appSessionState?.quickSolverToggles),
-                compositeLabelOffsets: sanitizeLabelOffsets(data.appSessionState?.compositeLabelOffsets),
-            },
-        };
-    }
-    if (data.meta.version === 1) {
-        // legacy file: the flat store itself, there is no session state in it
-        const { meta: _meta, ...state } = data;
-        return { state: state as ProjectState, session: { showRotationFor: {}, dimensionLabelOffsets: {}, quickSolverToggles: { ...DEFAULT_QUICK_SOLVER_TOGGLES }, compositeLabelOffsets: {} } };
-    }
-    return undefined;
-}
+/** Reads the project file into the store / session shapes */
+const readProject = (data: Record<string, any>): NormalizedProject => ({
+    state: data.state ?? {},
+    session: {
+        showRotationFor: data.appSessionState?.showRotationFor ?? {},
+        dimensionLabelOffsets: sanitizeShapeLabelOffsets(data.appSessionState?.dimensionLabelOffsets),
+        quickSolverToggles: sanitizeToggles(data.appSessionState?.quickSolverToggles),
+        compositeLabelOffsets: sanitizeLabelOffsets(data.appSessionState?.compositeLabelOffsets),
+    },
+})
 
 const replaceStoreData = (state: Partial<ProjectState>) => {
     resetStore();
@@ -116,14 +106,11 @@ const replaceAppSessionData = (session: PersistedSessionState) => {
     appSessionState.currentHoveredShapeID = null;
 }
 
-export const loadProjectData = (data: unknown): 'ok' | 'invalid' | 'unsupported' => {
+export const loadProjectData = (data: unknown): 'ok' | 'invalid' => {
     if (!isStoreDataValid(data)) {
         return 'invalid';
     }
-    const project = normalizeProject(data);
-    if (!project) {
-        return 'unsupported';
-    }
+    const project = readProject(data);
     replaceStoreData(project.state);
     replaceAppSessionData(project.session);
     markStateDirty();
@@ -143,10 +130,6 @@ export const importStoreData = async (file: File | undefined) => {
         const result = loadProjectData(data);
         if (result === 'invalid') {
             toast.error("The JSON data is not valid. Probably wrong file");
-            return;
-        }
-        if (result === 'unsupported') {
-            toast.error("This project file version is not supported");
             return;
         }
         toast.info('Successfully imported');
