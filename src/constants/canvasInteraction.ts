@@ -10,9 +10,9 @@ export const CURSOR = {
 export const DRAG_THRESHOLD = 3;
 
 /** the gestures every canvas shares; a canvas puts its own gestures in front of these */
-export const NAVIGATION_HINTS = ['Shift snaps to the grid', 'Right mouse pans', 'Wheel zooms'];
+export const NAVIGATION_HINTS = ['Shift locks to horizontal / vertical', 'Right mouse pans', 'Wheel zooms'];
 
-/** The grid dragging snaps to. */
+/** The drawn grid. */
 export const GRID = {
 	/** distance between two grid lines, in world units */
 	CELL_SIZE: 10,
@@ -32,3 +32,14 @@ export const POLYGON_EDITOR_INTERACTION = {
 	/** a press that moves less than this (screen px) is a click, not a drag */
 	CLICK_TOLERANCE: 4,
 } as const;
+
+/** Snapping of dragged shapes and polygon points. */
+export const SNAP = {
+	/** the steps the user can pick, in mm */
+	STEPS: [10, 5, 1, 0.5, 0.1, 0.05],
+	DEFAULT_STEP: 1,
+	/** decimals kept when snapping is off (one finer than the smallest step) and after snapping */
+	FREE_DECIMALS: 2,
+} as const;
+
+export type SnapStep = typeof SNAP.STEPS[number];

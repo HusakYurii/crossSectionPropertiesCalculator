@@ -1,7 +1,8 @@
 import { downloadText } from "../fileLoader/downloadFiles";
 import { MIME_JSON } from "../fileLoader/mimeTypes";
 import { PROJECT_FILE_VERSION, PROJECT_SOURCE, type ProjectFile } from "./projectFile";
-import { appSessionState, store } from "./store";
+import { store } from "./store";
+import { appSessionState } from "./appSessionState";
 
 export const buildProjectFile = (): ProjectFile => ({
         meta: {

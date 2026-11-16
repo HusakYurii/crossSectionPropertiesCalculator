@@ -2,7 +2,8 @@
 import { ref, computed, watch, nextTick, type Component } from 'vue';
 import { sectionModalState, closeSectionModal } from '../../store/sectionModal.ts';
 import type { ShapeType } from '../../store/sectionModal.ts';
-import { addGeometryData, updateGeometryData, getUID, store, addCrossSectionProperties, updateCrossSectionProperties, updateCrossSectionPolygon, addCrossSectionPolygon, updateGeometryExtraData, addGeometryExtraData, setCrossSectionMesh, removeCrossSectionMesh, setShowRotation } from '../../store/store.ts';
+import { addGeometryData, updateGeometryData, getUID, store, addCrossSectionProperties, updateCrossSectionProperties, updateCrossSectionPolygon, addCrossSectionPolygon, updateGeometryExtraData, addGeometryExtraData, setCrossSectionMesh, removeCrossSectionMesh } from '../../store/store.ts';
+import { setShowRotation } from '../../store/appSessionState.ts';
 import { openInfoPanel } from '../../store/infoPanel.ts';
 import { history } from '../../store/history.ts';
 import type { Geometry } from '../../interfaces/beams/common.types.ts';

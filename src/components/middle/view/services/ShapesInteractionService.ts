@@ -2,7 +2,7 @@ import type { DrawTarget, Point, Service } from '../../../../interfaces/common/t
 import type { BeamsDrawTargetCollection } from '../canvas/BeamsDrawTargetCollection';
 import { GenericBeamView } from '../beams';
 import { CURSOR, DRAG_THRESHOLD } from '../../../../constants/canvasInteraction';
-import { getSnapStep, snapValue } from '../canvas/gridSnap';
+import { lockAndSnap } from '../../../../mathUtils/snap';
 import type { InputService } from './InputService';
 
 type ShapesInteractionServiceProps = {
@@ -20,6 +20,8 @@ type ShapesInteractionServiceProps = {
 	isOverOtherInteractive?: (point: Point) => boolean;
 	/** that other grabbable thing is being dragged right now, so the cursor shows it is held */
 	isOtherInteractiveDragging?: () => boolean;
+	/** the snap step in mm, or null while snapping is off */
+	getSnapStep: () => number | null;
 	onChange: () => void;
 	/** 
 	 *  A drag of a label ended (mouse up or mouse leave), switching windows mid-drag sends no mouse up or leave
@@ -37,6 +39,8 @@ export class ShapesInteractionService implements Service {
 	private _mouseWorldPosition?: Point;
 	private _draggedShape: GenericBeamView | null = null;
 	private _dragOffset: Point = { x: 0, y: 0 };
+	// a copy of the shape's position at the press; the axis lock keeps one of its coordinates
+	private _dragStartPosition: Point = { x: 0, y: 0 };
 	// where the press happened in screen pixels; the shape stays put until the mouse has travelled past the threshold
 	private _dragStartScreenPosition: Point = { x: 0, y: 0 };
 	private _hasPassedThreshold = false;
@@ -50,6 +54,7 @@ export class ShapesInteractionService implements Service {
 	private _isTransformModeActive: () => boolean;
 	private _isOverOtherInteractive: (point: Point) => boolean;
 	private _isOtherInteractiveDragging: () => boolean;
+	private _getSnapStep: () => number | null;
 	private _onChange: () => void;
 	private _onDragEnd: () => void;
 
@@ -62,6 +67,7 @@ export class ShapesInteractionService implements Service {
 		this._isTransformModeActive = props.isTransformModeActive;
 		this._isOverOtherInteractive = props.isOverOtherInteractive ?? (() => false);
 		this._isOtherInteractiveDragging = props.isOtherInteractiveDragging ?? (() => false);
+		this._getSnapStep = props.getSnapStep;
 		this._onChange = props.onChange;
 		this._onDragEnd = props.onDragEnd;
 	}
@@ -173,6 +179,7 @@ export class ShapesInteractionService implements Service {
 			y: worldPosition.y - shape.position.y,
 		};
 
+		this._dragStartPosition = { ...shape.position };
 		this._dragStartScreenPosition = { x: event.offsetX, y: event.offsetY };
 		this._hasPassedThreshold = false;
 
@@ -191,12 +198,16 @@ export class ShapesInteractionService implements Service {
 		}
 
 		if (this._draggedShape && this._hasPassedThreshold) {
-			// whole numbers while dragging; Shift snaps the shape's position to the grid lines
-			const step = getSnapStep(event);
-			const nextPosition = {
-				x: snapValue(worldPosition.x - this._dragOffset.x, step),
-				y: snapValue(worldPosition.y - this._dragOffset.y, step),
+			// snaps to the selected step, and Shift locks the move to one axis
+			const rawPosition = {
+				x: worldPosition.x - this._dragOffset.x,
+				y: worldPosition.y - this._dragOffset.y,
 			};
+			const moveDelta = {
+				x: rawPosition.x - this._dragStartPosition.x,
+				y: rawPosition.y - this._dragStartPosition.y,
+			};
+			const nextPosition = lockAndSnap(this._dragStartPosition, rawPosition, moveDelta, this._getSnapStep(), event.shiftKey);
 
 			this._draggedShape.setPosition(nextPosition);
 		}

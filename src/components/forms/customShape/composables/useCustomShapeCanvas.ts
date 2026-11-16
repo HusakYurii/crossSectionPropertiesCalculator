@@ -2,7 +2,7 @@ import { onMounted, onUnmounted, watch, type Ref } from 'vue';
 import type { CanvasSize } from '../../../middle/view/canvas/Canvas.ts';
 import { CanvasScene } from '../../../middle/view/canvas/CanvasScene.ts';
 import { CURSOR } from '../../../../constants/canvasInteraction.ts';
-import { CANVAS_FONT } from '../../../../constants/canvasStyle.ts';
+import { AXIS_STYLE, CANVAS_FONT } from '../../../../constants/canvasStyle.ts';
 import { CUSTOM_SHAPE_EDITOR_VIEW } from '../../../../constants/canvasFit.ts';
 import { DrawTargetsCollection, type DrawableTarget } from '../../../middle/view/canvas/DrawTargetsCollection.ts';
 import { Grid, MainAxis } from '../../../middle/view/shapes/index.ts';
@@ -23,11 +23,13 @@ type CustomShapeCanvasProps = {
 	crossSectionMesh: Ref<Triangle[]>;
 	isStale: Ref<boolean>;
 	hasResults: Ref<boolean>;
+	/** the snap step in mm, or null while snapping is off */
+	getSnapStep: () => number | null;
 };
 
 /** the editor canvas: grid, polygon with its point editing, and the mesh and overlays of the results */
 export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
-	const { canvasRef, wrapperRef, points, selectedIndices, crossSectionProperties, crossSectionMesh, isStale, hasResults } = props;
+	const { canvasRef, wrapperRef, points, selectedIndices, crossSectionProperties, crossSectionMesh, isStale, hasResults, getSnapStep } = props;
 
 	let scene: CanvasScene | undefined;
 	// the view is fitted to an existing shape once, the first time the canvas has a size
@@ -41,7 +43,7 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 
 	// The polygon is drawn where the points are, so the centroid is not the world origin and every overlay is
 	// centered on it. The shape is never rotated, so its own axes are the world axes.
-	const overlays = new PropertyOverlays({ drawCentroid: true, style: { labelFontSize: CANVAS_FONT.LABEL_SIZE } });
+	const overlays = new PropertyOverlays({ drawCentroid: true, style: { labelFontSize: CANVAS_FONT.LABEL_SIZE, labelTopReserve: AXIS_STYLE.LABEL_TOP_RESERVE } });
 
 	function syncOverlays() {
 		const { centroid_x, centroid_y } = crossSectionProperties.value;
@@ -176,6 +178,7 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 			getPoints: points,
 			getSelectedIndices: () => selectedIndices.value,
 			setSelectedIndices: (indices) => { selectedIndices.value = indices; },
+			getSnapStep,
 			onChange: requestRedraw,
 		});
 		polygonTargets.add(new PolygonDrawTarget(points, () => selectedIndices.value, () => editor.getSelectionBox()));

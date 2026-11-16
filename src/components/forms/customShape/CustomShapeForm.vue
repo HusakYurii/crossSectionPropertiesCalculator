@@ -4,6 +4,9 @@ import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CustomShapeGeometry } from '../../../interfaces/beams/CustomShape.types.ts';
 import { NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
 import CanvasHint from '../../middle/view/CanvasHint.vue';
+import SnapControl from '../../middle/view/quickActions/snap/SnapControl.vue';
+import { appSessionState } from '../../../store/appSessionState.ts';
+import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from '../../../interfaces/FEMMeshOptions.ts';
 import { openInfoPanel } from '../../../store/infoPanel.ts';
 import IsNegativeField from '../components/IsNegativeField.vue';
@@ -72,6 +75,7 @@ const { fitView, requestRedraw } = useCustomShapeCanvas({
 	crossSectionMesh,
 	isStale,
 	hasResults,
+	getSnapStep: () => getActiveSnapStep(appSessionState.snapping),
 });
 
 function importCsv() {
@@ -103,6 +107,7 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 	<div class="custom-shape">
 		<div class="custom-shape__canvas" ref="wrapperRef">
 			<canvas ref="canvasRef"></canvas>
+			<SnapControl class="custom-shape__snap" compact />
 			<CanvasHint :items="HINTS" />
 		</div>
 
@@ -144,6 +149,13 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 	background: var(--color-surface-canvas);
 	border: 1px solid var(--color-border-subtle);
 	border-radius: 8px;
+}
+
+.custom-shape__snap {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 1;
 }
 
 .custom-shape__canvas canvas {

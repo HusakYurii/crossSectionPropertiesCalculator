@@ -1,6 +1,7 @@
 import { computed, watch } from 'vue';
 import { toast } from 'vue3-toastify';
-import { appSessionState, store, toggleQuickSolver } from '../../../../store/store';
+import { store } from '../../../../store/store';
+import { appSessionState, toggleQuickSolver } from '../../../../store/appSessionState';
 import { compositeCrossSectionPropertiesSolver } from '../../../../solvers/CompositeCrossSectionPropertiesSolver';
 import { anyQuickSolverToggleOn } from '../../../../interfaces/quickSolverToggles';
 

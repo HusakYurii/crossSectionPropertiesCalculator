@@ -4,16 +4,14 @@ import type { Point } from '../interfaces/common/types';
 import type { CrossSectionProperties } from '../interfaces/sectionProperties';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';
 import { sectionModalState } from './sectionModal';
+import { setGeometryOrder, store, type GeometryDataExtra } from './store';
 import {
 	appSessionState,
 	markStateDirty,
 	removeShapeSessionState,
-	setGeometryOrder,
 	setShowRotation,
-	store,
 	type DimensionLabelOffsetKey,
-	type GeometryDataExtra,
-} from './store';
+} from './appSessionState';
 
 type UID = string;
 

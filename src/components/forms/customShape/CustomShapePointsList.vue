@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { Point } from '../../../interfaces/common/types.ts';
 import { POLYGON_LIMITS } from '../../../constants/geometryTolerances.ts';
-import { roundTo } from './csv/csvTextParser.ts';
+import { roundTo } from '../../../mathUtils/round.ts';
 
 // the points are edited in place, the same way the canvas editor edits them
 const points = defineModel<Point[]>('points', { required: true });

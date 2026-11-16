@@ -2,7 +2,7 @@ import type { CrossSectionProperties } from "../../../../../interfaces/sectionPr
 import type { DrawableTarget } from "../DrawTargetsCollection";
 import { DimensionsWithTextLabel } from "../annotations/DimensionsWithTextLabel";
 import { CompositeCentroidDimensionSource } from "../annotations/dimensionSources/CompositeCentroidDimensionSource";
-import { appSessionState } from "../../../../../store/store";
+import { appSessionState } from "../../../../../store/appSessionState";
 import { AXIS_STYLE, CANVAS_FONT, CENTROID_STYLE } from "../../../../../constants/canvasStyle";
 import { PropertyOverlays } from "../propertiesHelperPreviews";
 import { anyQuickSolverToggleOn, type QuickSolverToggles } from "../../../../../interfaces/quickSolverToggles";
@@ -32,7 +32,7 @@ export class CompositeSectionOverlays implements DrawableTarget {
 		this._overlays = new PropertyOverlays({
 			drawCentroid: true,
 			layers: { shapeAxes: false },
-			style: { labelFontSize: CANVAS_FONT.LABEL_SIZE, centroidLineWidth: CENTROID_LINE_WIDTH, centroidSize: CENTROID_SIZE },
+			style: { labelFontSize: CANVAS_FONT.LABEL_SIZE, labelTopReserve: AXIS_STYLE.LABEL_TOP_RESERVE, centroidLineWidth: CENTROID_LINE_WIDTH, centroidSize: CENTROID_SIZE },
 		});
 		this._labels = (['x', 'y'] as const).map((axis) => new DimensionsWithTextLabel({
 			uid: `section-centroid_${axis}`,

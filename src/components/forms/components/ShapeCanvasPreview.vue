@@ -2,7 +2,8 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { sectionModalState } from '../../../store/sectionModal';
 import { history } from '../../../store/history';
-import { setShowRotation, store, type Store } from '../../../store/store';
+import { store, type Store } from '../../../store/store';
+import { setShowRotation } from '../../../store/appSessionState';
 import { Canvas, type CanvasSize, type CanvasTransformState } from '../../middle/view/canvas/Canvas';
 import { BeamsDrawTargetCollection } from '../../middle/view/canvas/BeamsDrawTargetCollection';
 import { ResizeService } from '../../middle/view/services/ResizeService';

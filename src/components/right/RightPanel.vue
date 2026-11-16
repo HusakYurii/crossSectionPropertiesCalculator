@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, ref, onMounted, onUnmounted } from 'vue';
-import { store, appSessionState, updateGeometryExtraData, type GeometryDataExtra } from '../../store/store';
+import { store, updateGeometryExtraData, type GeometryDataExtra } from '../../store/store';
+import { appSessionState } from '../../store/appSessionState';
 import { useDebounce } from '../../composables/useDebounce';
 import { history } from '../../store/history';
 

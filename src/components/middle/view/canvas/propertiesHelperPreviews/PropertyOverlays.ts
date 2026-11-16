@@ -38,6 +38,8 @@ export type PropertyOverlaysOptions = {
 		centroidLineWidth?: number;
 		/** size of the centroid cross, in screen px */
 		centroidSize?: number;
+		/** CSS px kept free under the top edge of the canvas for the axis labels, for what floats over it; 0 when left out */
+		labelTopReserve?: number;
 	};
 };
 
@@ -76,6 +78,7 @@ export class PropertyOverlays {
 			xColor: AXIS_STYLE.COLORS.x,
 			yColor: AXIS_STYLE.COLORS.y,
 			labelFontSize: options.style?.labelFontSize,
+			labelTopReserve: options.style?.labelTopReserve,
 		});
 		// dash-dot pattern so they read as a different kind of axis than x / y
 		this._principalAxis = new PreviewAxis({
@@ -86,6 +89,7 @@ export class PropertyOverlays {
 			yColor: AXIS_STYLE.PRINCIPAL_COLORS.v,
 			dash: [...AXIS_STYLE.PRINCIPAL_DASH],
 			labelFontSize: options.style?.labelFontSize,
+			labelTopReserve: options.style?.labelTopReserve,
 		});
 		this._ellipse = new PreviewGyrationEllipse();
 		this._centroid = options.drawCentroid

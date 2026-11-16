@@ -1,6 +1,6 @@
 import { reactive } from 'vue';
 import { SHAPE_TYPES } from '../interfaces/beams/common.types';
-import { appSessionState } from './store';
+import { appSessionState } from './appSessionState';
 
 export type ShapeType = keyof typeof SHAPE_TYPES;
 

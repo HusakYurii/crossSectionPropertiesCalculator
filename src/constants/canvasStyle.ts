@@ -24,6 +24,11 @@ export const AXIS_STYLE = {
 		u: 'rgba(30, 110, 220, 1)',
 		v: 'rgba(235, 140, 20, 1)',
 	},
+	/**
+	 * Free space kept under the top edge of the canvas for the labels of the axes, in CSS px: the options
+	 * bar floats there (8 margin + 32 control + 8 gap).
+	 */
+	LABEL_TOP_RESERVE: 48,
 	/** line width of the axes in screen px */
 	LINE_WIDTH: 1.5,
 	/** line width of the main x / y axes through the origin, in screen px */

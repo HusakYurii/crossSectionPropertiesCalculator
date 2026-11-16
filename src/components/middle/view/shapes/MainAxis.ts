@@ -1,6 +1,6 @@
 import type { DrawTarget } from "../../../../interfaces/common/types";
 import type { Point } from "../../../../interfaces/common/types";
-import { PIVOT, drawUprightText, getScaledSize } from "../canvas/drawUtils";
+import { PIVOT, cssPxToWorld, drawUprightText, getScaledSize } from "../canvas/drawUtils";
 import { AXIS_STYLE } from "../../../../constants/canvasStyle";
 
 export type MainAxisOptions = {
@@ -8,6 +8,8 @@ export type MainAxisOptions = {
 	showLabels?: boolean;
 	/** in screen px; PreviewAxis's default size when left out */
 	labelFontSize?: number;
+	/** CSS px kept free under the top edge for the Y label, so it stays clear of what floats over the canvas; 0 when left out */
+	labelTopReserve?: number;
 };
 
 /**
@@ -23,10 +25,12 @@ export class MainAxis implements DrawTarget {
 
 	private _showLabels: boolean;
 	private _labelFontSize: number;
+	private _labelTopReserve: number;
 
 	constructor(options: MainAxisOptions = {}) {
 		this._showLabels = options.showLabels ?? false;
 		this._labelFontSize = options.labelFontSize ?? AXIS_STYLE.LABEL_FONT_SIZE;
+		this._labelTopReserve = options.labelTopReserve ?? 0;
 	}
 
 	contains(_point: Point) {
@@ -83,7 +87,9 @@ export class MainAxis implements DrawTarget {
 				drawUprightText(props.context, 'X', at, AXIS_STYLE.COLORS.x, this._labelFontSize, PIVOT.CENTER);
 			}
 			if (minX <= 0 && maxX >= 0) {
-				const at = { x: maxX - gap >= half ? gap : -gap, y: maxY - inset };
+				// the label sits at the top edge, below the reserved band
+				const reserve = cssPxToWorld(props.context, this._labelTopReserve);
+				const at = { x: maxX - gap >= half ? gap : -gap, y: Math.min(maxY - inset, maxY - reserve - half) };
 				drawUprightText(props.context, 'Y', at, AXIS_STYLE.COLORS.y, this._labelFontSize, PIVOT.CENTER);
 			}
 		}

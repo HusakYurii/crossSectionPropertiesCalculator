@@ -1,5 +1,5 @@
 import type { Point } from "../../../../../../interfaces/common/types";
-import { clearCompositeLabelAlong, setCompositeLabelOffset, type AppSessionState, type DimensionLabelOffsetKey } from "../../../../../../store/store";
+import { clearCompositeLabelAlong, setCompositeLabelOffset, type AppSessionState, type DimensionLabelOffsetKey } from "../../../../../../store/appSessionState";
 import type { ArrowAxis } from "../DimensionsWithTextLabel";
 import type { DimensionSource } from "../../../../../../interfaces/annotations/DimensionSource";
 

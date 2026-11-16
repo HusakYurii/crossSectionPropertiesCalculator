@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { store, appSessionState, setSelectedShapeID, removeGeometryData, removeCrossSectionProperties, removeCrossSectionPolygon, removeCrossSectionMesh, removeGeometryExtraData, setHoveredShapeID, removeShapeSessionState, setGeometryOrder, updateGeometryExtraData } from '../../store/store';
+import { store, removeGeometryData, removeCrossSectionProperties, removeCrossSectionPolygon, removeCrossSectionMesh, removeGeometryExtraData, setGeometryOrder, updateGeometryExtraData } from '../../store/store';
+import { appSessionState, setSelectedShapeID, setHoveredShapeID, removeShapeSessionState } from '../../store/appSessionState';
 import { history } from '../../store/history';
 import { openSectionModal } from '../../store/sectionModal';
 import trashIconRaw from '../../svg/trash.svg?raw';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { appSessionState, store } from '../../store/store';
+import { store } from '../../store/store';
+import { appSessionState } from '../../store/appSessionState';
 import type { CrossSectionProperties } from '../../interfaces/sectionProperties';
 import { BeamsDrawTargetCollection } from '../../components/middle/view/canvas/BeamsDrawTargetCollection';
 import { DrawTargetsCollection } from '../../components/middle/view/canvas/DrawTargetsCollection';

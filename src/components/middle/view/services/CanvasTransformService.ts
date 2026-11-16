@@ -130,7 +130,9 @@ export class CanvasTransformService implements Service {
 	private _onWheel = (event: WheelEvent): void => {
 		event.preventDefault();
 
-		const factor = event.deltaY > 0 ? 1 / this._zoomFactor : this._zoomFactor;
+		// macOS sends Shift+wheel as deltaX
+		const delta = event.deltaY || event.deltaX;
+		const factor = delta > 0 ? 1 / this._zoomFactor : this._zoomFactor;
 		const newZoom = this._clamp(this._currentTransforms.zoom * factor, this._minZoom, this._maxZoom);
 		if (newZoom === this._currentTransforms.zoom) {
 			return;

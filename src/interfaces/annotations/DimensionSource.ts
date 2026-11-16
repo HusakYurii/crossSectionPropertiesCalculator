@@ -1,5 +1,5 @@
 import type { Point } from "../common/types";
-import type { DimensionLabelOffsetKey } from "../../store/store";
+import type { DimensionLabelOffsetKey } from "../../store/appSessionState";
 import type { ArrowAxis } from "../../components/middle/view/canvas/annotations/DimensionsWithTextLabel";
 
 /**

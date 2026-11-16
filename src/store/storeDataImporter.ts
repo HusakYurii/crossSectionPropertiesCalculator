@@ -3,7 +3,8 @@ import { toast } from 'vue3-toastify';
 import { PROJECT_SOURCE, type ProjectState } from "./projectFile";
 import { history } from "./history";
 import { DEFAULT_QUICK_SOLVER_TOGGLES, type QuickSolverToggles } from "../interfaces/quickSolverToggles";
-import { appSessionState, markStateDirty, resetStore, store, type DimensionLabelOffsetKey, type PersistedSessionState } from "./store";
+import { resetStore, store } from "./store";
+import { appSessionState, markStateDirty, type DimensionLabelOffsetKey, type PersistedSessionState } from "./appSessionState";
 
 type NormalizedProject = {
     state: ProjectState;

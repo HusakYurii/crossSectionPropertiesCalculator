@@ -1,4 +1,5 @@
-import type { Store, PersistedSessionState } from "./store";
+import type { Store } from "./store";
+import type { PersistedSessionState } from "./appSessionState";
 
 export const PROJECT_SOURCE = 'CrossSectionPropertiesCalculator';
 export const PROJECT_FILE_VERSION = 2;

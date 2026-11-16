@@ -6,7 +6,7 @@ withDefaults(defineProps<{
 	/** a toggle that is on is drawn darker */
 	active?: boolean;
 	/** which side of the button the tooltip opens to; away from the edge the bar sits on */
-	tooltipSide: 'left' | 'right';
+	tooltipSide: 'left' | 'right' | 'bottom';
 }>(), { active: undefined });
 
 defineEmits<{
@@ -37,17 +37,18 @@ defineEmits<{
 	cursor: pointer;
 }
 
+/* 30% more opaque than the shared --color-fill-hover / -strong / -strong-hover, so the canvas shows through less */
 .quick-action-button:hover {
-	background: var(--color-fill-hover);
+	background: rgb(var(--color-text-rgb) / 0.21);
 }
 
 /* a toggle that is on; the hover is darker still so it keeps showing */
 .quick-action-button.is-active {
-	background: var(--color-fill-strong);
+	background: rgb(var(--color-text-rgb) / 0.26);
 }
 
 .quick-action-button.is-active:hover {
-	background: var(--color-fill-strong-hover);
+	background: rgb(var(--color-text-rgb) / 0.31);
 }
 
 .quick-action-button__icon {
@@ -86,6 +87,13 @@ defineEmits<{
 
 .quick-action-button--tooltip-left::after {
 	right: calc(100% + 6px);
+}
+
+/* opens below the button, for a bar at the top of the canvas; overrides the vertical centering of the base */
+.quick-action-button--tooltip-bottom::after {
+	top: calc(100% + 6px);
+	left: 50%;
+	transform: translateX(-50%);
 }
 
 .quick-action-button:hover::after,

@@ -2,8 +2,8 @@ import type { Point, Service } from "../../../../interfaces/common/types";
 import type { CanvasTransformService } from "../../../middle/view/services/CanvasTransformService";
 import type { InputService } from "../../../middle/view/services/InputService";
 import { CURSOR, MOUSE_BUTTON, POLYGON_EDITOR_INTERACTION } from "../../../../constants/canvasInteraction";
-import { getSnapStep, snapPoint } from "../../../middle/view/canvas/gridSnap";
-import { roundTo } from "../csv/csvTextParser";
+import { lockAndSnap, snapPoint } from "../../../../mathUtils/snap";
+import { roundTo } from "../../../../mathUtils/round";
 
 type PolygonEditorProps = {
 	canvas: HTMLCanvasElement;
@@ -14,13 +14,15 @@ type PolygonEditorProps = {
 	getSelectedIndices: () => number[];
 	/** always receives a new sorted array, never a mutated one */
 	setSelectedIndices: (indices: number[]) => void;
+	/** the snap step in mm, or null while snapping is off */
+	getSnapStep: () => number | null;
 	onChange: () => void;
 };
 
 /**
  * Click on empty canvas to add a point, drag a point to move it, drag on empty canvas to box-select
  * several (they then move together). Pan / zoom is left to CanvasTransformService (right button + wheel).
- * Hold Shift to snap to the grid, Cmd/Ctrl to add to the selection.
+ * Hold Shift to move along one axis, Cmd/Ctrl to add to the selection.
  */
 export class PolygonEditor implements Service {
 	private _canvas: HTMLCanvasElement;
@@ -29,6 +31,7 @@ export class PolygonEditor implements Service {
 	private _getPoints: () => Point[];
 	private _getSelectedIndices: () => number[];
 	private _setSelectedIndices: (indices: number[]) => void;
+	private _getSnapStep: () => number | null;
 	private _onChange: () => void;
 
 	private _unsubscribeHandlers: Array<() => void> = [];
@@ -44,6 +47,8 @@ export class PolygonEditor implements Service {
 	private _pressHit = -1;
 	private _pressModifier = false;
 	private _pressScreen: Point | null = null;
+	// where the press happened in world units; the axis lock reads the drag direction from it
+	private _pressWorld: Point | null = null;
 	private _moved = false;
 
 	constructor(props: PolygonEditorProps) {
@@ -53,6 +58,7 @@ export class PolygonEditor implements Service {
 		this._getPoints = props.getPoints;
 		this._getSelectedIndices = props.getSelectedIndices;
 		this._setSelectedIndices = props.setSelectedIndices;
+		this._getSnapStep = props.getSnapStep;
 		this._onChange = props.onChange;
 	}
 
@@ -113,9 +119,9 @@ export class PolygonEditor implements Service {
 		return this._transformService.screenToWorld({ x: event.offsetX, y: event.offsetY });
 	}
 
-	/** imported and typed points may have decimals (0.001 mm); a dragged or added point lands on a whole number, and Shift snaps it to the grid lines instead */
-	private _snap(point: Point, event: MouseEvent): Point {
-		return snapPoint(point, getSnapStep(event));
+	/** imported and typed points may have decimals (0.001 mm); a dragged or added point lands on the step of the snap control, or is rounded to 0.01 when snapping is off */
+	private _snap(point: Point): Point {
+		return snapPoint(point, this._getSnapStep());
 	}
 
 	/** world-space box of the running selection drag, or null before the click tolerance is passed */
@@ -134,7 +140,7 @@ export class PolygonEditor implements Service {
 		};
 	}
 
-	/** the Shift key is taken by grid snapping, and Ctrl+click is a right click on Mac */
+	/** Shift is taken by the axis lock, and Ctrl+click is a right click on Mac */
 	private _hasModifier(event: MouseEvent): boolean {
 		return event.metaKey || event.ctrlKey;
 	}
@@ -146,6 +152,7 @@ export class PolygonEditor implements Service {
 
 		const screen = { x: event.offsetX, y: event.offsetY };
 		this._pressScreen = screen;
+		this._pressWorld = this._toWorld(event);
 		this._moved = false;
 		this._pressModifier = this._hasModifier(event);
 
@@ -214,7 +221,11 @@ export class PolygonEditor implements Service {
 			return;
 		}
 
-		const snapped = this._snap(this._toWorld(event), event);
+		// the anchor jumps to the cursor, so the axis comes from the press point, not from the anchor
+		const world = this._toWorld(event);
+		const pressWorld = this._pressWorld ?? world;
+		const moveDelta = { x: world.x - pressWorld.x, y: world.y - pressWorld.y };
+		const snapped = lockAndSnap(anchorStart, world, moveDelta, this._getSnapStep(), event.shiftKey);
 		const dx = snapped.x - anchorStart.x;
 		const dy = snapped.y - anchorStart.y;
 		const points = this._getPoints();
@@ -244,8 +255,13 @@ export class PolygonEditor implements Service {
 			}
 		} else if (!this._moved && this._pressScreen) {
 			// a press on empty canvas that did not move is a click: add a point there
-			const world = this._snap(this._toWorld(event), event);
+			const raw = this._toWorld(event);
 			const points = this._getPoints();
+			// Shift aligns the new point with the last one, the start of the new edge
+			const last = points[points.length - 1];
+			const world = last
+				? lockAndSnap({ x: last.x, y: last.y }, raw, { x: raw.x - last.x, y: raw.y - last.y }, this._getSnapStep(), event.shiftKey)
+				: this._snap(raw);
 			points.push({ x: world.x, y: world.y });
 			this._setSelectedIndices([points.length - 1]);
 			this._onChange();
@@ -287,9 +303,9 @@ export class PolygonEditor implements Service {
 		if (selected.length === 0 || (event.key !== 'Delete' && event.key !== 'Backspace')) {
 			return;
 		}
-		// let a focused number input keep its own Backspace / Delete
+		// let a focused form control (a number input, the snap step select) keep its own Backspace / Delete
 		const target = event.target as HTMLElement | null;
-		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
 			return;
 		}
 
@@ -311,6 +327,7 @@ export class PolygonEditor implements Service {
 		this._pressHit = -1;
 		this._pressModifier = false;
 		this._pressScreen = null;
+		this._pressWorld = null;
 		this._moved = false;
 		if (!this._transformService.isPanModeActive) {
 			this._canvas.style.cursor = CURSOR.CROSSHAIR;

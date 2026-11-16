@@ -1,5 +1,5 @@
 import type { BoundingBox, Point } from "../../../../../interfaces/common/types";
-import type { DimensionLabelOffsetKey } from "../../../../../store/store";
+import type { DimensionLabelOffsetKey } from "../../../../../store/appSessionState";
 import {
 	PIVOT,
 	drawUprightText,

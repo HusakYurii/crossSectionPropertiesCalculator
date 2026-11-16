@@ -2,8 +2,11 @@ import { onMounted, onUnmounted } from 'vue';
 import { history } from '../store/history';
 
 const inputTags = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+// a control with this attribute has no undo of its own (the canvas snap step), so undo / redo still reach the history
+const ALLOW_HISTORY_ATTR = 'data-allow-history-shortcuts';
 const isEditingNativeInputsNow = (target: EventTarget | null) => {
 	return target instanceof HTMLElement
+		&& !target.hasAttribute(ALLOW_HISTORY_ATTR)
 		&& (target.isContentEditable || inputTags.has(target.tagName));
 }
 

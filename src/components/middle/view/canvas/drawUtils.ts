@@ -11,6 +11,15 @@ export function getScaledSize(context: CanvasRenderingContext2D, screenSize: num
 	return screenSize / zoom;
 }
 
+/**
+ * A distance in CSS px as world units. getScaledSize works in canvas px, which are `dpr` times bigger
+ * than CSS px on a Retina screen, so the canvas-to-CSS ratio is applied first.
+ */
+export function cssPxToWorld(context: CanvasRenderingContext2D, cssPx: number): number {
+	const { width, clientWidth } = context.canvas;
+	return getScaledSize(context, cssPx * width / (clientWidth || width));
+}
+
 /** Smallest box that holds all the given boxes. Nulls are skipped; null when nothing is left. */
 export function unionBoundingBoxes(boxes: Iterable<BoundingBox | null>): BoundingBox | null {
 	let minX = Infinity;

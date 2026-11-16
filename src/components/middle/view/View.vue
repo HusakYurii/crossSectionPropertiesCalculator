@@ -12,15 +12,18 @@ import { NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
 import CanvasHint from './CanvasHint.vue';
 import QuickActions from './quickActions/QuickActions.vue';
 import QuickSolverActions from './quickActions/QuickSolverActions.vue';
+import CanvasOptionsBar from './quickActions/CanvasOptionsBar.vue';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
 import { ShapeDimensionSource } from './canvas/annotations/dimensionSources/ShapeDimensionSource';
 import { CompositeSectionOverlays } from './canvas/compositeSection/CompositeSectionOverlays.ts';
 import { unionBoundingBoxes } from './canvas/drawUtils.ts';
+import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { AXIS_STYLE, CANVAS_FONT } from '../../../constants/canvasStyle.ts';
 import { MAIN_VIEW_FIT } from '../../../constants/canvasFit.ts';
 
 import { Grid, MainAxis } from './shapes';
-import { appSessionState, setSelectedShapeID, store } from '../../../store/store';
+import { store } from '../../../store/store';
+import { appSessionState, setSelectedShapeID } from '../../../store/appSessionState';
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
 import { useDimensionsWithTextLabelEdit, EDITOR_MIN_WIDTH } from './composables/useDimensionsWithTextLabelEdit';
@@ -219,7 +222,7 @@ onMounted(() => {
 	compositeOverlays = new CompositeSectionOverlays();
 
 	gridDrawTargets.add(new Grid());
-	axisDrawTargets.add(new MainAxis({ showLabels: true, labelFontSize: CANVAS_FONT.LABEL_SIZE }));
+	axisDrawTargets.add(new MainAxis({ showLabels: true, labelFontSize: CANVAS_FONT.LABEL_SIZE, labelTopReserve: AXIS_STYLE.LABEL_TOP_RESERVE }));
 
 	shapesInteractionService = new ShapesInteractionService({
 		canvas: canvasRef.value!,
@@ -229,6 +232,7 @@ onMounted(() => {
 		isTransformModeActive: () => transformService.isPanModeActive,
 		isOverOtherInteractive: (point) => getAllLabels().some((label) => label.contains(point)),
 		isOtherInteractiveDragging: () => dimensionsWithTextLabelInteractionService.isDragging,
+		getSnapStep: () => getActiveSnapStep(appSessionState.snapping),
 		onChange: requestRedraw,
 		onDragEnd: () => history.commit(),
 		setSelectedShapeID: (uid: string | null) => setSelectedShapeID(uid)
@@ -265,6 +269,7 @@ onUnmounted(() => {
 	<section class="canvas" ref="canvasWrapperRef">
 		<canvas ref="canvasRef"></canvas>
 		<QuickActions @center="scene.centerView()" @reset-zoom="scene.resetZoom()" @fit-to-screen="fitToScreen" />
+		<CanvasOptionsBar />
 		<QuickSolverActions :toggles="quickSolver.toggles" @toggle="quickSolver.toggle" />
 		<input v-if="editing" :ref="labelEditor.editorInputRef" v-model="editText" type="text" inputmode="decimal"
 			class="dimension-editor" :class="`dimension-editor--${editing.label.axis}`"
