@@ -27,8 +27,14 @@ if (createdAt) {
 	document.title = 'Cross section report – ' + createdAt.toLocaleDateString();
 }
 
-const isFem = (uid: string) => FEM_SHAPE_TYPES.has(store.geometry[uid].type);
-const solverOf = (uid: string) => (isFem(uid) ? 'FEM' : 'Simple');
+// these shapes use closed-form formulas
+const CLASSIC_SHAPE_TYPES = new Set<string>([SHAPE_TYPES.TUBE, SHAPE_TYPES.HOLLOW_TUBE]);
+const solverOf = (uid: string) => {
+	const type = store.geometry[uid].type;
+	if (FEM_SHAPE_TYPES.has(type)) return 'FEM';
+	if (CLASSIC_SHAPE_TYPES.has(type)) return 'Classic';
+	return "Green's Theorem";
+};
 const typeLabelOf = (uid: string) => SHAPE_LABELS[store.geometry[uid].type];
 const rotationOf = (uid: string) => store.geometry[uid].rotation ?? 0;
 // display only: the tube strategies do not round, the composite solver does (PRECISION = 2)
@@ -52,7 +58,7 @@ const print = () => window.print();
 		<main class="report__sheet">
 			<header class="report__header">
 				<h1>Cross section properties report</h1>
-				<p>{{ createdAt!.toLocaleString() }} · {{ uids.length }} {{ uids.length === 1 ? 'part' : 'parts' }} · Lengths in mm, angles in deg</p>
+				<p>{{ createdAt!.toLocaleString() }}</p>
 			</header>
 
 			<section>
@@ -71,11 +77,10 @@ const print = () => window.print();
 							<th>#</th>
 							<th>Name</th>
 							<th>Type</th>
-							<th>Role</th>
+							<th>Shape sign</th>
 							<th>Solver</th>
 							<th>A (mm^2)</th>
-							<th>x (mm)</th>
-							<th>y (mm)</th>
+							<th>Position (mm)</th>
 							<th>Rotation (deg)</th>
 						</tr>
 					</thead>
@@ -87,8 +92,7 @@ const print = () => window.print();
 							<td>{{ store.geometry[uid].isNegative ? 'Negative (hole)' : 'Positive' }}</td>
 							<td>{{ solverOf(uid) }}</td>
 							<td>{{ areaOf(uid) }}</td>
-							<td>{{ round(store.geometryExtra[uid].position.x) }}</td>
-							<td>{{ round(store.geometryExtra[uid].position.y) }}</td>
+							<td>{{ round(store.geometryExtra[uid].position.x) }}, {{ round(store.geometryExtra[uid].position.y) }}</td>
 							<td>{{ rotationOf(uid) }}</td>
 						</tr>
 					</tbody>
@@ -99,13 +103,9 @@ const print = () => window.print();
 			<h2 class="report__parts-title">2. Parts</h2>
 			<section v-for="(uid, index) in uids" :key="uid" class="shape-section" :class="{ 'shape-section--fem': isCustom(uid) }">
 				<h3>
-					2.{{ index + 1 }} {{ store.geometryExtra[uid].name }} — {{ typeLabelOf(uid) }}
+					2.{{ index + 1 }} {{ store.geometryExtra[uid].name }}
 					<span v-if="store.geometry[uid].isNegative" class="shape-section__badge">Negative</span>
 				</h3>
-				<p class="shape-section__meta">
-					Position (x, y) {{ round(store.geometryExtra[uid].position.x) }}, {{ round(store.geometryExtra[uid].position.y) }} mm ·
-					Rotation {{ rotationOf(uid) }} deg · Solver {{ solverOf(uid) }}
-				</p>
 
 				<template v-if="isCustom(uid)">
 					<ReportShapeCanvas :uid="uid" :width="680" :height="320" />
@@ -280,10 +280,6 @@ h3 {
 	background: var(--color-fill);
 	font-size: 11px;
 	font-weight: 600;
-}
-
-.shape-section__meta {
-	margin: 0 0 8px;
 }
 
 .shape-section__grid {

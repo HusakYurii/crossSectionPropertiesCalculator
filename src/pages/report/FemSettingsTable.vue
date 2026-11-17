@@ -15,7 +15,6 @@ const rows = computed(() => {
 		value: options[field.key],
 		defaultValue: DEFAULT_FEM_MESH_OPTIONS[field.key],
 		unit: field.unit,
-		changed: options[field.key] !== DEFAULT_FEM_MESH_OPTIONS[field.key],
 	}));
 });
 </script>
@@ -33,16 +32,10 @@ const rows = computed(() => {
 		<tbody>
 			<tr v-for="row in rows" :key="row.label">
 				<td>{{ row.label }}</td>
-				<td :class="{ 'fem-table__changed': row.changed }">{{ row.value }}</td>
+				<td>{{ row.value }}</td>
 				<td>{{ row.defaultValue }}</td>
 				<td>{{ row.unit }}</td>
 			</tr>
 		</tbody>
 	</table>
 </template>
-
-<style scoped>
-.fem-table__changed {
-	font-weight: 700;
-}
-</style>
