@@ -1,6 +1,7 @@
 import { downloadText } from "../fileLoader/downloadFiles";
 import { MIME_JSON } from "../fileLoader/mimeTypes";
 import { PROJECT_FILE_VERSION, PROJECT_SOURCE, type ProjectFile } from "./projectFile";
+import { normalizeFileName } from "../fileLoader/fileName";
 import { store } from "./store";
 import { appSessionState } from "./appSessionState";
 import { DEFAULT_QUICK_SOLVER_TOGGLES } from "../interfaces/quickSolverToggles";
@@ -42,6 +43,8 @@ export const buildProjectFile = (): ProjectFile => ({
     },
 });
 
-export const exportStoreData = () => {
-    downloadText('project.json', JSON.stringify(buildProjectFile(), null, 2), MIME_JSON);
+export const DEFAULT_PROJECT_FILE_NAME = 'project';
+
+export const exportStoreData = (fileName = DEFAULT_PROJECT_FILE_NAME) => {
+    downloadText(normalizeFileName(fileName, 'json', DEFAULT_PROJECT_FILE_NAME), JSON.stringify(buildProjectFile(), null, 2), MIME_JSON);
 }

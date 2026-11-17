@@ -16,7 +16,7 @@ import { useFemCalculation } from './composables/useFemCalculation.ts';
 import { useCustomShapeCanvas } from './composables/useCustomShapeCanvas.ts';
 import { pickCsvPoints } from './csv/pickCsvPoints.ts';
 import { DEFAULT_CSV_FILE_NAME, exportCsvPoints } from './csv/exportCsvPoints.ts';
-import CsvFileNameModal from './csv/CsvFileNameModal.vue';
+import SaveCustomShapeCSVFileModal from './csv/SaveCustomShapeCSVFileModal.vue';
 import CustomShapePointsList from './CustomShapePointsList.vue';
 import FemMeshSettings from './FemMeshSettings.vue';
 
@@ -146,7 +146,7 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 			</button>
 		</aside>
 
-		<CsvFileNameModal v-if="isExportModalOpen" :initial-name="DEFAULT_CSV_FILE_NAME"
+		<SaveCustomShapeCSVFileModal v-if="isExportModalOpen" :initial-name="DEFAULT_CSV_FILE_NAME"
 			:on-confirm="onExportConfirm" :on-reject="closeExportModal" />
 	</div>
 </template>

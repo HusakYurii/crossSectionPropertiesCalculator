@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { sanitizeCsvFileName } from './exportCsvPoints.ts';
+import { sanitizeFileName } from '../../fileLoader/fileName.ts';
 
 const props = defineProps<{
+	title: string;
+	/** without the dot, for example 'csv' */
+	extension: string;
 	initialName?: string;
 	/** called with the trimmed, non-empty name */
 	onConfirm: (name: string) => void;
@@ -15,7 +18,7 @@ const inputRef = ref<HTMLInputElement | null>(null);
 const overlayRef = ref<HTMLElement | null>(null);
 const trimmedName = computed(() => name.value.trim());
 // a name of only invalid characters would be saved under the default name, so it is not accepted
-const canConfirm = computed(() => sanitizeCsvFileName(name.value) !== '');
+const canConfirm = computed(() => sanitizeFileName(name.value, props.extension) !== '');
 
 let previousFocus: HTMLElement | null = null;
 
@@ -68,9 +71,9 @@ function onModalKeydown(event: KeyboardEvent) {
 <template>
 	<Teleport defer to=".modals-container">
 		<div ref="overlayRef" class="modal-overlay" tabindex="-1" @keydown="onModalKeydown">
-			<div class="modal" role="dialog" aria-modal="true" aria-label="Export CSV">
+			<div class="modal" role="dialog" aria-modal="true" :aria-label="props.title">
 				<div class="modal-header">
-					<span class="modal-title">Export CSV</span>
+					<span class="modal-title">{{ props.title }}</span>
 					<button type="button" class="modal-close" aria-label="Close" @click="props.onReject">✕</button>
 				</div>
 
@@ -78,7 +81,7 @@ function onModalKeydown(event: KeyboardEvent) {
 					<span class="modal-label">File name</span>
 					<span class="modal-input-box">
 						<input ref="inputRef" v-model="name" type="text" class="modal-input" aria-label="File name" />
-						<span class="modal-suffix">.csv</span>
+						<span class="modal-suffix">.{{ props.extension }}</span>
 					</span>
 				</label>
 

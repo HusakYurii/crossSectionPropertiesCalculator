@@ -1,32 +1,85 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import MenuWithDropDown from './MenuWithDropDown.vue';
+import ConfirmModal from '../ConfirmModal.vue';
+import SaveProjectModal from '../SaveProjectModal.vue';
 import {  uploadJSON } from '../../../fileLoader/uploadFile.ts';
 
 import { importStoreData, loadProjectData} from '../../../store/storeDataImporter.ts';
 import { EMPTY_PROJECT, exportStoreData } from '../../../store/storeDataExporter.ts';
 import { store } from '../../../store/store.ts';
+import { history } from '../../../store/history.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../../solvers/CompositeCrossSectionPropertiesSolver.ts';
 import { createReportSnapshot, saveReportSnapshot } from '../../../pages/report/reportSnapshot.ts';
 import { toast } from 'vue3-toastify';
 
 type ActionNames = "import" | "export" | "results" | 'new';
 
+const isNewProjectConfirmOpen = ref(false);
+const isImportConfirmOpen = ref(false);
+const isSaveProjectModalOpen = ref(false);
+
+// undo/redo can bring deleted shapes back, so the history counts too
+function hasWorkToLose() {
+	return Object.keys(store.geometry).length > 0 || history.canUndo.value || history.canRedo.value;
+}
+
+function importProject() {
+	uploadJSON((file) => {
+		importStoreData(file)
+	})
+}
+
+// runs inside the Confirm click handler: keep it synchronous so the file picker keeps user activation
+function onImportConfirm() {
+	isImportConfirmOpen.value = false;
+	importProject();
+}
+
+function onImportReject() {
+	isImportConfirmOpen.value = false;
+}
+
+function createNewProject() {
+	loadProjectData(EMPTY_PROJECT);
+	toast.info('New project created');
+}
+
+function onNewProjectConfirm() {
+	isNewProjectConfirmOpen.value = false;
+	createNewProject();
+}
+
+function onNewProjectReject() {
+	isNewProjectConfirmOpen.value = false;
+}
+
+function onSaveProjectConfirm(name: string) {
+	isSaveProjectModalOpen.value = false;
+	exportStoreData(name);
+}
+
+function onSaveProjectReject() {
+	isSaveProjectModalOpen.value = false;
+}
+
 const ACTIONS_STRATEGIES: Record<ActionNames, () => void> = {
 	new: () => {
-		const hasShapes = Object.keys(store.geometry).length > 0;
-		if (hasShapes && !window.confirm('Start a new project? Unsaved changes and the undo history will be lost.')) {
+		if (hasWorkToLose()) {
+			isNewProjectConfirmOpen.value = true;
 			return;
 		}
-		loadProjectData(EMPTY_PROJECT);
-		toast.info('New project created');
+		createNewProject();
 	},
 	import: () => {
-		uploadJSON((file ) => {
-			importStoreData(file)
-		})
+		if (hasWorkToLose()) {
+			isImportConfirmOpen.value = true;
+			return;
+		}
+		importProject();
 	},
 	export: () => {
-		exportStoreData();
+		isSaveProjectModalOpen.value = true;
 	},
 	results: () => {
 		const properties = compositeCrossSectionPropertiesSolver.calculate(store);
@@ -62,4 +115,12 @@ function onFileSelect(action: ActionNames) {
 
 <template>
 	<MenuWithDropDown title="File" :items="MAIN_MENU_ITEMS" @select="onFileSelect" />
+	<ConfirmModal v-if="isNewProjectConfirmOpen" title="New Project"
+		message="Start a new project? Unsaved changes and the undo history will be lost."
+		confirm-label="Create" :on-confirm="onNewProjectConfirm" :on-reject="onNewProjectReject" />
+	<ConfirmModal v-if="isImportConfirmOpen" title="Import Project"
+		message="Importing a project will replace the current one. Unsaved changes and the undo history will be lost."
+		confirm-label="Import" :on-confirm="onImportConfirm" :on-reject="onImportReject" />
+	<SaveProjectModal v-if="isSaveProjectModalOpen" :on-confirm="onSaveProjectConfirm"
+		:on-reject="onSaveProjectReject" />
 </template>
