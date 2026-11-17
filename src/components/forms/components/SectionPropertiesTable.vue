@@ -37,7 +37,9 @@ const ROWS: { key: keyof CrossSectionProperties; notation: string; label: string
 ];
 
 function valueFor(key: keyof CrossSectionProperties) {
-	return props.properties?.[key] ?? '—';
+	const value = props.properties?.[key];
+	// a missing value or NaN (no real radius for a negative inertia) shows as a dash
+	return value === undefined || !Number.isFinite(value) ? '—' : value;
 }
 
 function unitFor(key: keyof CrossSectionProperties) {

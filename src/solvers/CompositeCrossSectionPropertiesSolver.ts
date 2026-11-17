@@ -7,7 +7,7 @@ import type { OSectionGeometry } from "../interfaces/beams/OSection.types";
 import { principalAxisAngleRad } from "./propertyStrategies/greenTheoremCalculator";
 import { RESULT_PRECISION } from "../constants/geometryTolerances";
 
-export type CompositeSolveErrorCode = 'no-shapes' | 'no-area' | 'holes-outside';
+export type CompositeSolveErrorCode = 'no-shapes' | 'no-area';
 
 export type CompositeSolveResult = { properties: CrossSectionProperties } | { error: string; code: CompositeSolveErrorCode };
 
@@ -65,11 +65,6 @@ export class CompositeCrossSectionPropertiesSolver {
 		const I_u = traceOver2 + radius;
 		const I_v = traceOver2 - radius;
 
-		// holes can leave a positive area but take away more inertia than there is, which would make the radii NaN
-		if (Ix <= 0 || Iy <= 0 || I_v < 0) {
-			return { error: 'Negative shapes must lie inside the positive shapes.', code: 'holes-outside' };
-		}
-
 		let x_min = Infinity, x_max = -Infinity, y_min = Infinity, y_max = -Infinity;
 		for (const { properties, position, polygon, geometry, sign } of parts) {
 			if (sign < 0 || properties.A <= 0) {
@@ -97,6 +92,9 @@ export class CompositeCrossSectionPropertiesSolver {
 		const c_rt = x_max - centroid_x;
 		const c_lf = centroid_x - x_min;
 
+		// an impossible layout with a negative inertia has no real radius, section modulus or polar moment: NaN, shown as "—"
+		const gyrationRadius = (inertia: number) => inertia >= 0 ? Math.sqrt(inertia / A) : NaN;
+		const sectionModulus = (inertia: number, c: number) => inertia < 0 ? NaN : c > 0 ? inertia / c : 0;
 		const round = (value: number) => parseFloat(value.toFixed(RESULT_PRECISION.SECTION_PROPERTIES)) + 0;
 
 		const properties: CrossSectionProperties = {
@@ -109,15 +107,15 @@ export class CompositeCrossSectionPropertiesSolver {
 			theta_p_deg: round(radToDeg(theta_p_rad)),
 			I_u: round(I_u),
 			I_v: round(I_v),
-			Ip: round(Ix + Iy),
-			rx: round(Math.sqrt(Ix / A)),
-			ry: round(Math.sqrt(Iy / A)),
-			r_u: round(Math.sqrt(I_u / A)),
-			r_v: round(Math.sqrt(I_v / A)),
-			Wx_top: round(c_top > 0 ? Ix / c_top : 0),
-			Wx_bot: round(c_bot > 0 ? Ix / c_bot : 0),
-			Wy_rt: round(c_rt > 0 ? Iy / c_rt : 0),
-			Wy_lf: round(c_lf > 0 ? Iy / c_lf : 0),
+			Ip: round(Ix + Iy < 0 ? NaN : Ix + Iy),
+			rx: round(gyrationRadius(Ix)),
+			ry: round(gyrationRadius(Iy)),
+			r_u: round(gyrationRadius(I_u)),
+			r_v: round(gyrationRadius(I_v)),
+			Wx_top: round(sectionModulus(Ix, c_top)),
+			Wx_bot: round(sectionModulus(Ix, c_bot)),
+			Wy_rt: round(sectionModulus(Iy, c_rt)),
+			Wy_lf: round(sectionModulus(Iy, c_lf)),
 		};
 		return { properties };
 	}

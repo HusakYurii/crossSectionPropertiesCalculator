@@ -4,6 +4,7 @@ import { isPointInPolygon } from "../../../../solvers/poligonUtils/polygonInters
 import type { Geometry } from "../../../../interfaces/beams/common.types";
 import type { Store } from "../../../../store/store";
 import { drawOriginCross, getScaledSize } from "../canvas/drawUtils";
+import { CrossHatch } from "../canvas/CrossHatch";
 import { BEAM_STYLE, ORIGIN_CROSS_STYLE } from "../../../../constants/canvasStyle";
 
 export { getScaledSize } from "../canvas/drawUtils";
@@ -26,6 +27,8 @@ export interface GenericBeamViewParams {
 export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarget {
 
 	public showDebug: boolean = false;
+	// negative shapes are cross-hatched; a view can turn it off (e.g. the form preview)
+	public showHatching: boolean = true;
 	public uid: string;
 
 	protected _store: Store;
@@ -37,6 +40,11 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 	 */
 	protected _cachedPathPoints: Point[];
 	protected _cachedBoundingBox: BoundingBox;
+
+	/** how the path is filled and clipped: even-odd leaves the holes of the hollow shapes empty */
+	protected _fillRule: CanvasFillRule = 'nonzero';
+
+	private static _crossHatch = new CrossHatch();
 
 	constructor(params: GenericBeamViewParams) {
 		this.uid = params.uid;
@@ -73,38 +81,60 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 
 	draw(props: { context: CanvasRenderingContext2D; isHovered?: boolean, isSelected?: boolean; }): void {
 		this._recalculateAndCacheShapeData();
-
-		const strokeStyle = props.context.strokeStyle;
-		const fillStyle = props.context.fillStyle;
-		const lineWidth = props.context.lineWidth;
-
-		props.context.beginPath();
-		props.context.moveTo(this._cachedPathPoints[0].x, this._cachedPathPoints[0].y);
-
-		for (let i = 1; i < this._cachedPathPoints.length; i++) {
-			props.context.lineTo(this._cachedPathPoints[i].x, this._cachedPathPoints[i].y);
-
+		if (this._cachedPathPoints.length === 0) {
+			return;
 		}
 
-		props.context.closePath();
+		const { context } = props;
+		// one Path2D for fill, clip and stroke: save()/restore() do not keep the context's current path
+		const path = this._buildPath();
 
-		props.context.fillStyle = this._geometryConfig.isNegative ?
+		context.save();
+
+		context.fillStyle = this.isNegative ?
 			GenericBeamView.getNegativeAreaFillStyle(props) :
 			GenericBeamView.getFillStyle(props);
+		context.fill(path, this._fillRule);
 
-		props.context.fill();
+		if (this.isNegative && this.showHatching) {
+			GenericBeamView._crossHatch.draw(context, {
+				path,
+				fillRule: this._fillRule,
+				bounds: this._getHatchBounds(),
+				extent: this._getHatchExtent(),
+				anchor: this.position,
+			});
+		}
 
-		props.context.strokeStyle = 'black';
-		props.context.lineWidth = getScaledLineWidth(props.context);
+		context.strokeStyle = 'black';
+		context.lineWidth = getScaledLineWidth(context);
+		context.stroke(path);
 
-		props.context.stroke();
+		context.restore();
 
+		drawOriginCross(context, this.position, ORIGIN_CROSS_STYLE.COLOR, ORIGIN_CROSS_STYLE.SIZE, ORIGIN_CROSS_STYLE.LINE_WIDTH);
+	}
 
-		props.context.strokeStyle = strokeStyle;
-		props.context.fillStyle = fillStyle;
-		props.context.lineWidth = lineWidth;
+	/** The outline of the shape. Subclasses override it (with _fillRule) when it is not the polygon of _cachedPathPoints. */
+	protected _buildPath(): Path2D {
+		const path = new Path2D();
+		path.moveTo(this._cachedPathPoints[0].x, this._cachedPathPoints[0].y);
+		for (let i = 1; i < this._cachedPathPoints.length; i++) {
+			path.lineTo(this._cachedPathPoints[i].x, this._cachedPathPoints[i].y);
+		}
+		path.closePath();
+		return path;
+	}
 
-		drawOriginCross(props.context, this.position, ORIGIN_CROSS_STYLE.COLOR, ORIGIN_CROSS_STYLE.SIZE, ORIGIN_CROSS_STYLE.LINE_WIDTH);
+	/** The area the cross-hatch has to cover. */
+	protected _getHatchBounds(): BoundingBox {
+		return this._cachedBoundingBox;
+	}
+
+	/** Width of the shape across the 45deg hatch lines, in world units. */
+	protected _getHatchExtent(): number {
+		const bbox = this._getHatchBounds();
+		return (bbox.width + bbox.height) / Math.SQRT2;
 	}
 
 	drawDebug(props: { context: CanvasRenderingContext2D }): void {

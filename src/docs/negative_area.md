@@ -5,6 +5,8 @@ Every shape on the canvas is either **positive** or **negative**. A new shape is
 *   A **positive shape** adds material to the section.
 *   A **negative shape** removes material. Use it for cut-outs and holes, for example fastener holes or lightening holes.
 
+On the canvas and in the report, a negative shape is drawn with red cross-hatching, so you can tell it from a positive one at a glance. The hatching follows the outline of the shape and leaves the hole of a hollow shape empty. The preview in the shape's form does not hatch the shape.
+
 ## How it is used in the math
 
 Each shape has a sign $s_i$: $+1$ for a positive shape and $-1$ for a negative one. The sign multiplies everything the shape contributes to the whole section:
@@ -28,4 +30,4 @@ The math treats every shape on its own and does not intersect or clip the shapes
 2.  **Negative shapes must not overlap each other.** Each one is subtracted in full, so the math subtracts the overlap twice.
 3.  **A cut-out that removes a whole outer strip** of a positive shape makes the section modulus on that side too small, because the math still takes the outermost fiber from the positive shape, so $c$ is too large.
 
-The math only checks the totals. It shows an error if $A \le 0$, $I_x \le 0$, $I_y \le 0$, or the smallest principal moment of inertia $I_v < 0$. A negative shape outside the positive shapes often keeps these totals valid, so there is no error and the results are wrong without any warning.
+The math does not check the layout. It only shows an error if $A \le 0$. A negative shape outside the positive shapes gives wrong results without any warning.

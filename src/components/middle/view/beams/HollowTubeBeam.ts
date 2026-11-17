@@ -1,5 +1,6 @@
 import type { OSectionHollowGeometry } from "../../../../interfaces/beams/OSection.types";
-import { GenericBeamView, getScaledLineWidth } from "./GenericBeamView";
+import type { BoundingBox } from "../../../../interfaces/common/types";
+import { GenericBeamView } from "./GenericBeamView";
 
 
 /**
@@ -7,38 +8,33 @@ import { GenericBeamView, getScaledLineWidth } from "./GenericBeamView";
  */
 export class HollowTubeBeam extends GenericBeamView<OSectionHollowGeometry> {
 
-	override draw(props: { context: CanvasRenderingContext2D; isHovered?: boolean, isSelected?: boolean; }): void {
-		this._recalculateAndCacheShapeData();
+	protected override _fillRule: CanvasFillRule = 'evenodd';
 
+	protected override _buildPath(): Path2D {
 		const D = this._geometryConfig.d1;
 		const d = this._geometryConfig.d2;
 		const { x: cx, y: cy } = this.position;
 
-		const strokeStyle = props.context.strokeStyle;
-		const fillStyle = props.context.fillStyle;
-		const lineWidth = props.context.lineWidth;
-
 		// both circles go into one path and an even-odd fill leaves the hole empty,
 		// without erasing whatever is drawn behind it (grid, axes)
-		props.context.beginPath();
-		props.context.arc(cx, cy, D / 2, 0, Math.PI * 2);
-		props.context.closePath();
-		props.context.moveTo(cx + d / 2, cy);
-		props.context.arc(cx, cy, d / 2, 0, Math.PI * 2);
-		props.context.closePath();
+		const path = new Path2D();
+		path.arc(cx, cy, D / 2, 0, Math.PI * 2);
+		path.closePath();
+		path.moveTo(cx + d / 2, cy);
+		path.arc(cx, cy, d / 2, 0, Math.PI * 2);
+		path.closePath();
+		return path;
+	}
 
-		props.context.fillStyle = this._geometryConfig.isNegative ?
-			GenericBeamView.getNegativeAreaFillStyle(props) :
-			GenericBeamView.getFillStyle(props);
-		props.context.fill('evenodd');
+	// the polygon can be shorter than the true circle, so the hatch covers the circle's box instead
+	protected override _getHatchBounds(): BoundingBox {
+		const D = this._geometryConfig.d1;
+		const { x: cx, y: cy } = this.position;
+		return { x: cx - D / 2, y: cy - D / 2, width: D, height: D };
+	}
 
-		props.context.strokeStyle = 'black';
-		props.context.lineWidth = getScaledLineWidth(props.context);
-		props.context.stroke();
-
-		props.context.strokeStyle = strokeStyle;
-		props.context.fillStyle = fillStyle;
-		props.context.lineWidth = lineWidth;
-
+	// a circle is as wide across the hatch lines as it is in any direction
+	protected override _getHatchExtent(): number {
+		return this._geometryConfig.d1;
 	}
 }

@@ -12,7 +12,7 @@ export class MeshView implements DrawTarget {
 	private _triangles: Triangle[];
 	private _screenLineWidth?: number;
 
-	/** `screenLineWidth` keeps the lines one width at any zoom; without it they are 0.2 in world units */
+	/** `screenLineWidth` keeps the lines one width at any zoom; without it they are MESH_STYLE.LINE_WIDTH in world units */
 	constructor(triangles: Triangle[], options: { screenLineWidth?: number } = {}) {
 		this._triangles = triangles;
 		this._screenLineWidth = options.screenLineWidth;
@@ -26,9 +26,11 @@ export class MeshView implements DrawTarget {
 		const { context } = props;
 		const strokeStyle = context.strokeStyle;
 		const lineWidth = context.lineWidth;
+		const lineJoin = context.lineJoin;
 
 		context.strokeStyle = MESH_STYLE.STROKE;
-		context.lineWidth = this._screenLineWidth === undefined ? 0.2 : getScaledSize(context, this._screenLineWidth);
+		context.lineWidth = this._screenLineWidth === undefined ? MESH_STYLE.LINE_WIDTH : getScaledSize(context, this._screenLineWidth);
+		context.lineJoin = 'round';
 
 		for (const [a, b, c] of this._triangles) {
 			context.beginPath();
@@ -41,6 +43,7 @@ export class MeshView implements DrawTarget {
 
 		context.strokeStyle = strokeStyle;
 		context.lineWidth = lineWidth;
+		context.lineJoin = lineJoin;
 	}
 
 	drawDebug(_props: { context: CanvasRenderingContext2D }): void {

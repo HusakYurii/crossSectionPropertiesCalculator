@@ -135,11 +135,25 @@ export const BEAM_STYLE = {
 		SELECTED: '#fc9272',
 		NONE: '#ffffff',
 	},
+	/** the cross-hatching of negative shapes */
+	NEGATIVE_HATCH: {
+		COLOR: '#cb181d',
+		/** fewest lines across a shape */
+		MIN_LINES: 10,
+		/** lines = DENSITY * sqrt(size in mm): 100 mm -> 20 lines, 400 mm -> 40 */
+		DENSITY: 2,
+		/** the densest the hatch gets when a shape is tiny on screen, in CSS px */
+		MIN_SPACING: 1.5,
+		/** in screen px */
+		LINE_WIDTH: 1,
+	},
 } as const;
 
 /** The FEM mesh lines. */
 export const MESH_STYLE = {
 	STROKE: 'rgba(0, 110, 255, 1)',
+	/** in world units, for the editor canvas */
+	LINE_WIDTH: 0.13,
 	/** in device pixels, like every size getScaledSize() returns: half a CSS pixel at RENDER_SCALE 2 */
 	REPORT_LINE_WIDTH: 1,
 } as const;

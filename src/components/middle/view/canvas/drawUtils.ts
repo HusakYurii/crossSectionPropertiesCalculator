@@ -16,8 +16,10 @@ export function getScaledSize(context: CanvasRenderingContext2D, screenSize: num
  * than CSS px on a Retina screen, so the canvas-to-CSS ratio is applied first.
  */
 export function cssPxToWorld(context: CanvasRenderingContext2D, cssPx: number): number {
-	const { width, clientWidth } = context.canvas;
-	return getScaledSize(context, cssPx * width / (clientWidth || width));
+	const { width, clientWidth, style } = context.canvas;
+	// an offscreen canvas (the report) has no layout, so its CSS width is read from the style Canvas.resize sets
+	const cssWidth = clientWidth || parseFloat(style.width) || width;
+	return getScaledSize(context, cssPx * width / cssWidth);
 }
 
 /** Smallest box that holds all the given boxes. Nulls are skipped; null when nothing is left. */

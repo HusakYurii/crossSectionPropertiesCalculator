@@ -114,13 +114,9 @@ $$I_v = \frac{I_x + I_y}{2} - \sqrt{\left(\frac{I_x - I_y}{2}\right)^2 + I_{xy}^
 
 ---
 
-## 8. Validity check
+## 8. No layout check
 
-Negative shapes can leave a positive area $A$ and still take away more inertia than the positive shapes have (for example a negative shape that lies outside the positive shapes). The algorithm checks the totals before going on:
-
-$$I_x \le 0 \quad\text{or}\quad I_y \le 0 \quad\text{or}\quad I_v < 0$$
-
-If any of these is true, the algorithm shows an error message and returns $0$ for every result. Without this check the radii of gyration would be the square root of a negative number.
+Negative shapes can leave a positive area $A$ and still take away more inertia than the positive shapes have (for example a negative shape that lies outside the positive shapes). The algorithm does not check for this, because the layout is up to you. The results are then wrong without any error. Only some results are limited: where $I$ is negative, there is no real square root, so the radius of gyration is shown as "—". The section moduli $W$ are shown as "—" when their $I$ is negative, and the polar moment $I_p$ when $I_x + I_y$ is negative.
 
 ---
 
@@ -182,10 +178,9 @@ The algorithm itself works at full floating point precision, and only the final 
 3.  Find the centroid $(\bar{x}, \bar{y})$ (section 4).
 4.  Find $d_{x,i}$, $d_{y,i}$ and sum $I_x$, $I_y$, $I_{xy}$ with the parallel axis theorem (sections 5 and 6).
 5.  Find $\theta_p$, $I_u$, $I_v$ (section 7).
-6.  Stop with an error if $I_x \le 0$, $I_y \le 0$ or $I_v < 0$ (section 8).
-7.  Find $I_p$ and the radii of gyration (sections 9 and 10).
-8.  Find the extreme fibers of the positive shapes and the section moduli (section 11).
-9.  Round the results (section 12).
+6.  Find $I_p$ and the radii of gyration (sections 9 and 10).
+7.  Find the extreme fibers of the positive shapes and the section moduli (section 11).
+8.  Round the results (section 12).
 
 ### Worked example: T-section from two rectangles
 
