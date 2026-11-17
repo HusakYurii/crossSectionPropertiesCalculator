@@ -308,6 +308,12 @@ export class PolygonEditor implements Service {
 		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
 			return;
 		}
+		// a dialog on top of the editor (the CSV file name) must not delete points behind it; its overlay
+		// can hold the focus too (a click on the backdrop), so that counts as the dialog
+		const dialog = target?.closest('[aria-modal="true"], .modal-overlay');
+		if (dialog && !dialog.contains(this._canvas)) {
+			return;
+		}
 
 		// highest first, so the indices still to remove do not shift
 		const points = this._getPoints();

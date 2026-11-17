@@ -27,8 +27,8 @@ defineEmits<{
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 32px;
-	height: 32px;
+	width: 26px;
+	height: 26px;
 	padding: 0;
 	border: 1px solid var(--color-border-subtle);
 	border-radius: 0;
@@ -39,22 +39,22 @@ defineEmits<{
 
 /* 30% more opaque than the shared --color-fill-hover / -strong / -strong-hover, so the canvas shows through less */
 .quick-action-button:hover {
-	background: rgb(var(--color-text-rgb) / 0.21);
+	background: rgb(var(--color-text-rgb) / 0.15);
 }
 
 /* a toggle that is on; the hover is darker still so it keeps showing */
 .quick-action-button.is-active {
-	background: rgb(var(--color-text-rgb) / 0.26);
+	background: rgb(var(--color-text-rgb) / 0.15);
 }
 
 .quick-action-button.is-active:hover {
-	background: rgb(var(--color-text-rgb) / 0.31);
+	background: rgb(var(--color-text-rgb) / 0.20);
 }
 
 .quick-action-button__icon {
 	display: block;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 }
 
 /*

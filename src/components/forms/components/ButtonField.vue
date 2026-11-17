@@ -2,10 +2,11 @@
 defineProps<{
 	/** the small label above the box, like the other fields */
 	label: string;
-	/** the text on the button inside the box */
-	buttonText: string;
+	/** the text on the button inside the box; not needed when the default slot brings its own buttons */
+	buttonText?: string;
 	/** aria-label of the "?" next to the label */
 	infoLabel?: string;
+	disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -24,7 +25,9 @@ const emit = defineEmits<{
 			</span>
 		</span>
 		<span class="field__input">
-			<button type="button" class="field__button" @click="emit('click')">{{ buttonText }}</button>
+			<slot>
+				<button type="button" class="field__button" :disabled="disabled" @click="emit('click')">{{ buttonText }}</button>
+			</slot>
 		</span>
 	</div>
 </template>
@@ -83,7 +86,8 @@ const emit = defineEmits<{
 }
 
 /* the same light gray as the other buttons in the project (Clear, Reset); it fills the frame above */
-.field__button {
+.field__button,
+.field__input :slotted(button) {
 	flex: 1;
 	min-width: 0;
 	border: none;
@@ -97,7 +101,20 @@ const emit = defineEmits<{
 	cursor: pointer;
 }
 
-.field__button:hover {
+.field__button:hover:not(:disabled),
+.field__input :slotted(button:hover:not(:disabled)) {
 	background: var(--color-fill-hover);
+}
+
+/* buttons side by side in one box get a thin line between them */
+.field__input :slotted(button + button) {
+	border-left: 1px solid var(--color-border-subtle);
+}
+
+/* dimmed and dead, so there is nothing to click when the action has no data */
+.field__button:disabled,
+.field__input :slotted(button:disabled) {
+	opacity: 0.5;
+	cursor: default;
 }
 </style>

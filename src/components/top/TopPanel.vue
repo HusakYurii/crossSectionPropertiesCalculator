@@ -27,6 +27,7 @@ defineProps<{inert: boolean}>()
 	gap: 0;
 	padding: 0;
 	overflow: visible;
-	background: var(--color-surface-chrome);
+	background: var(--color-surface-top);
+	border-bottom: 2px solid #e8e8e8;
 }
 </style>

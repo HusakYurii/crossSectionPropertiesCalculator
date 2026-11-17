@@ -10,9 +10,8 @@ import { DrawTargetsCollection } from './canvas/DrawTargetsCollection.ts';
 import { CanvasScene } from './canvas/CanvasScene';
 import { NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
 import CanvasHint from './CanvasHint.vue';
-import QuickActions from './quickActions/QuickActions.vue';
+import QuickActionsBar from './quickActions/QuickActionsBar.vue';
 import QuickSolverActions from './quickActions/QuickSolverActions.vue';
-import CanvasOptionsBar from './quickActions/CanvasOptionsBar.vue';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
 import { ShapeDimensionSource } from './canvas/annotations/dimensionSources/ShapeDimensionSource';
 import { CompositeSectionOverlays } from './canvas/compositeSection/CompositeSectionOverlays.ts';
@@ -266,23 +265,36 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<section class="canvas" ref="canvasWrapperRef">
-		<canvas ref="canvasRef"></canvas>
-		<QuickActions @center="scene.centerView()" @reset-zoom="scene.resetZoom()" @fit-to-screen="fitToScreen" />
-		<CanvasOptionsBar />
-		<QuickSolverActions :toggles="quickSolver.toggles" @toggle="quickSolver.toggle" />
-		<input v-if="editing" :ref="labelEditor.editorInputRef" v-model="editText" type="text" inputmode="decimal"
-			class="dimension-editor" :class="`dimension-editor--${editing.label.axis}`"
-			:style="{ left: `${editorPosition.left}px`, top: `${editorPosition.top}px`, width: `max(${EDITOR_MIN_WIDTH}px, ${editText.length + 2}ch)` }"
-			aria-label="Dimension value" @keydown="onEditorKeyDown" @wheel.prevent="onEditorWheel" />
-		<CanvasHint :items="HINTS" />
+	<section class="view">
+		<QuickActionsBar @center="scene.centerView()" @reset-zoom="scene.resetZoom()" @fit-to-screen="fitToScreen">
+			<QuickSolverActions :toggles="quickSolver.toggles" @toggle="quickSolver.toggle" />
+		</QuickActionsBar>
+		<div class="canvas" ref="canvasWrapperRef">
+			<canvas ref="canvasRef"></canvas>
+			<input v-if="editing" :ref="labelEditor.editorInputRef" v-model="editText" type="text" inputmode="decimal"
+				class="dimension-editor" :class="`dimension-editor--${editing.label.axis}`"
+				:style="{ left: `${editorPosition.left}px`, top: `${editorPosition.top}px`, width: `max(${EDITOR_MIN_WIDTH}px, ${editText.length + 2}ch)` }"
+				aria-label="Dimension value" @keydown="onEditorKeyDown" @wheel.prevent="onEditorWheel" />
+			<CanvasHint :items="HINTS" />
+		</div>
 	</section>
 </template>
 
 <style scoped>
+/* the view: the canvas fills it and the quick actions bar floats over its top center */
+.view {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* the area the canvas fills; no border or padding, because the canvas is sized from its border box */
 .canvas {
 	position: relative;
-	height: 100%;
+	flex: 1;
 	min-height: 0;
 	overflow: hidden;
 	background: var(--color-surface-canvas);

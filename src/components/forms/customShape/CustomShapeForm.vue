@@ -15,6 +15,8 @@ import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from '../compos
 import { useFemCalculation } from './composables/useFemCalculation.ts';
 import { useCustomShapeCanvas } from './composables/useCustomShapeCanvas.ts';
 import { pickCsvPoints } from './csv/pickCsvPoints.ts';
+import { DEFAULT_CSV_FILE_NAME, exportCsvPoints } from './csv/exportCsvPoints.ts';
+import CsvFileNameModal from './csv/CsvFileNameModal.vue';
 import CustomShapePointsList from './CustomShapePointsList.vue';
 import FemMeshSettings from './FemMeshSettings.vue';
 
@@ -89,6 +91,17 @@ function importCsv() {
 	});
 }
 
+const isExportModalOpen = ref(false);
+
+function closeExportModal() {
+	isExportModalOpen.value = false;
+}
+
+function onExportConfirm(name: string) {
+	closeExportModal();
+	exportCsvPoints(name, geometry.points);
+}
+
 function openCsvInfo() {
 	openInfoPanel('whatIsCustomShapeCsvFormat');
 }
@@ -107,7 +120,7 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 	<div class="custom-shape">
 		<div class="custom-shape__canvas" ref="wrapperRef">
 			<canvas ref="canvasRef"></canvas>
-			<SnapControl class="custom-shape__snap" compact />
+			<SnapControl class="custom-shape__snap" />
 			<CanvasHint :items="HINTS" />
 		</div>
 
@@ -115,8 +128,11 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 			<div class="custom-shape__options">
 				<IsNegativeField v-model="geometry.isNegative" />
 
-				<ButtonField label="CSV file" button-text="Import" info-label="CSV import info" @click="importCsv"
-					@info="openCsvInfo" />
+				<ButtonField label="CSV file" info-label="CSV file info" @info="openCsvInfo">
+					<button type="button" :disabled="geometry.points.length === 0"
+						@click="isExportModalOpen = true">Export</button>
+					<button type="button" @click="importCsv">Import</button>
+				</ButtonField>
 			</div>
 
 			<CustomShapePointsList v-model:points="geometry.points" v-model:selected-indices="selectedIndices"
@@ -129,6 +145,9 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 				{{ isCalculating ? 'Calculating...' : 'Calculate with FEM' }}
 			</button>
 		</aside>
+
+		<CsvFileNameModal v-if="isExportModalOpen" :initial-name="DEFAULT_CSV_FILE_NAME"
+			:on-confirm="onExportConfirm" :on-reject="closeExportModal" />
 	</div>
 </template>
 

@@ -11,9 +11,11 @@
   --toastify-font-family: var(--font-family);
 
   /* ---- Surfaces ---- */
-  /* Side panels: left & right */
-  --color-surface-sidebar: #e4e6ea;
-  /* Chrome panels: top & assets, modals, menus */
+  /* Side panels: left & right (20% darker than the #e4e6ea they had) */
+  --color-surface-sidebar: #f7f7f7;
+  /* The top panel with the menus (20% darker than the chrome color it had) */
+  --color-surface-top: #f0f0f0;
+  /* Chrome: assets, modals, menus, the buttons over the canvas */
   --color-surface-chrome: #f0f1f4;
   /* Main workspace and the inputs that sit on it */
   --color-surface-canvas: #fafbfc;
@@ -25,11 +27,11 @@
   --color-border-subtle: #d5d8de;
 
   /* ---- Fills: the ink color at different strengths, for buttons, hovers and pills ---- */
-  --color-fill-faint: rgb(var(--color-text-rgb) / 0.06);
+  --color-fill-faint: rgb(var(--color-text-rgb) / 0.1);
   --color-fill: rgb(var(--color-text-rgb) / 0.08);
   --color-fill-active: rgb(var(--color-text-rgb) / 0.12);
   --color-fill-disabled: rgb(var(--color-text-rgb) / 0.15);
-  --color-fill-hover: rgb(var(--color-text-rgb) / 0.16);
+  --color-fill-hover: rgb(var(--color-text-rgb) / 0.1);
   --color-fill-strong: rgb(var(--color-text-rgb) / 0.2);
   --color-fill-strong-hover: rgb(var(--color-text-rgb) / 0.24);
 
