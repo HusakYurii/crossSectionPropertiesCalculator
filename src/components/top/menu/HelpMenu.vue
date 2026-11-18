@@ -12,11 +12,12 @@ const HELP_ITEMS: NestedMenuLevel<string> = {
 					{ value: INFO_TOPICS.whatIsGreensTheoremSolver, label: "Green's Theorem" },
 					{ value: INFO_TOPICS.whatIsCompositeSolver, label: "Composite Section Calculator" },
 					{ value: INFO_TOPICS.whatIsClassicSolver, label: "Classic Section Calculator" },
-			]
+				]
 			}},
 			
 			{ value: INFO_TOPICS.whatIsNegativeArea, label: 'Negative / Positive Area' },
 			{ value: INFO_TOPICS.whatIsCustomShapeCsvFormat, label: 'CSV File For Custom Shape' },
+			{ value: INFO_TOPICS.navigationAndShortcuts, label: 'Navigation & Shortcuts' },
 			{ value: INFO_TOPICS.aboutThisApp, label: 'About' },
 		],
 		onSelect: openInfoPanel

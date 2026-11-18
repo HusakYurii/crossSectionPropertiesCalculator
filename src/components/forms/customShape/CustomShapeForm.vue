@@ -2,8 +2,6 @@
 import { computed, ref } from 'vue';
 import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CustomShapeGeometry } from '../../../interfaces/beams/CustomShape.types.ts';
-import { NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
-import CanvasHint from '../../middle/view/CanvasHint.vue';
 import SnapControl from '../../middle/view/quickActions/snap/SnapControl.vue';
 import { appSessionState } from '../../../store/appSessionState.ts';
 import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
@@ -66,8 +64,6 @@ const OUTDATED_HINT = 'The shape or the mesh settings changed. Calculate again t
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const wrapperRef = ref<HTMLDivElement | null>(null);
 
-const HINTS = ['Click to add a point', 'drag a point to move it', 'drag on empty canvas to select points', 'Cmd/Ctrl+click to add to the selection', ...NAVIGATION_HINTS];
-
 const { fitView, requestRedraw } = useCustomShapeCanvas({
 	canvasRef,
 	wrapperRef,
@@ -121,7 +117,6 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 		<div class="custom-shape__canvas" ref="wrapperRef">
 			<canvas ref="canvasRef"></canvas>
 			<SnapControl class="custom-shape__snap" />
-			<CanvasHint :items="HINTS" />
 		</div>
 
 		<aside class="custom-shape__side">

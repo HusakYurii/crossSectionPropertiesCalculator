@@ -1,6 +1,7 @@
 import { reactive } from 'vue';
 
 export const INFO_TOPICS = {
+	navigationAndShortcuts: 'navigationAndShortcuts',
 	whatIsNegativeArea: 'whatIsNegativeArea',
 	whatIsGreensTheoremSolver: 'whatIsGreensTheoremSolver',
 	whatIsFEMSolver: 'whatIsFEMSolver',

@@ -4,6 +4,7 @@ import WhatIsGreensTheoremSolver from './WhatIsGreensTheoremSolver.vue';
 import WhatIsFEMSolver from './WhatIsFEMSolver.vue';
 import WhatIsCustomShapeCsvFormat from './WhatIsCustomShapeCsvFormat.vue';
 import AboutThisApp from './AboutThisApp.vue';
+import NavigationAndShortcuts from './NavigationAndShortcuts.vue';
 import WhatIsCompositeSolver from './WhatIsCompositeSolver.vue';
 import WhatIsClassicSolver from './WhatIsClassicSolver.vue';
 </script>
@@ -16,4 +17,5 @@ import WhatIsClassicSolver from './WhatIsClassicSolver.vue';
 	<WhatIsFEMSolver />
 	<WhatIsCustomShapeCsvFormat />
 	<AboutThisApp />
+	<NavigationAndShortcuts />
 </template>

@@ -9,9 +9,6 @@ export const CURSOR = {
 /** screen pixels the mouse must travel after a press before it becomes a drag, so click jitter moves nothing */
 export const DRAG_THRESHOLD = 3;
 
-/** the gestures every canvas shares; a canvas puts its own gestures in front of these */
-export const NAVIGATION_HINTS = ['Shift locks to horizontal / vertical', 'Right mouse pans', 'Wheel zooms'];
-
 /** The drawn grid. Its spacing follows the zoom, see getGridSpacing. */
 export const GRID = {
 	/** the finest spacing, in world units (mm) */

@@ -8,8 +8,6 @@ import {
 import { BeamsDrawTargetCollection } from './canvas/BeamsDrawTargetCollection.ts';
 import { DrawTargetsCollection } from './canvas/DrawTargetsCollection.ts';
 import { CanvasScene } from './canvas/CanvasScene';
-import { NAVIGATION_HINTS } from '../../../constants/canvasInteraction.ts';
-import CanvasHint from './CanvasHint.vue';
 import QuickActionsBar from './quickActions/QuickActionsBar.vue';
 import QuickSolverActions from './quickActions/QuickSolverActions.vue';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
@@ -40,8 +38,6 @@ let compositeLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
 let compositeOverlays: CompositeSectionOverlays;
 let shapesInteractionService: ShapesInteractionService;
 let dimensionsWithTextLabelInteractionService: DimensionsWithTextLabelInteractionService;
-
-const HINTS = ['Drag a beam to move it', ...NAVIGATION_HINTS];
 
 const fitToScreen = () => {
 	const beamBounds = unionBoundingBoxes(beamsDrawTargets.getTargets().map(beam => beam.boundingBox));
@@ -282,7 +278,6 @@ onUnmounted(() => {
 				class="dimension-editor" :class="`dimension-editor--${editing.label.axis}`"
 				:style="{ left: `${editorPosition.left}px`, top: `${editorPosition.top}px`, width: `max(${EDITOR_MIN_WIDTH}px, ${editText.length + 2}ch)` }"
 				aria-label="Dimension value" @keydown="onEditorKeyDown" @wheel.prevent="onEditorWheel" />
-			<CanvasHint :items="HINTS" />
 		</div>
 	</section>
 </template>
