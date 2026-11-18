@@ -15,7 +15,7 @@ import { DrawTargetsCollection, type DrawableTarget } from '../../middle/view/ca
 import { buildAnnotations } from './shapeRegistry';
 import { PropertyOverlays } from '../../middle/view/canvas/propertiesHelperPreviews';
 import { degToRad } from '../../../mathUtils/anglesMath';
-import { Grid } from '../../middle/view/shapes';
+import { Grid, ScaleBar } from '../../middle/view/shapes';
 import { SHAPE_PREVIEW_FIT } from '../../../constants/canvasFit';
 
 const props = defineProps<{
@@ -54,6 +54,7 @@ let axisTargets: DrawTargetsCollection<DrawableTarget>;
 // the preview draws the shape centered on its centroid, which is the world origin, and the beam draws the centroid cross
 const overlays = new PropertyOverlays();
 let annotations: DrawTargetsCollection<DrawableTarget>;
+let scaleBarTargets: DrawTargetsCollection<ScaleBar>;
 let resizeService: ResizeService;
 let beam: GenericBeamView;
 
@@ -108,6 +109,8 @@ const redraw = () => {
 	// axes go over the shape (so the centroid stays visible) but under the annotations
 	axisTargets.draw();
 	annotations.draw();
+	// only in the fitted pass: the first one is off-screen and just measures
+	scaleBarTargets.draw();
 };
 
 const recalc = () => {
@@ -153,6 +156,8 @@ onMounted(() => {
 	axisTargets = new DrawTargetsCollection<DrawableTarget>({ context: canvas.context });
 	axisTargets.add(...overlays.targets);
 	annotations = new DrawTargetsCollection<DrawableTarget>({ context: canvas.context });
+	scaleBarTargets = new DrawTargetsCollection<ScaleBar>({ context: canvas.context });
+	scaleBarTargets.add(new ScaleBar());
 
 	resizeService = new ResizeService({
 		wrapper: wrapperRef.value!,

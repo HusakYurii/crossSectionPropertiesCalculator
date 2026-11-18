@@ -11,7 +11,7 @@ import { AXIS_STYLE, DIMENSION_STYLE } from '../../constants/canvasStyle';
 import { REPORT_SECTION_CANVAS } from '../../constants/canvasFit';
 import { PropertyOverlays } from '../../components/middle/view/canvas/propertiesHelperPreviews';
 import { createBeamView } from '../../components/middle/view/beams';
-import { Grid, MainAxis } from '../../components/middle/view/shapes';
+import { Grid, MainAxis, ScaleBar } from '../../components/middle/view/shapes';
 import { getShapesBounds, renderStaticScene } from './renderStaticScene';
 
 const props = defineProps<{
@@ -56,6 +56,11 @@ const draw = (context: CanvasRenderingContext2D) => {
 		);
 	});
 	labels.draw();
+
+	// last, so the exported image carries a scale
+	const scaleBarTargets = new DrawTargetsCollection<ScaleBar>({ context });
+	scaleBarTargets.add(new ScaleBar());
+	scaleBarTargets.draw();
 };
 
 onMounted(() => {

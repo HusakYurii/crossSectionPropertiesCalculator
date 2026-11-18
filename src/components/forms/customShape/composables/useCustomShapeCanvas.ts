@@ -5,7 +5,7 @@ import { CURSOR } from '../../../../constants/canvasInteraction.ts';
 import { AXIS_STYLE, CANVAS_FONT } from '../../../../constants/canvasStyle.ts';
 import { CUSTOM_SHAPE_EDITOR_VIEW } from '../../../../constants/canvasFit.ts';
 import { DrawTargetsCollection, type DrawableTarget } from '../../../middle/view/canvas/DrawTargetsCollection.ts';
-import { Grid, MainAxis } from '../../../middle/view/shapes/index.ts';
+import { Grid, MainAxis, ScaleBar } from '../../../middle/view/shapes/index.ts';
 import { MeshView } from '../../../middle/view/beams/index.ts';
 import { PropertyOverlays } from '../../../middle/view/canvas/propertiesHelperPreviews/index.ts';
 import type { Point } from '../../../../interfaces/common/types.ts';
@@ -40,6 +40,7 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 	let meshTargets: DrawTargetsCollection<MeshView>;
 	let polygonTargets: DrawTargetsCollection<PolygonDrawTarget>;
 	let overlayTargets: DrawTargetsCollection<DrawableTarget>;
+	let scaleBarTargets: DrawTargetsCollection<ScaleBar>;
 
 	// The polygon is drawn where the points are, so the centroid is not the world origin and every overlay is
 	// centered on it. The shape is never rotated, so its own axes are the world axes.
@@ -62,6 +63,8 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 		if (hasResults.value) {
 			overlayTargets.draw();
 		}
+		// last, so nothing covers it
+		scaleBarTargets.draw();
 	};
 
 	const requestRedraw = () => scene?.requestRedraw();
@@ -186,6 +189,9 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 		overlayTargets.add(...overlays.targets);
 		// a shape that was calculated before shows its saved results again right away
 		syncOverlays();
+
+		scaleBarTargets = new DrawTargetsCollection<ScaleBar>({ context });
+		scaleBarTargets.add(new ScaleBar());
 
 		scene.addService(editor);
 

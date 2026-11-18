@@ -9,7 +9,7 @@ export const SHAPE_PREVIEW_FIT = {
 export const CUSTOM_SHAPE_EDITOR_VIEW = {
 	MIN_ZOOM: 0.5,
 	MAX_ZOOM: 20,
-	/** the zoom a new, empty shape starts with, so the 10 unit grid is easy to hit */
+	/** the zoom a new, empty shape starts with: the grid is 5 mm there, so its cells are easy to hit */
 	START_ZOOM: 3,
 	/** share of the canvas an existing shape fills when it is fitted */
 	FIT_MARGIN: 0.8,

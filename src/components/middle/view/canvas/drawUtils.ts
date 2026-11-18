@@ -12,14 +12,37 @@ export function getScaledSize(context: CanvasRenderingContext2D, screenSize: num
 }
 
 /**
+ * Exact canvas-px-per-CSS-px ratios recorded by Canvas.resize. `style.width` is serialized by the browser with only
+ * about 6 significant digits (823.453125px reads back as 823.453px), which would skew the ratio and the grid step.
+ */
+const exactCssPxRatios = new WeakMap<HTMLCanvasElement, number>();
+
+export function setCssPxRatio(canvas: HTMLCanvasElement, ratio: number): void {
+	exactCssPxRatios.set(canvas, ratio);
+}
+
+/**
+ * Canvas px per CSS px: `dpr` on a Retina screen, the render scale on the report's offscreen canvas.
+ * The CSS width is read from `style.width`, which Canvas.resize sets to the exact (fractional) displayWidth.
+ * `clientWidth` is rounded to a whole number, which would shift the ratio and with it the grid step at zoom 1,
+ * so it is only the fallback. An offscreen canvas has no layout, so only the style has its width.
+ */
+export function getCssPxRatio(canvas: HTMLCanvasElement): number {
+	const exact = exactCssPxRatios.get(canvas);
+	if (exact) {
+		return exact;
+	}
+	const { width, clientWidth, style } = canvas;
+	const cssWidth = parseFloat(style.width) || clientWidth || width;
+	return width / cssWidth;
+}
+
+/**
  * A distance in CSS px as world units. getScaledSize works in canvas px, which are `dpr` times bigger
  * than CSS px on a Retina screen, so the canvas-to-CSS ratio is applied first.
  */
 export function cssPxToWorld(context: CanvasRenderingContext2D, cssPx: number): number {
-	const { width, clientWidth, style } = context.canvas;
-	// an offscreen canvas (the report) has no layout, so its CSS width is read from the style Canvas.resize sets
-	const cssWidth = clientWidth || parseFloat(style.width) || width;
-	return getScaledSize(context, cssPx * width / cssWidth);
+	return getScaledSize(context, cssPx * getCssPxRatio(context.canvas));
 }
 
 /** Smallest box that holds all the given boxes. Nulls are skipped; null when nothing is left. */

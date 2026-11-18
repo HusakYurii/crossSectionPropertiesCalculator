@@ -1,3 +1,4 @@
+import { setCssPxRatio } from "./drawUtils";
 export type CanvasSize = {
 	displayWidth: number;
 	displayHeight: number;
@@ -49,6 +50,8 @@ export class Canvas {
 		this._canvas.style.height = `${size.displayHeight}px`;
 		this._canvas.width = size.pixelWidth;
 		this._canvas.height = size.pixelHeight;
+		// the same factor clearAndApplyTransforms puts into the transform (a = dpr * zoom), so |a| / ratio is exact
+		setCssPxRatio(this._canvas, size.dpr);
 	}
 
 	clearAndApplyTransforms(view: CanvasTransformState = DEFAULT_CANVAS_STATE): void {

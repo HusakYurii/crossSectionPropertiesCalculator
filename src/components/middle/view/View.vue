@@ -20,7 +20,7 @@ import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { AXIS_STYLE, CANVAS_FONT } from '../../../constants/canvasStyle.ts';
 import { MAIN_VIEW_FIT } from '../../../constants/canvasFit.ts';
 
-import { Grid, MainAxis } from './shapes';
+import { Grid, MainAxis, ScaleBar } from './shapes';
 import { store } from '../../../store/store';
 import { appSessionState, setSelectedShapeID } from '../../../store/appSessionState';
 import { createBeamView } from './beams';
@@ -31,6 +31,7 @@ import { useQuickSolverOverlays } from './composables/useQuickSolverOverlays';
 let scene: CanvasScene;
 let gridDrawTargets: DrawTargetsCollection<Grid>;
 let axisDrawTargets: DrawTargetsCollection<MainAxis>;
+let scaleBarDrawTargets: DrawTargetsCollection<ScaleBar>;
 let beamsDrawTargets: BeamsDrawTargetCollection;
 let arrowLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
 // labels of the whole section (the centroid coordinates). They must never go into arrowLabelDrawTargets: its
@@ -97,6 +98,8 @@ const redraw = (context: CanvasRenderingContext2D) => {
 	compositeOverlays.draw({ context });
 	arrowLabelDrawTargets.draw(context);
 	compositeLabelDrawTargets.draw(context);
+	// last, so nothing covers it
+	scaleBarDrawTargets.draw(context);
 	labelEditor.updateEditorPosition();
 };
 
@@ -209,7 +212,8 @@ onMounted(() => {
 		wrapper: canvasWrapperRef.value!,
 		minSize: { width: 800, height: 800 },
 		minZoom: 0.3,
-		maxZoom: 8,
+		// 20 makes the 1 mm grid cells 10-20 px wide
+		maxZoom: 20,
 		draw: redraw,
 	});
 	const { context, inputService, transformService } = scene;
@@ -217,11 +221,13 @@ onMounted(() => {
 	beamsDrawTargets = new BeamsDrawTargetCollection({ context });
 	gridDrawTargets = new DrawTargetsCollection<Grid>({ context });
 	axisDrawTargets = new DrawTargetsCollection<MainAxis>({ context });
+	scaleBarDrawTargets = new DrawTargetsCollection<ScaleBar>({ context });
 	arrowLabelDrawTargets = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
 	compositeLabelDrawTargets = new DrawTargetsCollection<DimensionsWithTextLabel>({ context });
 	compositeOverlays = new CompositeSectionOverlays();
 
 	gridDrawTargets.add(new Grid());
+	scaleBarDrawTargets.add(new ScaleBar());
 	axisDrawTargets.add(new MainAxis({ showLabels: true, labelFontSize: CANVAS_FONT.LABEL_SIZE, labelTopReserve: AXIS_STYLE.LABEL_TOP_RESERVE }));
 
 	shapesInteractionService = new ShapesInteractionService({

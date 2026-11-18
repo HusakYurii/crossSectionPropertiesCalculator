@@ -5,7 +5,7 @@ import { BeamsDrawTargetCollection } from '../../components/middle/view/canvas/B
 import { DrawTargetsCollection, type DrawableTarget } from '../../components/middle/view/canvas/DrawTargetsCollection';
 import { PropertyOverlays } from '../../components/middle/view/canvas/propertiesHelperPreviews';
 import { MeshView, createBeamView } from '../../components/middle/view/beams';
-import { Grid } from '../../components/middle/view/shapes';
+import { Grid, ScaleBar } from '../../components/middle/view/shapes';
 import { buildAnnotations } from '../../components/forms/components/shapeRegistry';
 import { degToRad } from '../../mathUtils/anglesMath';
 import { getShapesBounds, renderStaticScene } from './renderStaticScene';
@@ -60,6 +60,11 @@ onMounted(() => {
 		const annotations = new DrawTargetsCollection<DrawableTarget>({ context });
 		annotations.add(...buildAnnotations(geometry, { x: properties.centroid_x, y: properties.centroid_y }));
 		annotations.draw();
+
+		// last, so the exported image carries a scale
+		const scaleBarTargets = new DrawTargetsCollection<ScaleBar>({ context });
+		scaleBarTargets.add(new ScaleBar());
+		scaleBarTargets.draw();
 	};
 
 	src.value = renderStaticScene({

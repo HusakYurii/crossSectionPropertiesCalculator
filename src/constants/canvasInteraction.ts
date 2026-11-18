@@ -12,10 +12,14 @@ export const DRAG_THRESHOLD = 3;
 /** the gestures every canvas shares; a canvas puts its own gestures in front of these */
 export const NAVIGATION_HINTS = ['Shift locks to horizontal / vertical', 'Right mouse pans', 'Wheel zooms'];
 
-/** The drawn grid. */
+/** The drawn grid. Its spacing follows the zoom, see getGridSpacing. */
 export const GRID = {
-	/** distance between two grid lines, in world units */
-	CELL_SIZE: 10,
+	/** the finest spacing, in world units (mm) */
+	MIN_STEP: 1,
+	/** the narrowest a grid cell gets on screen, in CSS px: the spacing grows until the cells are this wide */
+	MIN_CELL_PX: 10,
+	/** the spacing climbs a 1-2-5 ladder: these mantissas times 1, 10, 100 ... */
+	STEP_MANTISSAS: [1, 2, 5],
 } as const;
 
 /** MouseEvent.button values the canvases react to. */

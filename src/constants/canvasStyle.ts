@@ -160,12 +160,25 @@ export const MESH_STYLE = {
 
 /** The background grid. */
 export const GRID_STYLE = {
-	/** every MAJOR_EVERY-th line is drawn thicker/darker, forming MAJOR_EVERY x MAJOR_EVERY cells */
-	MAJOR_EVERY: 10,
+	/** which lines are major (thicker/darker) follows from the spacing, see getGridSpacing */
 	MINOR_LINE_WIDTH: 1.5,
 	MAJOR_LINE_WIDTH: 2.5,
 	MINOR_COLOR: '#e2e2e2',
 	MAJOR_COLOR: '#c8c8c8',
+} as const;
+
+/** The scale bar in the bottom-right corner of every canvas. Sizes are in CSS px. */
+export const SCALE_BAR_STYLE = {
+	/** distance from the right and bottom edges of the canvas, in canvas px */
+	MARGIN: 24,
+	/** full height of the end ticks */
+	TICK_HEIGHT: 12,
+	LINE_WIDTH: 2,
+	/** text gray, a shade darker than the grid lines */
+	COLOR: '#555',
+	FONT_SIZE: 18,
+	/** gap between the bar and the label above it */
+	LABEL_GAP: 6,
 } as const;
 
 /** The polygon being drawn in the custom shape form. Sizes are in screen px. */
