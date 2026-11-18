@@ -78,7 +78,7 @@ onUnmounted(removeListeners);
 <template>
 	<div ref="rootRef" class="quick-solver-actions" @focusout="onFocusOut">
 		<button ref="triggerRef" type="button" class="quick-solver-actions__trigger"
-			:class="{ 'is-active': anyQuickSolverToggleOn(toggles), 'is-open': open }" aria-label="Section overlays"
+			:class="{ 'is-active': anyQuickSolverToggleOn(toggles), 'is-open': open }" data-tooltip="Solver preview options" aria-label="Solver preview options"
 			:aria-expanded="open" :aria-controls="open ? listId : undefined" @click="open = !open">
 			<span class="quick-solver-actions__icon" v-html="overlaysLayersIconRaw"></span>
 			<span class="quick-solver-actions__chevron"></span>
@@ -104,6 +104,7 @@ onUnmounted(removeListeners);
 }
 
 .quick-solver-actions__trigger {
+	position: relative;
 	display: flex;
 	align-items: center;
 	height: 26px;
@@ -116,7 +117,7 @@ onUnmounted(removeListeners);
 }
 
 /* the light fills of the snap list: hover, and a toggle that is on or a list that is open;
-   focus-visible too, because the global reset removes the outline and this trigger has no tooltip to show focus */
+   focus-visible too, because the global reset removes the outline */
 .quick-solver-actions__trigger:is(:hover, :focus-visible) {
 	background: var(--color-fill-hover);
 }
@@ -158,6 +159,34 @@ onUnmounted(removeListeners);
 	border-right: 1.5px solid currentColor;
 	border-bottom: 1.5px solid currentColor;
 	transform: translateY(-70%) rotate(45deg);
+}
+
+/* the tooltip, drawn like the one of QuickActionButton (bottom side); not shown while the list is open,
+   since the list drops down where the tooltip would be */
+.quick-solver-actions__trigger::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 50%;
+	z-index: 2;
+	padding: 4px 8px;
+	border: 1px solid var(--color-border-subtle);
+	background: var(--color-surface-chrome);
+	box-shadow: 0 2px 6px var(--color-shadow);
+	color: var(--color-text);
+	font-size: 12px;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateX(-50%);
+	/* leaving is instant, so a tooltip never lingers over the canvas */
+	transition: opacity 0.08s ease 0s;
+}
+
+.quick-solver-actions__trigger:not(.is-open):is(:hover, :focus-visible)::after {
+	opacity: 1;
+	/* the 100 ms wait before it shows, so moving the mouse across the bar does not flash it */
+	transition-delay: 0.1s;
 }
 
 /* chevron flips while the list is open */
