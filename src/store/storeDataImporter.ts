@@ -3,7 +3,7 @@ import { toast } from 'vue3-toastify';
 import { PROJECT_SOURCE, type ProjectState } from "./projectFile";
 import { history } from "./history";
 import { DEFAULT_QUICK_SOLVER_TOGGLES, type QuickSolverToggles } from "../interfaces/quickSolverToggles";
-import { resetStore, store } from "./store";
+import { ensureHatchAngles, resetStore, store } from "./store";
 import { appSessionState, markStateDirty, type DimensionLabelOffsetKey, type PersistedSessionState } from "./appSessionState";
 
 type NormalizedProject = {
@@ -78,6 +78,7 @@ const readProject = (data: Record<string, any>): NormalizedProject => ({
 const replaceStoreData = (state: Partial<ProjectState>) => {
     resetStore();
     Object.assign(store.geometry, state.geometry);
+    ensureHatchAngles();
     Object.assign(store.geometryExtra, state.geometryExtra);
     Object.assign(store.crossSectionProperties, state.crossSectionProperties);
     Object.assign(store.crossSectionPolygon, state.crossSectionPolygon);

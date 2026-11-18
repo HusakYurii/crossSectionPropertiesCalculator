@@ -2,6 +2,8 @@
 import centerIconRaw from '../../../../svg/center.svg?raw';
 import resetZoomIconRaw from '../../../../svg/reset-zoom.svg?raw';
 import fitScreenIconRaw from '../../../../svg/fit-screen.svg?raw';
+import hatchIconRaw from '../../../../svg/hatch.svg?raw';
+import { appSessionState, setShowHatching } from '../../../../store/appSessionState';
 import QuickActionButton from './QuickActionButton.vue';
 import SnapControl from './snap/SnapControl.vue';
 
@@ -25,6 +27,9 @@ const QUICK_ACTIONS = [
 			tooltip-side="bottom" @click="action.run" />
 		<span class="quick-actions-bar__divider" role="separator" aria-orientation="vertical"></span>
 		<SnapControl />
+		<span class="quick-actions-bar__divider" role="separator" aria-orientation="vertical"></span>
+		<QuickActionButton label="Hatching" :icon="hatchIconRaw" :active="appSessionState.showHatching" tooltip-side="bottom"
+			@click="setShowHatching(!appSessionState.showHatching)" />
 		<template v-if="$slots.default">
 			<span class="quick-actions-bar__divider" role="separator" aria-orientation="vertical"></span>
 			<slot />

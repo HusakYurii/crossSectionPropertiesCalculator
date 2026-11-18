@@ -22,8 +22,12 @@ export const SHAPE_TYPES = {
 	CUSTOM_SHAPE: 'CUSTOM_SHAPE',
 } as const
 
+export type HatchAngle = 45 | 135;
+
 export interface Geometry {
 	isNegative: boolean;
+	// angle of the ISO hatch lines, given once when the shape is created and never recomputed
+	hatchAngle?: HatchAngle;
 	// this one is in deg so convert to radians if needed
 	rotation: number;// impacts the cross section properties because the shape rotates
 	type: keyof typeof SHAPE_TYPES;

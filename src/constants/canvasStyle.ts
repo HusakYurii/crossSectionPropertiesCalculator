@@ -135,16 +135,16 @@ export const BEAM_STYLE = {
 		SELECTED: '#fc9272',
 		NONE: '#ffffff',
 	},
-	/** the cross-hatching of negative shapes */
-	NEGATIVE_HATCH: {
-		COLOR: '#cb181d',
+	/** the ISO 128 hatching of the cut material (positive shapes) */
+	HATCH: {
+		COLOR: '#000',
 		/** fewest lines across a shape */
 		MIN_LINES: 10,
-		/** lines = DENSITY * sqrt(size in mm): 100 mm -> 20 lines, 400 mm -> 40 */
-		DENSITY: 2,
+		/** lines = DENSITY * sqrt(size in mm), size = sqrt(area): 100 mm -> 17 lines, 400 mm -> 34 */
+		DENSITY: 1.7,
 		/** the densest the hatch gets when a shape is tiny on screen, in CSS px */
 		MIN_SPACING: 1.5,
-		/** in screen px */
+		/** in screen px: thin against the 2 px outline (ISO thin:wide 1:2) */
 		LINE_WIDTH: 1,
 	},
 } as const;

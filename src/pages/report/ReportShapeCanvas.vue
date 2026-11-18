@@ -41,7 +41,7 @@ onMounted(() => {
 
 		const beams = new BeamsDrawTargetCollection({ context });
 		beams.add(createBeamView(SHAPE_PREVIEW_FIT.UID, shadowStore));
-		beams.draw([], { hoveredShapeID: '', selectedShapeID: '' });
+		beams.draw([], { hoveredShapeID: '', selectedShapeID: '' }, { showHatching: true });
 
 		if (mesh) {
 			// the mesh is in the solver's frame and the beam is drawn with its centroid on the origin

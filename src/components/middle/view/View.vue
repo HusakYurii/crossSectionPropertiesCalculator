@@ -90,7 +90,8 @@ const redraw = (context: CanvasRenderingContext2D) => {
 		{
 			selectedShapeID,
 			hoveredShapeID
-		}
+		},
+		{ showHatching: appSessionState.showHatching }
 	);
 
 	compositeOverlays.draw({ context });

@@ -27,7 +27,7 @@ export interface GenericBeamViewParams {
 export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarget {
 
 	public showDebug: boolean = false;
-	// negative shapes are cross-hatched; a view can turn it off (e.g. the form preview)
+	// positive shapes are hatched; a view can turn it off for good (e.g. the form preview)
 	public showHatching: boolean = true;
 	public uid: string;
 
@@ -79,7 +79,7 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 		return this._cachedBoundingBox;
 	}
 
-	draw(props: { context: CanvasRenderingContext2D; isHovered?: boolean, isSelected?: boolean; }): void {
+	draw(props: { context: CanvasRenderingContext2D; isHovered?: boolean, isSelected?: boolean; showHatching?: boolean }): void {
 		this._recalculateAndCacheShapeData();
 		if (this._cachedPathPoints.length === 0) {
 			return;
@@ -96,12 +96,14 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 			GenericBeamView.getFillStyle(props);
 		context.fill(path, this._fillRule);
 
-		if (this.isNegative && this.showHatching) {
+		if (!this.isNegative && this.showHatching && (props.showHatching ?? true)) {
 			GenericBeamView._crossHatch.draw(context, {
 				path,
 				fillRule: this._fillRule,
 				bounds: this._getHatchBounds(),
-				extent: this._getHatchExtent(),
+				size: this._getHatchSize(),
+				// given once when the shape was created; shapes of old projects get one on load
+				direction: this._geometryConfig.hatchAngle ?? 45,
 				anchor: this.position,
 			});
 		}
@@ -131,10 +133,14 @@ export class GenericBeamView<G extends Geometry = Geometry> implements DrawTarge
 		return this._cachedBoundingBox;
 	}
 
-	/** Width of the shape across the 45deg hatch lines, in world units. */
-	protected _getHatchExtent(): number {
+	/** Characteristic size of the shape, sqrt of its net area, in world units. The hatch spacing scales with it. */
+	protected _getHatchSize(): number {
+		const area = this._store.crossSectionProperties[this.uid]?.A;
+		if (area !== undefined && Number.isFinite(area) && area !== 0) {
+			return Math.sqrt(Math.abs(area));
+		}
 		const bbox = this._getHatchBounds();
-		return (bbox.width + bbox.height) / Math.SQRT2;
+		return Math.sqrt(bbox.width * bbox.height);
 	}
 
 	drawDebug(props: { context: CanvasRenderingContext2D }): void {

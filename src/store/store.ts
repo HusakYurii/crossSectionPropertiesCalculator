@@ -1,5 +1,5 @@
 import { markRaw, reactive, toRaw } from 'vue';
-import type { Geometry } from '../interfaces/beams/common.types';
+import type { Geometry, HatchAngle } from '../interfaces/beams/common.types';
 import type { Point } from '../interfaces/common/types';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';
 import type { CrossSectionProperties } from '../interfaces/sectionProperties';
@@ -60,6 +60,7 @@ export const resetStore = () => {
 			delete group[uid];
 		}
 	}
+	lastHatchAngle = 135; // the next new shape gets 45
 }
 
 // geometry extra data like name and position relative to the other shapes =====
@@ -80,8 +81,27 @@ export const removeGeometryExtraData = (uid: UID) => {
 
 
 // geometry  ====================================
+// the hatch alternates 45 -> 135 -> 45 per created shape: a new shape gets the opposite of the one created before it
+let lastHatchAngle: HatchAngle = 135;
+const oppositeAngle = (angle: HatchAngle): HatchAngle => (angle === 45 ? 135 : 45);
+
+/** Gives the shapes without a hatch angle (old projects) one each, alternating by store order. Stored angles are kept. */
+export const ensureHatchAngles = () => {
+	Object.keys(store.geometry).forEach((uid, i) => {
+		const geometry = store.geometry[uid];
+		if (geometry.hatchAngle === undefined) {
+			geometry.hatchAngle = i % 2 === 0 ? 45 : 135;
+		}
+	});
+	const angles = Object.values(store.geometry).map(g => g.hatchAngle);
+	lastHatchAngle = angles[angles.length - 1] ?? 135;
+}
+
 export const addGeometryData = <T extends Geometry>(payload: Payload<T>) => {
-	store.geometry[payload.uid] = payload.data;
+	// only new shapes get an angle; one that already has it (a restored or pasted shape) keeps it
+	const hatchAngle = payload.data.hatchAngle ?? oppositeAngle(lastHatchAngle);
+	lastHatchAngle = hatchAngle;
+	store.geometry[payload.uid] = { ...payload.data, hatchAngle };
 	markStateDirty()
 }
 
@@ -95,7 +115,12 @@ export const updateGeometryData = <T extends Geometry>(payload: Payload<T>) => {
 			delete (stored as unknown as Record<string, unknown>)[key];
 		}
 	}
+	const { hatchAngle } = stored;
 	Object.assign(stored, payload.data);
+	// an edit never changes the hatch
+	if (hatchAngle !== undefined) {
+		stored.hatchAngle = hatchAngle;
+	}
 	markStateDirty()
 }
 

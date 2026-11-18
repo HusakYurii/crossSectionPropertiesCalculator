@@ -20,6 +20,8 @@ type EditorSessionState = {
 	compositeLabelOffsets: Partial<Record<DimensionLabelOffsetKey, number>>;
 	/** snapping of dragged shapes and polygon points; shared by both canvases, never saved or put in the history */
 	snapping: { enabled: boolean; step: SnapStep };
+	/** hatching of the shapes in the editor; the report always hatches. Never saved or put in the history */
+	showHatching: boolean;
 }
 
 /** The part of the session state that is saved to the project file */
@@ -34,6 +36,7 @@ export const appSessionState = reactive<EditorSessionState>({
 	quickSolverToggles: { ...DEFAULT_QUICK_SOLVER_TOGGLES },
 	compositeLabelOffsets: {},
 	snapping: { enabled: true, step: SNAP.DEFAULT_STEP },
+	showHatching: true,
 });
 
 export type AppSessionState = typeof appSessionState;
@@ -124,4 +127,9 @@ export const setSnappingEnabled = (on: boolean) => {
 
 export const setSnappingStep = (step: SnapStep) => {
 	appSessionState.snapping.step = step;
+}
+
+export const setShowHatching = (on: boolean) => {
+	appSessionState.showHatching = on;
+	markStateDirty();
 }

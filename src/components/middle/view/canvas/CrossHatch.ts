@@ -22,39 +22,45 @@ export interface CrossHatchProps {
 	bounds: BoundingBox;
 	/** the lines are stepped from this point, so the hatch moves with the shape */
 	anchor: Point;
-	/** width of the shape across the 45deg lines, in world units */
-	extent: number;
+	/** characteristic size of the shape (sqrt of its area), in world units */
+	size: number;
+	/** angle of the lines: 45 runs up to the right, 135 up to the left */
+	direction: 45 | 135;
 }
 
-/** 45deg hatching clipped to a path. It knows nothing about what the path belongs to. */
+/** 45deg or 135deg hatching clipped to a path. It knows nothing about what the path belongs to. */
 export class CrossHatch {
 
 	private _style: CrossHatchStyle;
 
 	constructor(style: Partial<CrossHatchStyle> = {}) {
 		this._style = {
-			color: style.color ?? BEAM_STYLE.NEGATIVE_HATCH.COLOR,
-			minLines: style.minLines ?? BEAM_STYLE.NEGATIVE_HATCH.MIN_LINES,
-			density: style.density ?? BEAM_STYLE.NEGATIVE_HATCH.DENSITY,
-			minSpacing: style.minSpacing ?? BEAM_STYLE.NEGATIVE_HATCH.MIN_SPACING,
-			lineWidth: style.lineWidth ?? BEAM_STYLE.NEGATIVE_HATCH.LINE_WIDTH,
+			color: style.color ?? BEAM_STYLE.HATCH.COLOR,
+			minLines: style.minLines ?? BEAM_STYLE.HATCH.MIN_LINES,
+			density: style.density ?? BEAM_STYLE.HATCH.DENSITY,
+			minSpacing: style.minSpacing ?? BEAM_STYLE.HATCH.MIN_SPACING,
+			lineWidth: style.lineWidth ?? BEAM_STYLE.HATCH.LINE_WIDTH,
 		};
 	}
 
 	draw(context: CanvasRenderingContext2D, props: CrossHatchProps): void {
-		const { path, fillRule, bounds, anchor, extent } = props;
+		const { path, fillRule, bounds, anchor, size, direction } = props;
 
 		// the line count depends only on the shape's size (not zoom), so the hatch zooms with the shape
 		// like a drawn texture. It grows with sqrt(size): big shapes get more lines but a slightly coarser hatch.
 		// The screen floor only kicks in when the shape is a few px on screen, to avoid moire.
+		const safeSize = Math.max(0, size);
 		const lines = Math.max(
 			this._style.minLines,
-			this._style.density * Math.sqrt(Math.max(0, extent)),
+			this._style.density * Math.sqrt(safeSize),
 		);
 		const spacing = Math.max(
 			cssPxToWorld(context, this._style.minSpacing),
-			extent / lines,
+			safeSize / lines,
 		);
+		if (!(spacing > 0)) {
+			return;
+		}
 
 		// one spacing of padding, so the lines run past the edges of the shape
 		const box = this._intersectWithVisibleArea(context, {
@@ -73,18 +79,29 @@ export class CrossHatch {
 		context.strokeStyle = this._style.color;
 		context.lineWidth = getScaledSize(context, this._style.lineWidth);
 
-		// lines are y = x + c, `spacing` is measured across them, so c steps by spacing * sqrt(2)
+		// 45deg lines are y = x + c, 135deg lines are y = -x + c.
+		// `spacing` is measured across them, so c steps by spacing * sqrt(2)
 		const step = spacing * Math.SQRT2;
-		const c0 = anchor.y - anchor.x;
 		const left = box.x;
 		const right = box.x + box.width;
-		const cMin = box.y - right;
-		const cMax = box.y + box.height - left;
 
 		context.beginPath();
-		for (let c = c0 + Math.ceil((cMin - c0) / step) * step; c <= cMax; c += step) {
-			context.moveTo(left, left + c);
-			context.lineTo(right, right + c);
+		if (direction === 45) {
+			const c0 = anchor.y - anchor.x;
+			const cMin = box.y - right;
+			const cMax = box.y + box.height - left;
+			for (let c = c0 + Math.ceil((cMin - c0) / step) * step; c <= cMax; c += step) {
+				context.moveTo(left, left + c);
+				context.lineTo(right, right + c);
+			}
+		} else {
+			const c0 = anchor.y + anchor.x;
+			const cMin = box.y + left;
+			const cMax = box.y + box.height + right;
+			for (let c = c0 + Math.ceil((cMin - c0) / step) * step; c <= cMax; c += step) {
+				context.moveTo(left, c - left);
+				context.lineTo(right, c - right);
+			}
 		}
 		context.stroke();
 

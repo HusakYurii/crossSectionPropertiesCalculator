@@ -59,7 +59,7 @@ let beam: GenericBeamView;
 
 const buildBeam = () => {
 	const view = createBeamView(SHAPE_PREVIEW_FIT.UID, shadowStore as unknown as Store);
-	// the preview of the modal does not hatch negative shapes
+	// the preview of the modal does not hatch
 	view.showHatching = false;
 	return view;
 };

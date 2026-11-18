@@ -33,7 +33,7 @@ const draw = (context: CanvasRenderingContext2D) => {
 
 	const beams = new BeamsDrawTargetCollection({ context });
 	beams.add(...props.uids.map(uid => createBeamView(uid, store)));
-	beams.draw([], { hoveredShapeID: '', selectedShapeID: '' });
+	beams.draw([], { hoveredShapeID: '', selectedShapeID: '' }, { showHatching: true });
 
 	// the composite centroid, the principal axes and the gyration ellipse
 	const overlays = new PropertyOverlays({ drawCentroid: true });

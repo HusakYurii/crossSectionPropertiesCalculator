@@ -32,9 +32,4 @@ export class HollowTubeBeam extends GenericBeamView<OSectionHollowGeometry> {
 		const { x: cx, y: cy } = this.position;
 		return { x: cx - D / 2, y: cy - D / 2, width: D, height: D };
 	}
-
-	// a circle is as wide across the hatch lines as it is in any direction
-	protected override _getHatchExtent(): number {
-		return this._geometryConfig.d1;
-	}
 }
