@@ -19,6 +19,7 @@ import HollowRectSectionForm from '../forms/hollowRectSection/HollowRectSectionF
 import PlaceholderSectionForm from '../forms/components/PlaceholderSectionForm.vue';
 import SectionPropertiesTable from '../forms/components/SectionPropertiesTable.vue';
 import { FEM_SHAPE_TYPES, SHAPE_LABELS } from '../../interfaces/beams/shapeLabels.ts';
+import { SHAPE_TYPES } from '../../interfaces/beams/common.types.ts';
 import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from '../../interfaces/sectionProperties';
 import type { Point } from '../../interfaces/common/types.ts';
 import type { Triangle } from '../../solvers/femTriangulator/triangulate.ts';
@@ -70,6 +71,7 @@ const crossSectionProperties = computed(() => formRef.value?.crossSectionPropert
 
 const isFemModeSelected = computed(() => currentSolver.value === 'fem');
 const isSimpleModeSelected = computed(() => currentSolver.value === 'simple');
+const isCustomShape = computed(() => sectionModalState.shapeType === SHAPE_TYPES.CUSTOM_SHAPE);
 const activeForm = computed(() => {
 	const shapeType = sectionModalState.shapeType;
 	return shapeType ? SHAPE_FORMS[shapeType] ?? null : null;
@@ -168,7 +170,7 @@ function openSolverInfo() {
 					<button type="button" class="modal-close" aria-label="Close" @click="closeSectionModal">✕</button>
 				</div>
 
-				<div class="modal-body">
+				<div class="modal-body" :class="{ 'modal-body--custom-shape': isCustomShape }">
 					<section class="modal-section modal-section--form">
 						<input v-if="activeForm" v-model="shapeName" type="text" class="shape-name-input"
 							aria-label="Shape name" placeholder="Shape name" />
@@ -348,6 +350,11 @@ function openSolverInfo() {
 	flex: 0 0 36%;
 	min-height: 0;
 	overflow-y: auto;
+}
+
+/* the custom shape is drawn on its canvas, so it gets more of the height than a preview does */
+.modal-body--custom-shape .modal-section--properties {
+	flex-basis: 28%;
 }
 
 .modal-section--actions {

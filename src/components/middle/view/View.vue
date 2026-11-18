@@ -9,6 +9,11 @@ import { BeamsDrawTargetCollection } from './canvas/BeamsDrawTargetCollection.ts
 import { DrawTargetsCollection } from './canvas/DrawTargetsCollection.ts';
 import { CanvasScene } from './canvas/CanvasScene';
 import QuickActionsBar from './quickActions/QuickActionsBar.vue';
+import QuickActionsDivider from './quickActions/QuickActionsDivider.vue';
+import ViewQuickActions from './quickActions/ViewQuickActions.vue';
+import HatchingToggle from './quickActions/HatchingToggle.vue';
+import SnapControl from './quickActions/snap/SnapControl.vue';
+import { createCanvasViewActions } from './quickActions/canvasViewActions';
 import QuickSolverActions from './quickActions/QuickSolverActions.vue';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
 import { ShapeDimensionSource } from './canvas/annotations/dimensionSources/ShapeDimensionSource';
@@ -52,6 +57,8 @@ const fitToScreen = () => {
 		scene.transformService.fitToBounds(bounds, MAIN_VIEW_FIT.MARGIN);
 	}
 };
+
+const viewActions = createCanvasViewActions(() => scene, fitToScreen);
 
 // remembers which geometry type each beam on the canvas was built for, to notice when a shape changes kind
 const beamTypes = new Map<string, string>();
@@ -269,7 +276,13 @@ onUnmounted(() => {
 
 <template>
 	<section class="view">
-		<QuickActionsBar @center="scene.centerView()" @reset-zoom="scene.resetZoom()" @fit-to-screen="fitToScreen">
+		<QuickActionsBar>
+			<ViewQuickActions :actions="viewActions" />
+			<QuickActionsDivider />
+			<SnapControl />
+			<QuickActionsDivider />
+			<HatchingToggle />
+			<QuickActionsDivider />
 			<QuickSolverActions :toggles="quickSolver.toggles" @toggle="quickSolver.toggle" />
 		</QuickActionsBar>
 		<div class="canvas" ref="canvasWrapperRef">

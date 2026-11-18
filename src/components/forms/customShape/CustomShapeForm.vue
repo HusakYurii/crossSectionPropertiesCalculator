@@ -3,6 +3,9 @@ import { computed, ref } from 'vue';
 import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CustomShapeGeometry } from '../../../interfaces/beams/CustomShape.types.ts';
 import SnapControl from '../../middle/view/quickActions/snap/SnapControl.vue';
+import QuickActionsBar from '../../middle/view/quickActions/QuickActionsBar.vue';
+import QuickActionsDivider from '../../middle/view/quickActions/QuickActionsDivider.vue';
+import ViewQuickActions from '../../middle/view/quickActions/ViewQuickActions.vue';
 import { appSessionState } from '../../../store/appSessionState.ts';
 import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from '../../../interfaces/FEMMeshOptions.ts';
@@ -64,7 +67,7 @@ const OUTDATED_HINT = 'The shape or the mesh settings changed. Calculate again t
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const wrapperRef = ref<HTMLDivElement | null>(null);
 
-const { fitView, requestRedraw } = useCustomShapeCanvas({
+const { fitView, requestRedraw, viewActions } = useCustomShapeCanvas({
 	canvasRef,
 	wrapperRef,
 	points: () => geometry.points,
@@ -83,7 +86,6 @@ function importCsv() {
 		resetResults();
 		// the imported shape can be anywhere, so look at it
 		fitView();
-		requestRedraw();
 	});
 }
 
@@ -116,7 +118,11 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 	<div class="custom-shape">
 		<div class="custom-shape__canvas" ref="wrapperRef">
 			<canvas ref="canvasRef"></canvas>
-			<SnapControl class="custom-shape__snap" />
+			<QuickActionsBar align="right">
+				<ViewQuickActions :actions="viewActions" />
+				<QuickActionsDivider />
+				<SnapControl />
+			</QuickActionsBar>
 		</div>
 
 		<aside class="custom-shape__side">
@@ -163,13 +169,6 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 	background: var(--color-surface-canvas);
 	border: 1px solid var(--color-border-subtle);
 	border-radius: 8px;
-}
-
-.custom-shape__snap {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	z-index: 1;
 }
 
 .custom-shape__canvas canvas {

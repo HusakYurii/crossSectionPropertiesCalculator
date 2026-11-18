@@ -13,6 +13,7 @@ import type { CrossSectionProperties } from '../../../../interfaces/sectionPrope
 import type { Triangle } from '../../../../solvers/femTriangulator/triangulate.ts';
 import { PolygonDrawTarget } from '.././drawUtils/PolygonDrawTarget.ts';
 import { PolygonEditor } from '.././drawUtils/PolygonEditor.ts';
+import { createCanvasViewActions } from '../../../middle/view/quickActions/canvasViewActions.ts';
 
 type CustomShapeCanvasProps = {
 	canvasRef: Ref<HTMLCanvasElement | null>;
@@ -120,6 +121,8 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 	function fitView() {
 		if (scene) {
 			fitViewToPoints(scene.canvas.canvasSize);
+			// the fit changes the transforms directly, so the canvas has to be told to repaint
+			requestRedraw();
 		}
 	}
 
@@ -202,5 +205,7 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 		scene?.deactivate();
 	});
 
-	return { fitView, requestRedraw };
+	const viewActions = createCanvasViewActions(() => scene, fitView);
+
+	return { fitView, requestRedraw, viewActions };
 }
