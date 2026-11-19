@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CustomShapeGeometry } from '../../../interfaces/beams/CustomShape.types.ts';
+import type { Point } from '../../../interfaces/common/types.ts';
 import SnapControl from '../../middle/view/quickActions/snap/SnapControl.vue';
 import QuickActionsBar from '../../middle/view/quickActions/QuickActionsBar.vue';
 import QuickActionsDivider from '../../middle/view/quickActions/QuickActionsDivider.vue';
@@ -9,14 +10,12 @@ import ViewQuickActions from '../../middle/view/quickActions/ViewQuickActions.vu
 import { appSessionState } from '../../../store/appSessionState.ts';
 import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from '../../../interfaces/FEMMeshOptions.ts';
-import { openInfoPanel } from '../../../store/infoPanel.ts';
 import IsNegativeField from '../components/IsNegativeField.vue';
 import ButtonField from '../components/ButtonField.vue';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from '../composables/useStoreGeometryWatcher.ts';
 import { useFemCalculation } from './composables/useFemCalculation.ts';
 import { useCustomShapeCanvas } from './composables/useCustomShapeCanvas.ts';
-import { pickCsvPoints } from './csv/pickCsvPoints.ts';
-import { DEFAULT_CSV_FILE_NAME, exportCsvPoints } from './csv/exportCsvPoints.ts';
+import { useCustomShapeCsv } from './composables/useCustomShapeCsv.ts';
 import SaveCustomShapeCSVFileModal from './csv/SaveCustomShapeCSVFileModal.vue';
 import CustomShapePointsList from './CustomShapePointsList.vue';
 import FemMeshSettings from './FemMeshSettings.vue';
@@ -61,6 +60,13 @@ const {
 	resetResults,
 } = useFemCalculation(geometry, props.selectedShapeUID);
 
+/** the points are swapped as a whole, so the selection and the results of the old ones go too */
+function replacePoints(points: Point[]) {
+	geometry.points.splice(0, geometry.points.length, ...points);
+	selectedIndices.value = [];
+	resetResults();
+}
+
 // a shape can only be saved with results that belong to the polygon on screen
 const OUTDATED_HINT = 'The shape or the mesh settings changed. Calculate again to update the results before saving.';
 
@@ -79,35 +85,26 @@ const { fitView, requestRedraw, viewActions } = useCustomShapeCanvas({
 	getSnapStep: () => getActiveSnapStep(appSessionState.snapping),
 });
 
-function importCsv() {
-	pickCsvPoints((points) => {
-		geometry.points.splice(0, geometry.points.length, ...points);
-		selectedIndices.value = [];
-		resetResults();
-		// the imported shape can be anywhere, so look at it
+const {
+	defaultFileName,
+	isExportModalOpen,
+	canExport,
+	openExportModal,
+	closeExportModal,
+	confirmExport,
+	importCsv,
+	openCsvInfo,
+} = useCustomShapeCsv({
+	points: () => geometry.points,
+	// the imported shape can be anywhere, so look at it
+	onImport: (points) => {
+		replacePoints(points);
 		fitView();
-	});
-}
-
-const isExportModalOpen = ref(false);
-
-function closeExportModal() {
-	isExportModalOpen.value = false;
-}
-
-function onExportConfirm(name: string) {
-	closeExportModal();
-	exportCsvPoints(name, geometry.points);
-}
-
-function openCsvInfo() {
-	openInfoPanel('whatIsCustomShapeCsvFormat');
-}
+	},
+});
 
 function clearPoints() {
-	geometry.points.splice(0, geometry.points.length);
-	selectedIndices.value = [];
-	resetResults();
+	replacePoints([]);
 	requestRedraw();
 }
 
@@ -130,8 +127,8 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 				<IsNegativeField v-model="geometry.isNegative" />
 
 				<ButtonField label="CSV file" info-label="CSV file info" @info="openCsvInfo">
-					<button type="button" :disabled="geometry.points.length === 0"
-						@click="isExportModalOpen = true">Export</button>
+					<button type="button" :disabled="!canExport"
+						@click="openExportModal">Export</button>
 					<button type="button" @click="importCsv">Import</button>
 				</ButtonField>
 			</div>
@@ -147,8 +144,8 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 			</button>
 		</aside>
 
-		<SaveCustomShapeCSVFileModal v-if="isExportModalOpen" :initial-name="DEFAULT_CSV_FILE_NAME"
-			:on-confirm="onExportConfirm" :on-reject="closeExportModal" />
+		<SaveCustomShapeCSVFileModal v-if="isExportModalOpen" :initial-name="defaultFileName"
+			:on-confirm="confirmExport" :on-reject="closeExportModal" />
 	</div>
 </template>
 
