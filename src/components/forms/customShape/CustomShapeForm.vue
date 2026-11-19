@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { SHAPE_TYPES } from '../../../interfaces/beams/common.types.ts';
 import type { CustomShapeGeometry } from '../../../interfaces/beams/CustomShape.types.ts';
 import type { Point } from '../../../interfaces/common/types.ts';
@@ -7,12 +7,16 @@ import SnapControl from '../../middle/view/quickActions/snap/SnapControl.vue';
 import QuickActionsBar from '../../middle/view/quickActions/QuickActionsBar.vue';
 import QuickActionsDivider from '../../middle/view/quickActions/QuickActionsDivider.vue';
 import ViewQuickActions from '../../middle/view/quickActions/ViewQuickActions.vue';
+import HistoryQuickActions from '../../middle/view/quickActions/HistoryQuickActions.vue';
 import { appSessionState } from '../../../store/appSessionState.ts';
+import { infoPanelState } from '../../../store/infoPanel.ts';
 import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from '../../../interfaces/FEMMeshOptions.ts';
 import IsNegativeField from '../components/IsNegativeField.vue';
 import ButtonField from '../components/ButtonField.vue';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from '../composables/useStoreGeometryWatcher.ts';
+import { useLocalHistory } from '../../../composables/useLocalHistory.ts';
+import { useUndoRedoShortcuts } from '../../../composables/useUndoRedoShortcuts.ts';
 import { useFemCalculation } from './composables/useFemCalculation.ts';
 import { useCustomShapeCanvas } from './composables/useCustomShapeCanvas.ts';
 import { useCustomShapeCsv } from './composables/useCustomShapeCsv.ts';
@@ -60,11 +64,34 @@ const {
 	resetResults,
 } = useFemCalculation(geometry, props.selectedShapeUID);
 
+// Created after the normalisation above, so the opening state is the base. useStoreGeometryWatcher fills the
+// geometry synchronously during setup (immediate watch); the uid never changes while the form lives (if it ever did, the history would need a reset).
+// isPointerDown and isExportModalOpen come from the composables below, hence the arrow functions.
+const localHistory = useLocalHistory({
+	source: () => ({ points: geometry.points, isNegative: geometry.isNegative, femOptions: geometry.femOptions }),
+	restore: (snapshot) => {
+		geometry.points.splice(0, geometry.points.length, ...snapshot.points);
+		geometry.isNegative = snapshot.isNegative;
+		geometry.femOptions = snapshot.femOptions;
+		// indices may point at other points after undoing a reorder / delete
+		selectedIndices.value = [];
+	},
+	isBlocked: () => isPointerDown() || isExportModalOpen.value || infoPanelState.topic !== null,
+});
+useUndoRedoShortcuts({ undo: localHistory.undo, redo: localHistory.redo, capture: true });
+
 /** the points are swapped as a whole, so the selection and the results of the old ones go too */
 function replacePoints(points: Point[]) {
 	geometry.points.splice(0, geometry.points.length, ...points);
 	selectedIndices.value = [];
 	resetResults();
+	localHistory.commit();
+}
+
+// IsNegativeField is shared by many forms, so the history hook lives here and not in the field
+function setSign(isNegative: boolean) {
+	geometry.isNegative = isNegative;
+	localHistory.commit();
 }
 
 // a shape can only be saved with results that belong to the polygon on screen
@@ -73,7 +100,7 @@ const OUTDATED_HINT = 'The shape or the mesh settings changed. Calculate again t
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const wrapperRef = ref<HTMLDivElement | null>(null);
 
-const { fitView, requestRedraw, viewActions } = useCustomShapeCanvas({
+const { fitView, requestRedraw, viewActions, isPointerDown } = useCustomShapeCanvas({
 	canvasRef,
 	wrapperRef,
 	points: () => geometry.points,
@@ -83,6 +110,7 @@ const { fitView, requestRedraw, viewActions } = useCustomShapeCanvas({
 	isStale,
 	hasResults,
 	getSnapStep: () => getActiveSnapStep(appSessionState.snapping),
+	onEditEnd: localHistory.commit,
 });
 
 const {
@@ -108,6 +136,25 @@ function clearPoints() {
 	requestRedraw();
 }
 
+const pointsListRef = ref<HTMLDivElement | null>(null);
+
+// A press anywhere else clears the selection. The canvas (with its quick actions bar) and the points list are
+// left out: the list rows are the other way to select points, so pressing them must not undo the selection.
+// pointerdown, not click: the selection goes the moment the press starts, before any click handler runs.
+function onDocumentPointerDown(event: PointerEvent) {
+	const target = event.target;
+	if (!(target instanceof Node) || selectedIndices.value.length === 0) {
+		return;
+	}
+	if (wrapperRef.value?.contains(target) || pointsListRef.value?.contains(target)) {
+		return;
+	}
+	selectedIndices.value = [];
+}
+
+onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown, true));
+onUnmounted(() => document.removeEventListener('pointerdown', onDocumentPointerDown, true));
+
 defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSectionMesh, isValid });
 </script>
 
@@ -116,6 +163,9 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 		<div class="custom-shape__canvas" ref="wrapperRef">
 			<canvas ref="canvasRef"></canvas>
 			<QuickActionsBar align="right">
+				<HistoryQuickActions :can-undo="localHistory.canUndo.value" :can-redo="localHistory.canRedo.value"
+					@undo="localHistory.undo" @redo="localHistory.redo" />
+				<QuickActionsDivider />
 				<ViewQuickActions :actions="viewActions" />
 				<QuickActionsDivider />
 				<SnapControl />
@@ -124,7 +174,7 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 
 		<aside class="custom-shape__side">
 			<div class="custom-shape__options">
-				<IsNegativeField v-model="geometry.isNegative" />
+				<IsNegativeField :model-value="geometry.isNegative" @update:model-value="setSign" />
 
 				<ButtonField label="CSV file" info-label="CSV file info" @info="openCsvInfo">
 					<button type="button" :disabled="!canExport"
@@ -133,10 +183,12 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 				</ButtonField>
 			</div>
 
-			<CustomShapePointsList v-model:points="geometry.points" v-model:selected-indices="selectedIndices"
-				@clear="clearPoints" />
+			<div ref="pointsListRef" class="custom-shape__points">
+				<CustomShapePointsList v-model:points="geometry.points" v-model:selected-indices="selectedIndices"
+					@clear="clearPoints" @edit="localHistory.commit" />
+			</div>
 
-			<FemMeshSettings v-model:options="femOptions" />
+			<FemMeshSettings v-model:options="femOptions" @edit="localHistory.commit" />
 
 			<button type="button" class="custom-shape__calculate" :disabled="!needsRecalculation"
 				:title="needsRecalculation ? OUTDATED_HINT : undefined" @click="calculate">
@@ -170,6 +222,11 @@ defineExpose({ geometry, crossSectionProperties, crossSectionPolygon, crossSecti
 
 .custom-shape__canvas canvas {
 	display: block;
+}
+
+/* the wrapper only exists to find the list in the DOM; the list keeps laying out in the side column */
+.custom-shape__points {
+	display: contents;
 }
 
 .custom-shape__side {

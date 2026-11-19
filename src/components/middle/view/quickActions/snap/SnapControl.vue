@@ -7,7 +7,7 @@ const { enabled, step, toggle, options } = useSnapControl();
 
 function onStepChange(event: Event) {
 	step.value = Number((event.target as HTMLSelectElement).value) as typeof step.value;
-	// the arrow keys of a focused select would keep changing the step (undo still works: see data-allow-history-shortcuts)
+	// the arrow keys of a focused select would keep changing the step (blurring also hands the keys back to undo / redo)
 	(event.target as HTMLSelectElement).blur();
 }
 </script>
@@ -18,7 +18,7 @@ function onStepChange(event: Event) {
 			@click="toggle" />
 		<div class="snap-control__select-wrap" :class="{ 'is-off': !enabled }">
 			<select class="snap-control__select" :value="step" aria-label="Snap step" title="Snap step" name="steps-options"
-				data-allow-history-shortcuts @change="onStepChange">
+				@change="onStepChange">
 				<option v-for="option in options" :key="option.value" :value="option.value">{{ option.label }}</option>
 			</select>
 		</div>

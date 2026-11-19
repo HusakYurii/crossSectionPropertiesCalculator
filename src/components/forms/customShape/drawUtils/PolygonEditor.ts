@@ -17,12 +17,16 @@ type PolygonEditorProps = {
 	/** the snap step in mm, or null while snapping is off */
 	getSnapStep: () => number | null;
 	onChange: () => void;
+	/** a finished edit: a point added, a drag ended, points deleted */
+	onEditEnd: () => void;
 };
 
 /**
- * Click on empty canvas to add a point, drag a point to move it, drag on empty canvas to box-select
+ * Click on empty canvas to add a point (only when nothing is selected: with a selection the click
+ * deselects it, or keeps it with Shift / Cmd/Ctrl, so a misclick never adds a point), drag a point to move it, drag on empty canvas to box-select
  * several (they then move together). Pan / zoom is left to CanvasTransformService (right button + wheel).
  * Hold Shift to move along one axis, Cmd/Ctrl to add to the selection.
+ * Delete / Backspace removes the selected points, Escape deselects them.
  */
 export class PolygonEditor implements Service {
 	private _canvas: HTMLCanvasElement;
@@ -33,6 +37,7 @@ export class PolygonEditor implements Service {
 	private _setSelectedIndices: (indices: number[]) => void;
 	private _getSnapStep: () => number | null;
 	private _onChange: () => void;
+	private _onEditEnd: () => void;
 
 	private _unsubscribeHandlers: Array<() => void> = [];
 	private _active = false;
@@ -60,6 +65,7 @@ export class PolygonEditor implements Service {
 		this._setSelectedIndices = props.setSelectedIndices;
 		this._getSnapStep = props.getSnapStep;
 		this._onChange = props.onChange;
+		this._onEditEnd = props.onEditEnd;
 	}
 
 	initialize(): void {
@@ -91,6 +97,11 @@ export class PolygonEditor implements Service {
 		window.removeEventListener('keydown', this._onKeyDown, true);
 		this._reset();
 		this._active = false;
+	}
+
+	/** true between a mouse press and its release; undo must not run in the middle of a drag */
+	isPointerDown(): boolean {
+		return this._pressScreen !== null;
 	}
 
 	/** index of the topmost point under the cursor, or -1 */
@@ -159,7 +170,7 @@ export class PolygonEditor implements Service {
 		const hit = this._findPointAt(screen);
 		this._pressHit = hit;
 		if (hit < 0) {
-			// empty space: a click adds a point, a drag draws a box; the selection waits for the mouse up
+			// empty space: a click adds a point (or deselects), a drag draws a box; the selection waits for the mouse up
 			return;
 		}
 
@@ -254,7 +265,17 @@ export class PolygonEditor implements Service {
 				this._setSelectedIndices([this._pressHit]);
 			}
 		} else if (!this._moved && this._pressScreen) {
-			// a press on empty canvas that did not move is a click: add a point there
+			// a click on empty canvas while points are selected is a misclick: it never adds a point
+			if (this._getSelectedIndices().length > 0) {
+				// Shift / Cmd/Ctrl keep the selection, a plain click clears it
+				if (!event.shiftKey && !this._pressModifier) {
+					this._setSelectedIndices([]);
+					this._onChange();
+				}
+				this._reset();
+				return;
+			}
+			// nothing selected: a click that did not move adds a point there
 			const raw = this._toWorld(event);
 			const points = this._getPoints();
 			// Shift aligns the new point with the last one, the start of the new edge
@@ -262,8 +283,9 @@ export class PolygonEditor implements Service {
 			const world = last
 				? lockAndSnap({ x: last.x, y: last.y }, raw, { x: raw.x - last.x, y: raw.y - last.y }, this._getSnapStep(), event.shiftKey)
 				: this._snap(raw);
+			// the new point stays unselected, so the next click on empty canvas adds another point
+			// instead of being taken as a misclick that deselects
 			points.push({ x: world.x, y: world.y });
-			this._setSelectedIndices([points.length - 1]);
 			this._onChange();
 		}
 
@@ -299,19 +321,47 @@ export class PolygonEditor implements Service {
 	};
 
 	private _onKeyDown = (event: KeyboardEvent): void => {
+		const isEscape = event.key === 'Escape';
+		const isDelete = event.key === 'Delete' || event.key === 'Backspace';
+		if (!isEscape && !isDelete) {
+			return;
+		}
 		const selected = this._getSelectedIndices();
-		if (selected.length === 0 || (event.key !== 'Delete' && event.key !== 'Backspace')) {
+		if (selected.length === 0) {
 			return;
 		}
-		// let a focused form control (a number input, the snap step select) keep its own Backspace / Delete
-		const target = event.target as HTMLElement | null;
-		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+		// a key that belongs to an IME composition (it can cancel the candidate list) is not ours
+		if (event.isComposing || event.keyCode === 229) {
 			return;
 		}
-		// a dialog on top of the editor (the CSV file name) must not delete points behind it; its overlay
+		// a dialog on top of the editor (help panel, the CSV file name) must not act on points behind it; its overlay
 		// can hold the focus too (a click on the backdrop), so that counts as the dialog
+		const target = event.target as HTMLElement | null;
 		const dialog = target?.closest('[aria-modal="true"], .modal-overlay');
 		if (dialog && !dialog.contains(this._canvas)) {
+			return;
+		}
+
+		if (isEscape) {
+			// the selection stays while the mouse button is held, so a drag in progress is not cut short;
+			// the Escape is swallowed too, because letting it reach the shape dialog would close it
+			// mid-drag and throw the changes away
+			if (this.isPointerDown()) {
+				event.preventDefault();
+				event.stopPropagation();
+				return;
+			}
+			// stopped here at window capture, the shape dialog never sees this Escape and stays open;
+			// number inputs have no Escape of their own, so it works with a coordinate field focused too
+			this._setSelectedIndices([]);
+			this._onChange();
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		}
+
+		// let a focused form control (a number input, the snap step select) keep its own Backspace / Delete
+		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
 			return;
 		}
 
@@ -322,9 +372,11 @@ export class PolygonEditor implements Service {
 		}
 		this._setSelectedIndices([]);
 		this._onChange();
+		this._onEditEnd();
 	};
 
 	private _reset(): void {
+		const hadPress = this._pressScreen !== null;
 		const hadBox = this._boxStart !== null;
 		this._dragIndex = null;
 		this._dragStart = new Map();
@@ -341,6 +393,11 @@ export class PolygonEditor implements Service {
 		// the box is drawn from the editor state, so it needs one more repaint to disappear
 		if (hadBox) {
 			this._onChange();
+		}
+		// _reset also runs when the mouse leaves the canvas, so a drag that ends outside still counts as one edit.
+		// A click or a box-select without edits is a no-op for the history (the selection is not tracked)
+		if (hadPress) {
+			this._onEditEnd();
 		}
 	}
 }

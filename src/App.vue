@@ -5,11 +5,12 @@ import View from './components/middle/view/View.vue';
 // import RightPanel from './components/right/RightPanel.vue';
 import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
-import { useHistoryShortcuts } from './composables/useHistoryShortcuts.ts';
+import { useUndoRedoShortcuts } from './composables/useUndoRedoShortcuts.ts';
+import { history } from './store/history.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
 import { computed, onMounted } from 'vue';
 
-useHistoryShortcuts();
+useUndoRedoShortcuts({ undo: () => history.undo(), redo: () => history.redo() });
 
 const {
 	leftWidth,

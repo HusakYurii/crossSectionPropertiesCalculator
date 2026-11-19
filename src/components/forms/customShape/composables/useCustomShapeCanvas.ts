@@ -26,13 +26,16 @@ type CustomShapeCanvasProps = {
 	hasResults: Ref<boolean>;
 	/** the snap step in mm, or null while snapping is off */
 	getSnapStep: () => number | null;
+	/** called after each finished canvas edit (a point added, a drag ended, points deleted) */
+	onEditEnd: () => void;
 };
 
 /** the editor canvas: grid, polygon with its point editing, and the mesh and overlays of the results */
 export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
-	const { canvasRef, wrapperRef, points, selectedIndices, crossSectionProperties, crossSectionMesh, isStale, hasResults, getSnapStep } = props;
+	const { canvasRef, wrapperRef, points, selectedIndices, crossSectionProperties, crossSectionMesh, isStale, hasResults, getSnapStep, onEditEnd } = props;
 
 	let scene: CanvasScene | undefined;
+	let editor: PolygonEditor | undefined;
 	// the view is fitted to an existing shape once, the first time the canvas has a size
 	let hasFitted = false;
 
@@ -177,7 +180,7 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 		showMesh(crossSectionMesh.value);
 		polygonTargets = new DrawTargetsCollection<PolygonDrawTarget>({ context });
 		// the editor owns the box, so it is created first for the draw target to read it
-		const editor = new PolygonEditor({
+		editor = new PolygonEditor({
 			canvas: canvasEl,
 			inputService: scene.inputService,
 			transformService: scene.transformService,
@@ -186,8 +189,9 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 			setSelectedIndices: (indices) => { selectedIndices.value = indices; },
 			getSnapStep,
 			onChange: requestRedraw,
+			onEditEnd,
 		});
-		polygonTargets.add(new PolygonDrawTarget(points, () => selectedIndices.value, () => editor.getSelectionBox()));
+		polygonTargets.add(new PolygonDrawTarget(points, () => selectedIndices.value, () => editor!.getSelectionBox()));
 		overlayTargets = new DrawTargetsCollection<DrawableTarget>({ context });
 		overlayTargets.add(...overlays.targets);
 		// a shape that was calculated before shows its saved results again right away
@@ -205,7 +209,9 @@ export function useCustomShapeCanvas(props: CustomShapeCanvasProps) {
 		scene?.deactivate();
 	});
 
+	const isPointerDown = () => editor?.isPointerDown() ?? false;
+
 	const viewActions = createCanvasViewActions(() => scene, fitView);
 
-	return { fitView, requestRedraw, viewActions };
+	return { fitView, requestRedraw, viewActions, isPointerDown };
 }

@@ -16,18 +16,19 @@ On Windows and Linux, read **Ctrl** wherever this page says **Cmd**.
 
 | Keys | Action | Where |
 | --- | --- | --- |
-| Cmd+Z | Undo | main window |
-| Shift+Cmd+Z, or Ctrl+Y | Redo | main window |
+| Cmd+Z | Undo | main window, custom shape editor |
+| Shift+Cmd+Z, or Ctrl+Y | Redo | main window, custom shape editor |
 | Shift (hold while dragging) | Move along one axis only | both canvases |
 | Cmd+click | Add a point to the selection, or remove it | custom shape editor: canvas and points list |
 | Delete or Backspace | Delete the selected points | custom shape editor |
 | Enter | Apply the typed value | dimension number, shape name in the left panel, point coordinate |
 | Tab | Apply the typed value | dimension number, shape name in the left panel |
 | Escape | Cancel the typing | dimension number, shape name in the left panel |
+| Escape | Deselect the points (the dialog stays open) | custom shape editor |
 | Enter | OK | file name dialogs (Export Project, Export CSV) |
 | Escape | Close without doing anything | any dialog, help panel, solver preview list |
 
-<small>**Note: Escape in the shape dialog.** Escape always closes the shape dialog, even while you type in one of its fields, and the changes are not saved. Escape closes only the dialog on top: in a help panel or in the Export CSV dialog opened from the shape dialog, the shape dialog stays open.</small>
+<small>**Note: Escape in the shape dialog.** Escape closes the shape dialog, even while you type in one of its fields, and the changes are not saved. While points are selected, the first Escape only deselects them and the next one closes the dialog. Escape closes only the dialog on top: in a help panel or in the Export CSV dialog opened from the shape dialog, the shape dialog stays open.</small>
 
 There is no key to delete a shape. Use the trash button in the left panel.
 
@@ -38,8 +39,9 @@ There is no key to delete a shape. Use the trash button in the left panel.
 *   View settings are not undone: zoom, pan, snap, hatching and the solver preview options.
 *   **New Project** and **Import Project** clear the undo history.
 *   Undo and Redo are also in the **Edit** menu.
+*   The custom shape editor has its own undo while its dialog is open. It starts empty when the dialog opens and is gone when it closes. **Save** then becomes one step in the main undo: Cmd+Z in the main window takes back the whole edit.
 
-<small>**Note: when undo does nothing.** Undo and redo do not work while a dialog or a help panel is open, or while a drag is running. While you type in a text field, Cmd+Z undoes the typing in that field.</small>
+<small>**Note: when undo does nothing.** Undo and redo do not work in the main window while a dialog or a help panel is open, or while a drag is running; the custom shape editor has its own undo while its dialog is open. That undo also pauses during a drag, while a help panel is open, and while the Export CSV dialog is open. While you type in a text field, Cmd+Z undoes the typing in that field.</small>
 
 ---
 
@@ -120,12 +122,13 @@ The points are the outline of the shape, in the order of the points list. The la
 
 | Action | How |
 | --- | --- |
-| Add a point | Click on empty canvas. The point is added at the **end** of the list and is selected. |
+| Add a point | Click on empty canvas while no point is selected. The point is added at the **end** of the list and is not selected, so you can keep clicking to add more. |
 | Add a point in line with the last one | Hold Shift while you click. The new edge is horizontal or vertical, whichever is closer to where you clicked. |
 | Select a point | Click it. |
 | Add to the selection, or remove from it | Cmd+click a point. |
 | Select several points | Drag a box on empty canvas. Hold Cmd to add them to the selection instead of replacing it. |
 | Move points | Drag a point. If it is part of the selection, all selected points move together. Hold Shift to move along one axis. |
+| Deselect | Escape, a click on empty canvas (with points selected it only deselects them and never adds a point; hold Shift or Cmd to keep the selection), or a click outside the canvas and the points list. |
 | Delete the selected points | Delete or Backspace. |
 | Delete one point | The ✕ button in its row. |
 | Delete all points | The **Clear** button. |
@@ -138,15 +141,15 @@ The points are the outline of the shape, in the order of the points list. The la
 *   A typed coordinate is rounded to 0.001 mm. Clearing a field sets it to 0.
 *   A point can't be inserted between two others on the canvas. Add it, then move it to its place in the list with ▲ ▼.
 *   A click on one point of a selected group, without moving, selects only that point.
-*   A box over empty space clears the selection when Cmd is not held. A click there adds a point instead.
+*   A box over empty space clears the selection when Cmd is not held. A click there deselects the points, or keeps them with Shift or Cmd held, and adds a point only when nothing is selected.
 *   Delete and Backspace do nothing while a field has focus.
 
-<small>**Note: no undo here.** Undo does not work in the shape dialog. **Clear**, Delete and ✕ cannot be taken back. To throw away all changes, close the dialog with Escape or ✕: the saved shape stays as it was.</small>
+<small>**Note: undo here.** The dialog has its own undo (Cmd+Z, or the Undo and Redo buttons above the canvas) for points, shape sign and mesh settings. It also takes back **Clear**, Delete and ✕, and a CSV import: the points come back, but not the results, so calculate again. To throw away all changes, close the dialog with Escape or ✕: the saved shape stays as it was.</small>
 
 To finish the shape:
 
 1.  Have at least 3 points, with no crossing edges. The app does not check the crossing (see "CSV File For Custom Shape", section 7).
-2.  Press **Calculate with FEM**. After a change to the points or the mesh settings, the mesh disappears and **Create** / **Save** stays off until you calculate again. Until then the table shows the old numbers. Switching negative / positive needs no new calculation.
+2.  Press **Calculate with FEM**. After a change to the points or the mesh settings, the mesh disappears and **Create** / **Save** stays off until you calculate again (or undo back to the calculated shape, which brings the results back). Until then the table shows the old numbers. Switching negative / positive needs no new calculation.
 3.  Press **Create** or **Save**.
 
 The points can also be imported from a CSV file, see "CSV File For Custom Shape".

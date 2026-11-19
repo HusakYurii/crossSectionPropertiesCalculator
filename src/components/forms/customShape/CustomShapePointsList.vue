@@ -7,7 +7,7 @@ import { roundTo } from '../../../mathUtils/round.ts';
 // the points are edited in place, the same way the canvas editor edits them
 const points = defineModel<Point[]>('points', { required: true });
 const selectedIndices = defineModel<number[]>('selectedIndices', { required: true });
-const emit = defineEmits<{ clear: [] }>();
+const emit = defineEmits<{ clear: []; edit: [] }>();
 
 const hasEnoughPoints = computed(() => points.value.length >= POLYGON_LIMITS.MIN_OPEN_POINTS);
 
@@ -18,6 +18,7 @@ function setCoordinate(point: Point, axis: 'x' | 'y', event: Event) {
 	point[axis] = roundTo(Number(input.value), 3);
 	// show the rounded value even when it equals the old one, so the field never keeps "2.7004"
 	input.value = String(point[axis]);
+	emit('edit');
 }
 
 /** swaps a point with its neighbour (-1 up, +1 down); the selection follows the moved point */
@@ -34,6 +35,7 @@ function movePoint(index: number, delta: -1 | 1) {
 	selectedIndices.value = selectedIndices.value
 		.map((i) => (i === index ? target : i === target ? index : i))
 		.sort((a, b) => a - b);
+	emit('edit');
 }
 
 /** Cmd/Ctrl+click toggles a row, a plain click selects only it */
@@ -59,6 +61,7 @@ function removePoint(index: number) {
 	selectedIndices.value = selectedIndices.value
 		.filter((i) => i !== index)
 		.map((i) => (i > index ? i - 1 : i));
+	emit('edit');
 }
 </script>
 

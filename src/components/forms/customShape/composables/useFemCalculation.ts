@@ -4,9 +4,11 @@ import type { CustomShapeGeometry } from '../../../../interfaces/beams/CustomSha
 import type { Point } from '../../../../interfaces/common/types.ts';
 import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from '../../../../interfaces/sectionProperties/index.ts';
 import { POLYGON_LIMITS } from '../../../../constants/geometryTolerances.ts';
+import { copyPlainData, isSamePlainData } from '../../../../utils/plainData.ts';
 import { store } from '../../../../store/store.ts';
 import { crossSectionPolygonsBuilder } from '../../../../solvers/CrossSectionPolygonsBuilder.ts';
 import { femCrossSectionPropertiesSolver } from '../../../../solvers/FEMCrossSectionPropertiesSolver.ts';
+import type { FEMMeshOptions } from '../../../../interfaces/FEMMeshOptions.ts';
 import type { Triangle } from '../../../../solvers/femTriangulator/triangulate.ts';
 
 /** the FEM results of the custom shape (and whether they still belong to the points on screen) */
@@ -30,8 +32,19 @@ export function useFemCalculation(geometry: CustomShapeGeometry, selectedShapeUI
 	// overlays only mean something for results that belong to the polygon on screen, like the mesh
 	const hasResults = computed(() => !isStale.value && crossSectionProperties.value.A > 0);
 
-	// results are only valid for the polygon and FEM settings they were calculated from (isNegative does not change them)
-	watch(() => [geometry.points, geometry.femOptions], () => { isStale.value = true; }, { deep: true });
+	// the inputs the current results belong to: the opening geometry for a saved shape, nothing for a new one.
+	// Comparing against them (and not just flagging "changed") lets an undo back to these inputs make the results fresh again
+	let resultInputs: { points: Point[]; femOptions: FEMMeshOptions | undefined } | null = stored
+		? copyPlainData({ points: geometry.points, femOptions: geometry.femOptions })
+		: null;
+
+	// results are only valid for the polygon and FEM settings they were calculated from (isNegative does not change them).
+	// A deep watch on purpose: it walks the reactive data, so nested edits trigger it, which a computed over
+	// isSamePlainData would not (that reads through toRaw and tracks nothing)
+	watch(() => [geometry.points, geometry.femOptions], () => {
+		isStale.value = !resultInputs
+			|| !isSamePlainData({ points: geometry.points, femOptions: geometry.femOptions }, resultInputs);
+	}, { deep: true });
 
 	async function calculate() {
 		if (!hasEnoughPoints.value || isCalculating.value) {
@@ -44,12 +57,16 @@ export function useFemCalculation(geometry: CustomShapeGeometry, selectedShapeUI
 		await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
 		try {
+			// copied here, in the same sync block as solve(): an undo during the frame above cannot pair the results with other points.
+			// Only kept once the solver succeeded, a failed run leaves the old results with their old inputs
+			const inputs = copyPlainData({ points: geometry.points, femOptions: geometry.femOptions });
 			const polygon = crossSectionPolygonsBuilder.calculate(geometry);
 			// solve (not calculate) so the mesh the numbers come from can be drawn too
 			const { properties, triangles } = femCrossSectionPropertiesSolver.solve(polygon, geometry.femOptions);
 			crossSectionProperties.value = properties;
 			crossSectionPolygon.value = polygon;
 			crossSectionMesh.value = triangles;
+			resultInputs = inputs;
 			isStale.value = false;
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'The FEM solver failed.';
@@ -65,6 +82,7 @@ export function useFemCalculation(geometry: CustomShapeGeometry, selectedShapeUI
 		crossSectionProperties.value = { ...EMPTY_CROSS_SECTION_PROPERTIES };
 		crossSectionPolygon.value = [];
 		crossSectionMesh.value = [];
+		resultInputs = null;
 		isStale.value = true;
 	}
 

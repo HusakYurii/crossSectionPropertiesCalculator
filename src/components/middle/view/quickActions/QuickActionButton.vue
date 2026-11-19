@@ -5,9 +5,10 @@ withDefaults(defineProps<{
 	icon: string;
 	/** a toggle that is on is drawn darker */
 	active?: boolean;
+	disabled?: boolean;
 	/** which side of the button the tooltip opens to; away from the edge the bar sits on */
 	tooltipSide: 'left' | 'right' | 'bottom';
-}>(), { active: undefined });
+}>(), { active: undefined, disabled: false });
 
 defineEmits<{
 	click: [];
@@ -16,7 +17,7 @@ defineEmits<{
 
 <template>
 	<button type="button" class="quick-action-button" :class="[`quick-action-button--tooltip-${tooltipSide}`, { 'is-active': active }]"
-		:data-tooltip="label" :aria-label="label" :aria-pressed="active === undefined ? undefined : active" @click="$emit('click')">
+		:data-tooltip="label" :aria-label="label" :aria-pressed="active === undefined ? undefined : active" :disabled="disabled" @click="$emit('click')">
 		<span class="quick-action-button__icon" v-html="icon"></span>
 	</button>
 </template>
@@ -40,6 +41,20 @@ defineEmits<{
 /* 30% more opaque than the shared --color-fill-hover / -strong / -strong-hover, so the canvas shows through less */
 .quick-action-button:hover {
 	background: rgb(var(--color-text-rgb) / 0.15);
+}
+
+/* dead but still hoverable, so the tooltip keeps telling what the button does; the hover colour does not change */
+.quick-action-button:disabled {
+	cursor: default;
+}
+
+/* only the icon is dimmed: the tooltip is part of the button and must stay readable */
+.quick-action-button:disabled .quick-action-button__icon {
+	opacity: 0.4;
+}
+
+.quick-action-button:disabled:hover {
+	background: var(--color-surface-chrome);
 }
 
 /* a toggle that is on; the hover is darker still so it keeps showing */

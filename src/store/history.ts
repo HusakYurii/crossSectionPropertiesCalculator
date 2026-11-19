@@ -3,6 +3,7 @@ import type { Geometry } from '../interfaces/beams/common.types';
 import type { Point } from '../interfaces/common/types';
 import type { CrossSectionProperties } from '../interfaces/sectionProperties';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';
+import { copyPlainData, isSamePlainData } from '../utils/plainData';
 import { sectionModalState } from './sectionModal';
 import { setGeometryOrder, store, type GeometryDataExtra } from './store';
 import {
@@ -62,64 +63,6 @@ class History {
 		this.canRedo.value = this._redoStack.length > 0;
 	}
 
-	// plain data helpers ====================================
-
-	private _isObject(value: unknown): value is Record<string, unknown> {
-		return typeof value === 'object' && value !== null;
-	}
-
-	/** Deep copy of plain data; reads through proxies. Unlike JSON it keeps NaN and undefined */
-	private _copyData<T>(value: T): T {
-		if (!this._isObject(value)) {
-			return value;
-		}
-		const source = toRaw(value) as unknown;
-		if (Array.isArray(source)) {
-			return source.map(item => this._copyData(item)) as T;
-		}
-		const result: Record<string, unknown> = {};
-		for (const key of Object.keys(source as object)) {
-			result[key] = this._copyData((source as Record<string, unknown>)[key]);
-		}
-		return result as T;
-	}
-
-	/** Deep equality with Object.is for numbers, so NaN equals NaN */
-	private _isSameData(a: unknown, b: unknown): boolean {
-		if (Object.is(a, b)) {
-			return true;
-		}
-		if (!this._isObject(a) || !this._isObject(b)) {
-			return false;
-		}
-		const rawA = toRaw(a);
-		const rawB = toRaw(b);
-		if (rawA === rawB) {
-			return true;
-		}
-		if (Array.isArray(rawA) || Array.isArray(rawB)) {
-			if (!Array.isArray(rawA) || !Array.isArray(rawB) || rawA.length !== rawB.length) {
-				return false;
-			}
-			for (let i = 0; i < rawA.length; i++) {
-				if (!this._isSameData(rawA[i], rawB[i])) {
-					return false;
-				}
-			}
-			return true;
-		}
-		const keysA = Object.keys(rawA);
-		if (keysA.length !== Object.keys(rawB).length) {
-			return false;
-		}
-		for (const key of keysA) {
-			if (!Object.prototype.hasOwnProperty.call(rawB, key) || !this._isSameData(rawA[key], rawB[key])) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	// reading the store ====================================
 
 	// raw groups: no dependency tracking and no proxies while diffing
@@ -146,10 +89,10 @@ class History {
 		const groups = this._getStoreDataAsRaw();
 		const session = this._getSessionDataAsRaw();
 		const record: ShapeRecord = {
-			geometry: this._copyData(groups.geometry[uid]),
-			extra: this._copyData(groups.geometryExtra[uid]),
-			properties: this._copyData(groups.crossSectionProperties[uid]),
-			polygon: this._copyData(groups.crossSectionPolygon[uid]),
+			geometry: copyPlainData(groups.geometry[uid]),
+			extra: copyPlainData(groups.geometryExtra[uid]),
+			properties: copyPlainData(groups.crossSectionProperties[uid]),
+			polygon: copyPlainData(groups.crossSectionPolygon[uid]),
 		};
 		const mesh = groups.crossSectionMesh[uid];
 		if (mesh) {
@@ -160,7 +103,7 @@ class History {
 		}
 		const offsets = session.dimensionLabelOffsets[uid];
 		if (offsets) {
-			record.labelOffsets = this._copyData(offsets);
+			record.labelOffsets = copyPlainData(offsets);
 		}
 		return record;
 	}
@@ -171,9 +114,9 @@ class History {
 		// properties and the polygon are only written with the geometry, and a recalculated FEM shape also gets a new mesh
 		return Object.is(groups.crossSectionMesh[uid], record.mesh)
 			&& Boolean(session.showRotationFor[uid]) === Boolean(record.showRotation)
-			&& this._isSameData(groups.geometry[uid], record.geometry)
-			&& this._isSameData(groups.geometryExtra[uid], record.extra)
-			&& this._isSameData(session.dimensionLabelOffsets[uid], record.labelOffsets);
+			&& isSamePlainData(groups.geometry[uid], record.geometry)
+			&& isSamePlainData(groups.geometryExtra[uid], record.extra)
+			&& isSamePlainData(session.dimensionLabelOffsets[uid], record.labelOffsets);
 	}
 
 	private _isSameOrder(a: UID[], b: UID[]): boolean {
@@ -193,10 +136,10 @@ class History {
 
 	/** The store gets copies, because it edits its objects in place. Only the mesh is handed over as it is */
 	private _writeShape(uid: UID, record: ShapeRecord) {
-		store.geometry[uid] = this._copyData(record.geometry);
-		store.geometryExtra[uid] = this._copyData(record.extra);
-		store.crossSectionProperties[uid] = this._copyData(record.properties);
-		store.crossSectionPolygon[uid] = this._copyData(record.polygon);
+		store.geometry[uid] = copyPlainData(record.geometry);
+		store.geometryExtra[uid] = copyPlainData(record.extra);
+		store.crossSectionProperties[uid] = copyPlainData(record.properties);
+		store.crossSectionPolygon[uid] = copyPlainData(record.polygon);
 		if (record.mesh) {
 			store.crossSectionMesh[uid] = markRaw(record.mesh);
 		} else {
@@ -204,7 +147,7 @@ class History {
 		}
 		setShowRotation(uid, record.showRotation === true);
 		if (record.labelOffsets) {
-			appSessionState.dimensionLabelOffsets[uid] = this._copyData(record.labelOffsets);
+			appSessionState.dimensionLabelOffsets[uid] = copyPlainData(record.labelOffsets);
 		} else {
 			delete appSessionState.dimensionLabelOffsets[uid];
 		}

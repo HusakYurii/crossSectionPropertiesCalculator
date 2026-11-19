@@ -4,16 +4,19 @@ import SectionField from '../components/SectionField.vue';
 import { FEM_OPTION_FIELDS } from './fields.ts';
 
 const options = defineModel<Required<FEMMeshOptions>>('options', { required: true });
+const emit = defineEmits<{ edit: [] }>();
 
 function resetFemOptions() {
 	options.value = { ...DEFAULT_FEM_MESH_OPTIONS };
+	emit('edit');
 }
 </script>
 
 <template>
 	<details class="custom-shape__mesh">
 		<summary>Mesh settings</summary>
-		<div class="custom-shape__mesh-fields">
+		<!-- the native change event bubbles up from a field on blur / Enter, so one listener covers all fields -->
+		<div class="custom-shape__mesh-fields" @change="emit('edit')">
 			<SectionField v-for="field in FEM_OPTION_FIELDS" :key="field.key" v-model="options[field.key]" :label="field.label" :unit="field.unit" />
 		</div>
 		<div class="custom-shape__mesh-actions">
