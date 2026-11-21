@@ -1,5 +1,6 @@
 import { reactive } from 'vue';
 import { DEFAULT_QUICK_SOLVER_TOGGLES, type QuickSolverToggleKey, type QuickSolverToggles } from '../interfaces/quickSolverToggles';
+import { DEFAULT_SNAP_OPTIONS_TOGGLES, type SnapOptionToggleKey, type SnapOptionsToggles } from '../interfaces/snapOptionsToggles';
 import { SNAP, type SnapStep } from '../constants/canvasInteraction';
 
 // not imported from store.ts: that file depends on this one, never the other way round
@@ -14,18 +15,22 @@ type EditorSessionState = {
 	redrawId: number;
 	showRotationFor: Record<UID, boolean>; // only `true` entries are kept
 	dimensionLabelOffsets: Record<UID, Partial<Record<DimensionLabelOffsetKey, number>>>;
-	/** which of the section overlays (centroid, principal axes, gyration) are shown on the canvas */
+	/** which of the section overlays (centroid, principal axes, gyration) are shown on the canvas; never saved or put in the history */
 	quickSolverToggles: QuickSolverToggles;
 	/** where the Cx / Cy labels of the section centroid were dragged to; like dimensionLabelOffsets, for the one label pair */
 	compositeLabelOffsets: Partial<Record<DimensionLabelOffsetKey, number>>;
-	/** snapping of dragged shapes and polygon points; shared by both canvases, never saved or put in the history */
+	/** snapping of dragged shapes and polygon points; shared by both canvases, never saved or put in the history, reset on a new or imported project */
 	snapping: { enabled: boolean; step: SnapStep };
 	/** hatching of the shapes in the editor; the report always hatches. Never saved or put in the history */
 	showHatching: boolean;
+	/** object snaps of the main canvas; never saved or put in the history */
+	snapOptionsToggles: SnapOptionsToggles;
 }
 
 /** The part of the session state that is saved to the project file */
-export type PersistedSessionState = Pick<EditorSessionState, 'showRotationFor' | 'dimensionLabelOffsets' | 'quickSolverToggles' | 'compositeLabelOffsets'>;
+export type PersistedSessionState = Pick<EditorSessionState, 'showRotationFor' | 'dimensionLabelOffsets' | 'compositeLabelOffsets'>;
+
+const DEFAULT_SNAPPING = { enabled: true, step: SNAP.DEFAULT_STEP } as const;
 
 export const appSessionState = reactive<EditorSessionState>({
 	currentSelectedShapeID: null,
@@ -35,8 +40,9 @@ export const appSessionState = reactive<EditorSessionState>({
 	dimensionLabelOffsets: {},
 	quickSolverToggles: { ...DEFAULT_QUICK_SOLVER_TOGGLES },
 	compositeLabelOffsets: {},
-	snapping: { enabled: true, step: SNAP.DEFAULT_STEP },
+	snapping: { ...DEFAULT_SNAPPING },
 	showHatching: true,
+	snapOptionsToggles: { ...DEFAULT_SNAP_OPTIONS_TOGGLES },
 });
 
 export type AppSessionState = typeof appSessionState;
@@ -114,6 +120,18 @@ export const clearCompositeLabelAlong = (axis: 'x' | 'y') => {
 
 export const toggleQuickSolver = (key: QuickSolverToggleKey) => {
 	appSessionState.quickSolverToggles[key] = !appSessionState.quickSolverToggles[key];
+}
+
+/** view toggles and grid snapping that are not part of the project: back to their defaults on a new / imported project */
+export const resetViewToggles = () => {
+	Object.assign(appSessionState.quickSolverToggles, DEFAULT_QUICK_SOLVER_TOGGLES);
+	Object.assign(appSessionState.snapOptionsToggles, DEFAULT_SNAP_OPTIONS_TOGGLES);
+	Object.assign(appSessionState.snapping, DEFAULT_SNAPPING);
+	appSessionState.showHatching = true;
+}
+
+export const toggleSnapOption = (key: SnapOptionToggleKey) => {
+	appSessionState.snapOptionsToggles[key] = !appSessionState.snapOptionsToggles[key];
 }
 
 export const removeShapeSessionState = (uid: UID) => {

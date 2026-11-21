@@ -34,6 +34,16 @@ export const POLYGON_EDITOR_INTERACTION = {
 	CLICK_TOLERANCE: 4,
 } as const;
 
+/** Object snaps (Endpoint) of the main canvas. */
+export const OBJECT_SNAP = {
+	/** how close (CSS px) the cursor has to be to a shape point to pick it */
+	HIT_RADIUS: 10,
+	/** points closer than this (px) to the nearest one count as a tie */
+	TIE_TOLERANCE: 0.5,
+	/** decimals kept on the snapped position: only float noise goes, the points still coincide */
+	DECIMALS: 6,
+} as const;
+
 /** Snapping of dragged shapes and polygon points. */
 export const SNAP = {
 	/** the steps the user can pick, in mm */

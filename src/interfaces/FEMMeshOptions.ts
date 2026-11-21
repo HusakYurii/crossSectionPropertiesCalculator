@@ -20,7 +20,7 @@ export interface FEMMeshOptions {
 export const DEFAULT_FEM_MESH_OPTIONS: Required<FEMMeshOptions> = {
 	improvePasses: 10,
 	subdivideLevels: 0,
-	minSegmentLength: 2,
+	minSegmentLength: 10,
 	minAngleDeg: 28,
 	maxSteinerPoints: 500,
 	maxIterations: 1000,

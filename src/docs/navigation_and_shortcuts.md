@@ -26,7 +26,8 @@ On Windows and Linux, read **Ctrl** wherever this page says **Cmd**.
 | Escape | Cancel the typing | dimension number, shape name in the left panel |
 | Escape | Deselect the points (the dialog stays open) | custom shape editor |
 | Enter | OK | file name dialogs (Export Project, Export CSV) |
-| Escape | Close without doing anything | any dialog, help panel, solver preview list |
+| Escape | Clear the first point picked for an endpoint snap | main canvas, Endpoint on |
+| Escape | Close without doing anything | any dialog, help panel, solver preview and object snap lists |
 
 <small>**Note: Escape in the shape dialog.** Escape closes the shape dialog, even while you type in one of its fields, and the changes are not saved. While points are selected, the first Escape only deselects them and the next one closes the dialog. Escape closes only the dialog on top: in a help panel or in the Export CSV dialog opened from the shape dialog, the shape dialog stays open.</small>
 
@@ -36,7 +37,7 @@ There is no key to delete a shape. Use the trash button in the left panel.
 
 *   Undo takes back changes to shapes: adding, editing, deleting, moving, renaming, reordering, and moving their dimension numbers (not Cx / Cy).
 *   It keeps up to 100 steps, fewer when custom shapes have large meshes.
-*   View settings are not undone: zoom, pan, snap, hatching and the solver preview options.
+*   View settings are not undone: zoom, pan, snap, object snap, hatching and the solver preview options. The move made by an object snap can be undone.
 *   **New Project** and **Import Project** clear the undo history.
 *   Undo and Redo are also in the **Edit** menu.
 *   The custom shape editor has its own undo while its dialog is open. It starts empty when the dialog opens and is gone when it closes. **Save** then becomes one step in the main undo: Cmd+Z in the main window takes back the whole edit.
@@ -66,8 +67,9 @@ The bar at the top of the main canvas, from left to right:
 | Snap to grid step (magnet) and step list | Turns snapping on or off. The list picks the step: 10, 5, 1, 0.5, 0.1 or 0.05 mm. Picking a step does not turn snapping on. |
 | Hatching | Shows or hides the hatching of the shapes. |
 | Solver preview options | Toggles for the whole section: section centroid, principal axes, radius of gyration. |
+| Object snap options | Endpoint: shows the points of every shape; click a point of one shape, then a point of another, to move the first shape there. |
 
-**Snapping.** It is on by default, with a 1 mm step. A dragged shape or point lands on a multiple of the step. With snapping off, a dragged shape or point is rounded to 0.01 mm. The custom shape editor has the same snap control, and both canvases share the setting. The setting is not saved with the project.
+**Snapping.** It is on by default, with a 1 mm step. A dragged shape or point lands on a multiple of the step. With snapping off, a dragged shape or point is rounded to 0.01 mm. The custom shape editor has the same snap control, and both canvases share the setting. The setting is not saved with the project and goes back to on, 1 mm, on a new or imported project.
 
 **Shift lock.** Hold Shift while dragging: the move stays horizontal or vertical, whichever way the mouse moved more. The other coordinate keeps its value.
 

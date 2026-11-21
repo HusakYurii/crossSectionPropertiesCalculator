@@ -25,11 +25,6 @@
         "yAlong": -0.75
       }
     },
-    "quickSolverToggles": {
-      "centroid": true,
-      "principalAxes": true,
-      "gyration": true
-    },
     "compositeLabelOffsets": {
       "xAlong": 7.514006315085425,
       "y": 18.28491629992139,

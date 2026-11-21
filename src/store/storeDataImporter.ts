@@ -2,9 +2,8 @@ import { markRaw } from 'vue';
 import { toast } from 'vue3-toastify';
 import { PROJECT_SOURCE, type ProjectState } from "./projectFile";
 import { history } from "./history";
-import { DEFAULT_QUICK_SOLVER_TOGGLES, type QuickSolverToggles } from "../interfaces/quickSolverToggles";
 import { ensureHatchAngles, resetStore, store } from "./store";
-import { appSessionState, markStateDirty, type DimensionLabelOffsetKey, type PersistedSessionState } from "./appSessionState";
+import { appSessionState, markStateDirty, resetViewToggles, type DimensionLabelOffsetKey, type PersistedSessionState } from "./appSessionState";
 
 type NormalizedProject = {
     state: ProjectState;
@@ -17,19 +16,6 @@ const isRecord = (value: unknown): value is Record<string, any> => {
 
 const isStoreDataValid = (data: unknown): data is Record<string, any> => {
     return isRecord(data) && isRecord(data.meta) && data.meta.source === PROJECT_SOURCE;
-}
-
-/** only the known keys with a boolean value are taken, the rest stay at their defaults */
-const sanitizeToggles = (value: unknown): QuickSolverToggles => {
-    const toggles = { ...DEFAULT_QUICK_SOLVER_TOGGLES };
-    if (isRecord(value)) {
-        for (const key of Object.keys(toggles) as (keyof QuickSolverToggles)[]) {
-            if (typeof value[key] === 'boolean') {
-                toggles[key] = value[key];
-            }
-        }
-    }
-    return toggles;
 }
 
 const OFFSET_KEYS: DimensionLabelOffsetKey[] = ['x', 'y', 'xAlong', 'yAlong'];
@@ -70,7 +56,6 @@ const readProject = (data: Record<string, any>): NormalizedProject => ({
     session: {
         showRotationFor: data.appSessionState?.showRotationFor ?? {},
         dimensionLabelOffsets: sanitizeShapeLabelOffsets(data.appSessionState?.dimensionLabelOffsets),
-        quickSolverToggles: sanitizeToggles(data.appSessionState?.quickSolverToggles),
         compositeLabelOffsets: sanitizeLabelOffsets(data.appSessionState?.compositeLabelOffsets),
     },
 })
@@ -100,7 +85,7 @@ const replaceAppSessionData = (session: PersistedSessionState) => {
     }
     Object.assign(appSessionState.showRotationFor, session.showRotationFor);
     Object.assign(appSessionState.dimensionLabelOffsets, session.dimensionLabelOffsets);
-    Object.assign(appSessionState.quickSolverToggles, session.quickSolverToggles);
+    resetViewToggles();
     Object.assign(appSessionState.compositeLabelOffsets, session.compositeLabelOffsets);
     // redrawId is left alone, markStateDirty bumps it so the View watchers always fire
     appSessionState.currentSelectedShapeID = null;

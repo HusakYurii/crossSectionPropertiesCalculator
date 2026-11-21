@@ -4,7 +4,6 @@ import { PROJECT_FILE_VERSION, PROJECT_SOURCE, type ProjectFile } from "./projec
 import { normalizeFileName } from "../fileLoader/fileName";
 import { store } from "./store";
 import { appSessionState } from "./appSessionState";
-import { DEFAULT_QUICK_SOLVER_TOGGLES } from "../interfaces/quickSolverToggles";
 
 export const EMPTY_PROJECT: ProjectFile = {
     meta: {
@@ -14,7 +13,6 @@ export const EMPTY_PROJECT: ProjectFile = {
     appSessionState: {
         showRotationFor: {},
         dimensionLabelOffsets: {},
-        quickSolverToggles: { ...DEFAULT_QUICK_SOLVER_TOGGLES },
         compositeLabelOffsets: {},
     },
     state: {
@@ -31,7 +29,6 @@ export const buildProjectFile = (): ProjectFile => ({
     appSessionState: {
         showRotationFor: appSessionState.showRotationFor,
         dimensionLabelOffsets: appSessionState.dimensionLabelOffsets,
-        quickSolverToggles: appSessionState.quickSolverToggles,
         compositeLabelOffsets: appSessionState.compositeLabelOffsets,
     },
     state: {

@@ -181,6 +181,17 @@ export const SCALE_BAR_STYLE = {
 	LABEL_GAP: 6,
 } as const;
 
+/** The point markers of the object snaps on the main canvas. Sizes are in screen px. */
+export const OBJECT_SNAP_STYLE = {
+	POINT_RADIUS: 4,
+	HOVER_RING: 4,
+	SELECTED_RING: 4,
+	POINT: 'rgba(44, 51, 64, 0.85)',
+	HOVER_FILL: 'rgba(44, 51, 64, 0.2)',
+	SELECTED: 'rgba(220, 60, 60, 1)',
+	SELECTED_FILL: 'rgba(220, 60, 60, 0.25)',
+} as const;
+
 /** The polygon being drawn in the custom shape form. Sizes are in screen px. */
 export const POLYGON_EDITOR_STYLE = {
 	LINE_WIDTH: 2,

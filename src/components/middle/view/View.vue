@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, toRaw, watch } from 'vue';
 import {
 	ShapesInteractionService,
 	DimensionsWithTextLabelInteractionService,
+	ObjectSnapInteractionService,
 } from './services';
 
 import { BeamsDrawTargetCollection } from './canvas/BeamsDrawTargetCollection.ts';
@@ -15,16 +16,20 @@ import HatchingToggle from './quickActions/HatchingToggle.vue';
 import SnapControl from './quickActions/snap/SnapControl.vue';
 import { createCanvasViewActions } from './quickActions/canvasViewActions';
 import QuickSolverActions from './quickActions/QuickSolverActions.vue';
+import ObjectSnapActions from './quickActions/ObjectSnapActions.vue';
 import { DimensionsWithTextLabel } from './canvas/annotations/DimensionsWithTextLabel.ts';
 import { ShapeDimensionSource } from './canvas/annotations/dimensionSources/ShapeDimensionSource';
 import { CompositeSectionOverlays } from './canvas/compositeSection/CompositeSectionOverlays.ts';
 import { unionBoundingBoxes } from './canvas/drawUtils.ts';
+import { getShapeVertexOffsets } from './canvas/objectSnap/shapeVertices';
+import { drawObjectSnapMarkers } from './canvas/objectSnap/ObjectSnapMarkers';
 import { getActiveSnapStep } from '../../../mathUtils/snap.ts';
 import { AXIS_STYLE, CANVAS_FONT } from '../../../constants/canvasStyle.ts';
 import { MAIN_VIEW_FIT } from '../../../constants/canvasFit.ts';
 
 import { Grid, MainAxis, ScaleBar } from './shapes';
-import { store } from '../../../store/store';
+import { store, updateGeometryExtraData } from '../../../store/store';
+import type { Point } from '../../../interfaces/common/types';
 import { appSessionState, setSelectedShapeID } from '../../../store/appSessionState';
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
@@ -43,6 +48,18 @@ let compositeLabelDrawTargets: DrawTargetsCollection<DimensionsWithTextLabel>;
 let compositeOverlays: CompositeSectionOverlays;
 let shapesInteractionService: ShapesInteractionService;
 let dimensionsWithTextLabelInteractionService: DimensionsWithTextLabelInteractionService;
+let objectSnapService: ObjectSnapInteractionService;
+
+// the points of each shape relative to its centroid; cleared whenever the store changes
+const vertexOffsetCache = new Map<string, Point[]>();
+const getVertexOffsets = (uid: string) => {
+	let offsets = vertexOffsetCache.get(uid);
+	if (!offsets) {
+		offsets = getShapeVertexOffsets(store, uid);
+		vertexOffsetCache.set(uid, offsets);
+	}
+	return offsets;
+};
 
 const fitToScreen = () => {
 	const beamBounds = unionBoundingBoxes(beamsDrawTargets.getTargets().map(beam => beam.boundingBox));
@@ -99,6 +116,8 @@ const redraw = (context: CanvasRenderingContext2D) => {
 	);
 
 	compositeOverlays.draw({ context });
+	const snapModel = objectSnapService.getMarkerModel();
+	snapModel && drawObjectSnapMarkers(context, snapModel);
 	arrowLabelDrawTargets.draw(context);
 	compositeLabelDrawTargets.draw(context);
 	// last, so nothing covers it
@@ -107,6 +126,7 @@ const redraw = (context: CanvasRenderingContext2D) => {
 };
 
 watch(() => appSessionState.redrawId, () => {
+	vertexOffsetCache.clear();
 	const currentBeamIds = new Set(beamsDrawTargets.getTargets().map(val => val.uid));
 	const allGeometryIds = new Set(Object.keys(store.geometry));
 	const toAdd: Set<string> = new Set();
@@ -202,6 +222,11 @@ const syncCompositeOverlays = () => {
 
 watch([quickSolver.properties, () => ({ ...quickSolver.toggles })], syncCompositeOverlays);
 
+watch(() => appSessionState.snapOptionsToggles.endpoint, (on) => {
+	!on && objectSnapService?.clearSelection();
+	requestRedraw();
+});
+
 watch(() => [
 	appSessionState.currentSelectedShapeID,
 	appSessionState.currentHoveredShapeID
@@ -257,10 +282,33 @@ onMounted(() => {
 		editor: labelEditor,
 	});
 
+	objectSnapService = new ObjectSnapInteractionService({
+		inputService,
+		canvas: canvasRef.value!,
+		isEnabled: () => appSessionState.snapOptionsToggles.endpoint,
+		hasShape: (uid) => uid in store.geometry,
+		getPolygonRef: (uid) => toRaw(store.crossSectionPolygon[uid]),
+		getShapeIds: () => beamsDrawTargets.getTargets().map((beam) => beam.uid),
+		getVertexOffsets,
+		getPosition: (uid) => store.geometryExtra[uid]?.position ?? null,
+		worldToScreen: (point) => transformService.worldToScreen(point),
+		screenToWorld: (point) => transformService.screenToWorld(point),
+		isTransformModeActive: () => transformService.isPanModeActive,
+		isOverLabel: (point) => getAllLabels().some((label) => label.contains(point)),
+		onSnap: (uid, position) => {
+			updateGeometryExtraData({ uid, data: { position } });
+			history.commit();
+			// the moved shape is the one the right panel shows
+			setSelectedShapeID(uid);
+		},
+		onChange: requestRedraw,
+	});
+
 	inputService.onWindowMouseDown(labelEditor.onWindowMouseDown);
 
 	scene.addService(shapesInteractionService);
 	scene.addService(dimensionsWithTextLabelInteractionService);
+	scene.addService(objectSnapService);
 	scene.initialize();
 	// the toggles may already be on when the view is mounted
 	syncCompositeOverlays();
@@ -280,6 +328,8 @@ onUnmounted(() => {
 			<ViewQuickActions :actions="viewActions" />
 			<QuickActionsDivider />
 			<SnapControl />
+			<QuickActionsDivider />
+			<ObjectSnapActions />
 			<QuickActionsDivider />
 			<HatchingToggle />
 			<QuickActionsDivider />

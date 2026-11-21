@@ -6,8 +6,8 @@ import { compositeCrossSectionPropertiesSolver } from '../../../../solvers/Compo
 import { anyQuickSolverToggleOn } from '../../../../interfaces/quickSolverToggles';
 
 /**
- * State of the solver quick actions: which toggles are on (kept in the session state, so they are saved with the
- * project) and the properties of the whole section while any is.
+ * State of the solver quick actions: which toggles are on (kept in the session state, so they are not saved with the
+ * project and are reset to off on a new or imported project) and the properties of the whole section while any is.
  * The result is a computed over the reactive store, so it follows shape drags, edits, undo and delete by itself.
  */
 export const useQuickSolverOverlays = () => {
