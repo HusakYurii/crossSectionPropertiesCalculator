@@ -2,18 +2,22 @@
 import NestedMenuList from './NestedMenuList.vue';
 import type { NestedMenuLevel } from '../../../interfaces/menu/menu.types.ts';
 
+import { ref } from 'vue';
+
 defineProps<{
 	title: string;
 	level: NestedMenuLevel<T>;
 }>();
+
+const isClosed = ref(false);
 </script>
 
 <template>
-	<div class="nav-item">
-		<button type="button" class="nav-button">
+	<div class="nav-item" :class="{ 'nav-item--closed': isClosed }" @mouseleave="isClosed = false">
+		<button type="button" class="nav-button" @click="isClosed = false">
 			{{ title }}
 		</button>
-		<NestedMenuList :level="level" />
+		<NestedMenuList :level="level" @picked="isClosed = true" />
 	</div>
 </template>
 
@@ -30,8 +34,8 @@ defineProps<{
 	background-color: var(--color-fill-hover);
 }
 
-.nav-item:hover>.nav-menu,
-.nav-item:focus-within>.nav-menu {
+.nav-item:not(.nav-item--closed):hover>.nav-menu,
+.nav-item:not(.nav-item--closed):focus-within>.nav-menu {
 	display: block;
 }
 

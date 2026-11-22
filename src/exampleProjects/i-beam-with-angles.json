@@ -53,7 +53,8 @@
         "r2": 2,
         "t_f2": 7.6,
         "b2": 36,
-        "w2": 76
+        "w2": 76,
+        "hatchAngle": 45
       },
       "1795129251310": {
         "isNegative": false,
@@ -63,7 +64,8 @@
         "t_f1": 3,
         "w": 30,
         "t_f2": 3,
-        "r": 2
+        "r": 2,
+        "hatchAngle": 135
       },
       "1795287240188": {
         "isNegative": false,
@@ -73,7 +75,8 @@
         "t_f1": 3,
         "w": 30,
         "t_f2": 3,
-        "r": 2
+        "r": 2,
+        "hatchAngle": 45
       },
       "1795381777124": {
         "isNegative": true,
@@ -81,7 +84,8 @@
         "type": "RECTANGLE",
         "w": 10,
         "h": 4,
-        "r": 4
+        "r": 4,
+        "hatchAngle": 135
       }
     },
     "geometryExtra": {

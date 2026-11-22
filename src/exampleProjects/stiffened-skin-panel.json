@@ -215,7 +215,8 @@
           "minAngleDeg": 28,
           "maxSteinerPoints": 500,
           "maxIterations": 1000
-        }
+        },
+        "hatchAngle": 45
       },
       "1796003704419": {
         "isNegative": false,
@@ -286,7 +287,8 @@
           "minAngleDeg": 28,
           "maxSteinerPoints": 500,
           "maxIterations": 1000
-        }
+        },
+        "hatchAngle": 135
       },
       "1795609347091": {
         "isNegative": false,
@@ -294,7 +296,8 @@
         "type": "RECTANGLE",
         "w": 100,
         "h": 2,
-        "r": 4
+        "r": 4,
+        "hatchAngle": 45
       }
     },
     "geometryExtra": {

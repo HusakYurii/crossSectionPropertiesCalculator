@@ -1,32 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import MenuWithDropDown from './MenuWithDropDown.vue';
+import { nextTick, ref } from 'vue';
+import MenuWithNestedDropDown from './MenuWithNestedDropDown.vue';
 import ConfirmModal from '../ConfirmModal.vue';
 import SaveProjectModal from '../SaveProjectModal.vue';
 import {  uploadJSON } from '../../../fileLoader/uploadFile.ts';
 
-import { importStoreData, loadProjectData} from '../../../store/storeDataImporter.ts';
+import { importExampleProject, importStoreData, loadProjectData} from '../../../store/storeDataImporter.ts';
+import { EXAMPLE_PROJECTS, type ExampleProjectId } from '../../../store/exampleProjects.ts';
+import type { NestedMenuLevel } from '../../../interfaces/menu/menu.types.ts';
 import { EMPTY_PROJECT, exportStoreData } from '../../../store/storeDataExporter.ts';
 import { store } from '../../../store/store.ts';
 import { history } from '../../../store/history.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../../solvers/CompositeCrossSectionPropertiesSolver.ts';
 import { createReportSnapshot, saveReportSnapshot } from '../../../pages/report/reportSnapshot.ts';
 import { toast } from 'vue3-toastify';
+import { eventBus } from '../../../services/eventBus.ts';
 
 type ActionNames = "import" | "export" | "results" | 'new';
+// 'examples' only keys the parent item of the submenu, it is never dispatched
+type FileMenuValue = ActionNames | 'examples';
 
 const isNewProjectConfirmOpen = ref(false);
 const isImportConfirmOpen = ref(false);
 const isSaveProjectModalOpen = ref(false);
+const pendingExampleId = ref<ExampleProjectId | null>(null);
 
 // undo/redo can bring deleted shapes back, so the history counts too
 function hasWorkToLose() {
 	return Object.keys(store.geometry).length > 0 || history.canUndo.value || history.canRedo.value;
 }
 
+// after the next tick the View watchers have built the beams of the loaded project
+function emitProjectLoaded() {
+	nextTick(() => eventBus.emit('projectLoaded'));
+}
+
 function importProject() {
-	uploadJSON((file) => {
-		importStoreData(file)
+	uploadJSON(async (file) => {
+		if (await importStoreData(file)) emitProjectLoaded();
 	})
 }
 
@@ -38,6 +49,30 @@ function onImportConfirm() {
 
 function onImportReject() {
 	isImportConfirmOpen.value = false;
+}
+
+async function openExample(id: ExampleProjectId) {
+	if (await importExampleProject(EXAMPLE_PROJECTS[id].load)) emitProjectLoaded();
+}
+
+function onExampleSelect(id: ExampleProjectId) {
+	if (hasWorkToLose()) {
+		pendingExampleId.value = id;
+		return;
+	}
+	openExample(id);
+}
+
+function onExampleConfirm() {
+	const id = pendingExampleId.value;
+	pendingExampleId.value = null;
+	if (id) {
+		openExample(id);
+	}
+}
+
+function onExampleReject() {
+	pendingExampleId.value = null;
 }
 
 function createNewProject() {
@@ -101,26 +136,40 @@ const ACTIONS_STRATEGIES: Record<ActionNames, () => void> = {
 	},
 }
 
-const MAIN_MENU_ITEMS: Array<{ value: ActionNames, label: string }> = [
-	{ value: 'new', label: 'New Project' },
-	{ value: 'import', label: 'Import Project' },
-	{ value: 'export', label: 'Export Project' },
-	{ value: 'results', label: 'Show Results' },
-];
-
-function onFileSelect(action: ActionNames) {
+function onFileSelect(action: FileMenuValue) {
+	// the 'examples' parent has children, so the menu never selects it
+	if (action === 'examples') return;
 	ACTIONS_STRATEGIES[action]();
 }
+
+const EXAMPLE_PROJECTS_LEVEL: NestedMenuLevel<ExampleProjectId> = {
+	items: (Object.keys(EXAMPLE_PROJECTS) as ExampleProjectId[]).map(id => ({ value: id, label: EXAMPLE_PROJECTS[id].label })),
+	onSelect: onExampleSelect,
+};
+
+const FILE_MENU: NestedMenuLevel<FileMenuValue> = {
+	items: [
+		{ value: 'new', label: 'New Project' },
+		{ value: 'import', label: 'Import Project' },
+		{ value: 'export', label: 'Export Project' },
+		{ value: 'results', label: 'Show Results' },
+		{ value: 'examples', label: 'Example Projects', children: EXAMPLE_PROJECTS_LEVEL },
+	],
+	onSelect: onFileSelect,
+};
 </script>
 
 <template>
-	<MenuWithDropDown title="File" :items="MAIN_MENU_ITEMS" @select="onFileSelect" />
+	<MenuWithNestedDropDown title="File" :level="FILE_MENU" />
 	<ConfirmModal v-if="isNewProjectConfirmOpen" title="New Project"
 		message="Start a new project? Unsaved changes and the undo history will be lost."
 		confirm-label="Create" :on-confirm="onNewProjectConfirm" :on-reject="onNewProjectReject" />
 	<ConfirmModal v-if="isImportConfirmOpen" title="Import Project"
 		message="Importing a project will replace the current one. Unsaved changes and the undo history will be lost."
 		confirm-label="Import" :on-confirm="onImportConfirm" :on-reject="onImportReject" />
+	<ConfirmModal v-if="pendingExampleId" title="Open Example Project"
+		message="Opening an example will replace the current project. Unsaved changes and the undo history will be lost."
+		confirm-label="Open" :on-confirm="onExampleConfirm" :on-reject="onExampleReject" />
 	<SaveProjectModal v-if="isSaveProjectModalOpen" :on-confirm="onSaveProjectConfirm"
 		:on-reject="onSaveProjectReject" />
 </template>

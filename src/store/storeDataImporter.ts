@@ -105,21 +105,37 @@ export const loadProjectData = (data: unknown): 'ok' | 'invalid' => {
     return 'ok';
 }
 
-export const importStoreData = async (file: File | undefined) => {
+/** validates and loads the project data, shows the result toast; true when it was loaded */
+export const importProjectData = (data: unknown): boolean => {
+    if (loadProjectData(data) !== 'ok') {
+        toast.error("The JSON data is not valid. Probably wrong file");
+        return false;
+    }
+    toast.info('Successfully imported');
+    return true;
+}
+
+export const importExampleProject = async (load: () => Promise<unknown>): Promise<boolean> => {
+    try {
+        // the module's JSON object is cached and the store mutates what it is given, so load a copy
+        return importProjectData(structuredClone(await load()));
+    } catch (error) {
+        toast.error('Failed to load the example project');
+        return false;
+    }
+}
+
+export const importStoreData = async (file: File | undefined): Promise<boolean> => {
     if (!file) {
         toast.error("File wasn't picked up. Upload valid JSON file");
-        return;
+        return false;
     }
     try {
         const fileContent = await file.text();
         const data: unknown = JSON.parse(fileContent);
-        const result = loadProjectData(data);
-        if (result === 'invalid') {
-            toast.error("The JSON data is not valid. Probably wrong file");
-            return;
-        }
-        toast.info('Successfully imported');
+        return importProjectData(data);
     } catch (error) {
         toast.error("Failed to parse the file, make sure it is the right one");
+        return false;
     }
 }

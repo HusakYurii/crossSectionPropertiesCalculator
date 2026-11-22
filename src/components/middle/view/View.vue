@@ -33,6 +33,7 @@ import type { Point } from '../../../interfaces/common/types';
 import { appSessionState, setSelectedShapeID } from '../../../store/appSessionState';
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
+import { eventBus } from '../../../services/eventBus';
 import { useDimensionsWithTextLabelEdit, EDITOR_MIN_WIDTH } from './composables/useDimensionsWithTextLabelEdit';
 import { useQuickSolverOverlays } from './composables/useQuickSolverOverlays';
 
@@ -74,6 +75,10 @@ const fitToScreen = () => {
 		scene.transformService.fitToBounds(bounds, MAIN_VIEW_FIT.MARGIN);
 	}
 };
+
+// set when a project was loaded, the fit runs after the first frame that draws it
+let pendingFit = false;
+let unsubscribeProjectLoaded: (() => void) | null = null;
 
 const viewActions = createCanvasViewActions(() => scene, fitToScreen);
 
@@ -123,6 +128,12 @@ const redraw = (context: CanvasRenderingContext2D) => {
 	// last, so nothing covers it
 	scaleBarDrawTargets.draw(context);
 	labelEditor.updateEditorPosition();
+	if (pendingFit) {
+		pendingFit = false;
+		// the beam bounding boxes are cached during draw, so the fit waits for the first frame of the loaded project
+		// fitToBounds asks for the next frame itself
+		fitToScreen();
+	}
 };
 
 watch(() => appSessionState.redrawId, () => {
@@ -310,12 +321,17 @@ onMounted(() => {
 	scene.addService(dimensionsWithTextLabelInteractionService);
 	scene.addService(objectSnapService);
 	scene.initialize();
+	unsubscribeProjectLoaded = eventBus.on('projectLoaded', () => {
+		pendingFit = true;
+		requestRedraw();
+	});
 	// the toggles may already be on when the view is mounted
 	syncCompositeOverlays();
 	history.setDragProbe(() => shapesInteractionService.isDragging || dimensionsWithTextLabelInteractionService.isDragging);
 });
 
 onUnmounted(() => {
+	unsubscribeProjectLoaded?.();
 	history.setDragProbe(null);
 	scene?.deactivate();
 	scene?.inputService.cleanup();

@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import type { NestedMenuLevel } from '../../../interfaces/menu/menu.types.ts';
 
-defineProps<{
+const props = defineProps<{
 	level: NestedMenuLevel;
 }>();
+
+const emit = defineEmits<{
+	picked: [];
+}>();
+
+function handleItemClick(event: MouseEvent, item: NestedMenuLevel['items'][number]) {
+	if (item.children) return;
+	// Blur first so a modal opened by onSelect records body (not this button) as previous focus.
+	(event.currentTarget as HTMLElement).blur();
+	props.level.onSelect(item.value);
+	emit('picked');
+}
 </script>
 
 <template>
@@ -14,7 +26,7 @@ defineProps<{
 				class="nav-menu__item"
 				:disabled="item.disabled"
 				:aria-haspopup="item.children ? 'menu' : undefined"
-				@click="!item.children && level.onSelect(item.value)"
+				@click="handleItemClick($event, item)"
 			>
 				<span v-if="item.icon" class="nav-menu__icon" v-html="item.icon"></span>
 				{{ item.label }}
@@ -24,7 +36,7 @@ defineProps<{
 					</svg>
 				</span>
 			</button>
-			<NestedMenuList v-if="item.children && !item.disabled" :level="item.children" />
+			<NestedMenuList v-if="item.children && !item.disabled" :level="item.children" @picked="emit('picked')" />
 		</li>
 	</ul>
 </template>
