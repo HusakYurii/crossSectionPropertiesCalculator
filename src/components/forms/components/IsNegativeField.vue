@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StyledSelectWrapper from './StyledSelectWrapper.vue';
 import { openInfoPanel } from '../../../store/infoPanel.ts';
 
 const model = defineModel<boolean>({ required: true });
@@ -21,12 +22,12 @@ function onChange(event: Event) {
 					@click="openNegativeInfo">?</button>
 			</span>
 		</span>
-		<span class="field__input">
+		<StyledSelectWrapper class="field__input">
 			<select :value="model ? 'negative' : 'positive'" @change="onChange">
 				<option value="positive">Positive</option>
 				<option value="negative">Negative</option>
 			</select>
-		</span>
+		</StyledSelectWrapper>
 	</label>
 </template>
 
@@ -73,25 +74,17 @@ function onChange(event: Event) {
 	background: var(--color-fill-hover);
 }
 
-.field__input {
-	display: flex;
-	align-items: center;
-	gap: 5px;
-	border: 1px solid var(--color-border-subtle);
-	border-radius: 5px;
-	padding: 0 6px;
-	background: var(--color-surface-canvas);
-}
-
+/* the select draws its own box; match the 26 px height and 5 px radius of the other form inputs */
 .field__input select {
 	flex: 1;
 	min-width: 0;
-	border: none;
-	background: transparent;
-	height: 24px;
-	font-size: 11.7px;
-	color: var(--color-text);
-	outline: none;
-	cursor: pointer;
+	height: 26px;
+	border-radius: 5px;
+}
+
+@supports (appearance: base-select) {
+	.field__input select::picker(select) {
+		border-radius: 5px;
+	}
 }
 </style>
