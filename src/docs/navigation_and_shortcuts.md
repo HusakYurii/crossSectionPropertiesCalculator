@@ -18,6 +18,9 @@ On Windows and Linux, read **Ctrl** wherever this page says **Cmd**.
 | --- | --- | --- |
 | Cmd+Z | Undo | main window, custom shape editor |
 | Shift+Cmd+Z, or Ctrl+Y | Redo | main window, custom shape editor |
+| Cmd+C | Copy the selected shape | main window |
+| Cmd+V | Paste the copied shape, offset 10 mm from the original and selected. Repeated pastes step further | main window |
+| Cmd+D | Duplicate the selected shape, offset 10 mm and selected. The copied shape stays on the clipboard | main window |
 | Shift (hold while dragging) | Move along one axis only | both canvases |
 | Cmd+click | Add a point to the selection, or remove it | custom shape editor: canvas and points list |
 | Delete or Backspace | Delete the selected points | custom shape editor |

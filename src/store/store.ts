@@ -97,6 +97,15 @@ export const ensureHatchAngles = () => {
 	lastHatchAngle = angles[angles.length - 1] ?? 135;
 }
 
+/**
+ * The hatch for a shape that is added without going through addGeometryData (a pasted one).
+ * With `oppositeOf` it is the opposite of that angle (the copied shape), so the copy stands out from its original.
+ */
+export const takeNextHatchAngle = (oppositeOf: HatchAngle = lastHatchAngle): HatchAngle => {
+	lastHatchAngle = oppositeAngle(oppositeOf);
+	return lastHatchAngle;
+}
+
 export const addGeometryData = <T extends Geometry>(payload: Payload<T>) => {
 	// only new shapes get an angle; one that already has it (a restored or pasted shape) keeps it
 	const hatchAngle = payload.data.hatchAngle ?? oppositeAngle(lastHatchAngle);

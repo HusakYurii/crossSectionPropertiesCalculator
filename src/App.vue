@@ -6,11 +6,13 @@ import View from './components/middle/view/View.vue';
 import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
 import { useUndoRedoShortcuts } from './composables/useUndoRedoShortcuts.ts';
+import { useShapeClipboardShortcuts } from './composables/useShapeClipboardShortcuts.ts';
 import { history } from './store/history.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
 import { computed, onMounted } from 'vue';
 
 useUndoRedoShortcuts({ undo: () => history.undo(), redo: () => history.redo() });
+useShapeClipboardShortcuts();
 
 const {
 	leftWidth,

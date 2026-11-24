@@ -1,30 +1,16 @@
-import { markRaw, ref, toRaw } from 'vue';
-import type { Geometry } from '../interfaces/beams/common.types';
-import type { Point } from '../interfaces/common/types';
-import type { CrossSectionProperties } from '../interfaces/sectionProperties';
+import { ref, toRaw } from 'vue';
 import type { Triangle } from '../solvers/femTriangulator/triangulate';
-import { copyPlainData, isSamePlainData } from '../utils/plainData';
+import { isSamePlainData } from '../utils/plainData';
 import { sectionModalState } from './sectionModal';
-import { setGeometryOrder, store, type GeometryDataExtra } from './store';
+import { setGeometryOrder, store } from './store';
 import {
 	appSessionState,
 	markStateDirty,
 	removeShapeSessionState,
-	setShowRotation,
-	type DimensionLabelOffsetKey,
 } from './appSessionState';
+import { captureShape, writeShape, type ShapeRecord } from './shapeRecord';
 
 type UID = string;
-
-type ShapeRecord = {
-	geometry: Geometry;
-	extra: GeometryDataExtra;
-	properties: CrossSectionProperties;
-	polygon: Point[];
-	mesh?: Triangle[];
-	showRotation?: true;
-	labelOffsets?: Partial<Record<DimensionLabelOffsetKey, number>>;
-};
 
 type Change = { uid: UID; before: ShapeRecord | null; after: ShapeRecord | null };
 
@@ -85,29 +71,6 @@ class History {
 		};
 	}
 
-	private _captureShape(uid: UID): ShapeRecord {
-		const groups = this._getStoreDataAsRaw();
-		const session = this._getSessionDataAsRaw();
-		const record: ShapeRecord = {
-			geometry: copyPlainData(groups.geometry[uid]),
-			extra: copyPlainData(groups.geometryExtra[uid]),
-			properties: copyPlainData(groups.crossSectionProperties[uid]),
-			polygon: copyPlainData(groups.crossSectionPolygon[uid]),
-		};
-		const mesh = groups.crossSectionMesh[uid];
-		if (mesh) {
-			record.mesh = mesh; // shared, never copied
-		}
-		if (session.showRotationFor[uid]) {
-			record.showRotation = true;
-		}
-		const offsets = session.dimensionLabelOffsets[uid];
-		if (offsets) {
-			record.labelOffsets = copyPlainData(offsets);
-		}
-		return record;
-	}
-
 	private _isShapeUnchanged(uid: UID, record: ShapeRecord): boolean {
 		const groups = this._getStoreDataAsRaw();
 		const session = this._getSessionDataAsRaw();
@@ -132,25 +95,6 @@ class History {
 		delete store.crossSectionPolygon[uid];
 		delete store.crossSectionMesh[uid];
 		removeShapeSessionState(uid);
-	}
-
-	/** The store gets copies, because it edits its objects in place. Only the mesh is handed over as it is */
-	private _writeShape(uid: UID, record: ShapeRecord) {
-		store.geometry[uid] = copyPlainData(record.geometry);
-		store.geometryExtra[uid] = copyPlainData(record.extra);
-		store.crossSectionProperties[uid] = copyPlainData(record.properties);
-		store.crossSectionPolygon[uid] = copyPlainData(record.polygon);
-		if (record.mesh) {
-			store.crossSectionMesh[uid] = markRaw(record.mesh);
-		} else {
-			delete store.crossSectionMesh[uid];
-		}
-		setShowRotation(uid, record.showRotation === true);
-		if (record.labelOffsets) {
-			appSessionState.dimensionLabelOffsets[uid] = copyPlainData(record.labelOffsets);
-		} else {
-			delete appSessionState.dimensionLabelOffsets[uid];
-		}
 	}
 
 	// limits ====================================
@@ -199,7 +143,7 @@ class History {
 		this._base = new Map();
 		const geometry = this._getStoreDataAsRaw().geometry;
 		for (const uid of Object.keys(geometry)) {
-			this._base.set(uid, this._captureShape(uid));
+			this._base.set(uid, captureShape(uid));
 		}
 		this._baseOrder = Object.keys(geometry);
 	}
@@ -208,7 +152,7 @@ class History {
 		for (const change of entry.changes) {
 			const record = change[direction];
 			if (record) {
-				this._writeShape(change.uid, record);
+				writeShape(change.uid, record);
 				this._base.set(change.uid, record);
 			} else {
 				this._removeShape(change.uid);
@@ -232,10 +176,6 @@ class History {
 		markStateDirty();
 	}
 
-	private _isBlocked(): boolean {
-		return sectionModalState.isOpen || this._isDragging();
-	}
-
 	/** Edits that are still waiting get saved first, so they are part of what undo takes back */
 	private _settlePendingEdits() {
 		this._beforeCommit.forEach(callback => callback());
@@ -246,6 +186,11 @@ class History {
 
 	readonly canUndo = ref(false);
 	readonly canRedo = ref(false);
+
+	/** True while the shape dialog is open or a drag is going on: undo, redo and paste wait for it */
+	isBlocked(): boolean {
+		return sectionModalState.isOpen || this._isDragging();
+	}
 
 	/** The canvas tells history whether a drag is going on, undo and redo are blocked meanwhile */
 	setDragProbe(probe: (() => boolean) | null) {
@@ -275,7 +220,7 @@ class History {
 		for (const uid of uids) {
 			const before = this._base.get(uid) ?? null;
 			if (!before || !this._isShapeUnchanged(uid, before)) {
-				changes.push({ uid, before, after: this._captureShape(uid) });
+				changes.push({ uid, before, after: captureShape(uid) });
 			}
 		}
 		for (const [uid, before] of this._base) {
@@ -306,7 +251,7 @@ class History {
 	}
 
 	undo(): boolean {
-		if (this._isBlocked()) {
+		if (this.isBlocked()) {
 			return false;
 		}
 		this._settlePendingEdits();
@@ -322,7 +267,7 @@ class History {
 	}
 
 	redo(): boolean {
-		if (this._isBlocked()) {
+		if (this.isBlocked()) {
 			return false;
 		}
 		this._settlePendingEdits();
