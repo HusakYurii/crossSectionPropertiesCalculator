@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { sanitizeFileName } from '../../fileLoader/fileName.ts';
+import { useModalKeyboard } from '../../composables/useModalKeyboard.ts';
 
 const props = defineProps<{
 	title: string;
@@ -51,27 +52,15 @@ function confirm() {
 	props.onConfirm(trimmedName.value);
 }
 
-function onModalKeydown(event: KeyboardEvent) {
-	// shortcuts of the app (undo and so on) and the section window behind must not see these keys
-	event.stopPropagation();
-	// a key that belongs to an input method (IME) composition is not a command
-	if (event.isComposing || event.keyCode === 229) {
-		return;
-	}
-	if (event.key === 'Escape') {
-		props.onReject();
-	} else if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) {
-		// buttons keep their own Enter, so the close button does not confirm
-		event.preventDefault();
-		confirm();
-	}
-}
+const onModalKeydown = useModalKeyboard({
+	onCancel: () => props.onReject(),
+});
 </script>
 
 <template>
 	<Teleport defer to=".modals-container">
 		<div ref="overlayRef" class="modal-overlay" tabindex="-1" @keydown="onModalKeydown">
-			<div class="modal" role="dialog" aria-modal="true" :aria-label="props.title">
+			<form class="modal" role="dialog" aria-modal="true" :aria-label="props.title" @submit.prevent="confirm">
 				<div class="modal-header">
 					<span class="modal-title">{{ props.title }}</span>
 					<button type="button" class="modal-close" aria-label="Close" @click="props.onReject">✕</button>
@@ -86,9 +75,9 @@ function onModalKeydown(event: KeyboardEvent) {
 				</label>
 
 				<div class="modal-actions">
-					<button type="button" class="modal-btn" :disabled="!canConfirm" @click="confirm">OK</button>
+					<button type="submit" class="modal-btn" :disabled="!canConfirm">OK</button>
 				</div>
-			</div>
+			</form>
 		</div>
 	</Teleport>
 </template>
@@ -106,6 +95,7 @@ function onModalKeydown(event: KeyboardEvent) {
 }
 
 .modal {
+	margin: 0;
 	width: 320px;
 	max-width: 90%;
 	padding: 16px;

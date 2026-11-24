@@ -2,6 +2,8 @@ export type MenuItem<T extends string> = {
 	value: T;
 	label: string;
 	icon?: string;
+	/** keyboard shortcut hint shown on the right, e.g. ⌘Z */
+	shortcut?: string;
 	disabled?: boolean;
 };
 

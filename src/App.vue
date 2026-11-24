@@ -5,14 +5,26 @@ import View from './components/middle/view/View.vue';
 // import RightPanel from './components/right/RightPanel.vue';
 import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
-import { useUndoRedoShortcuts } from './composables/useUndoRedoShortcuts.ts';
-import { useShapeClipboardShortcuts } from './composables/useShapeClipboardShortcuts.ts';
+import { useHotKey } from './composables/useHotKey.ts';
+import { nativeHotKeysService } from './services/NativeHotKeysService.ts';
+import { sectionModalState } from './store/sectionModal.ts';
+import { copySelectedShape, duplicateSelectedShape, pasteShape } from './store/shapeClipboard.ts';
 import { history } from './store/history.ts';
 import { useEditorPanelsResize, RESIZE_TARGETS } from './composables/useEditorPanelsResize.ts';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 
-useUndoRedoShortcuts({ undo: () => history.undo(), redo: () => history.redo() });
-useShapeClipboardShortcuts();
+// Undo and redo are in the bubble phase: the shape dialog stops keydown from bubbling, so while it is open the app
+// history never hears the key (the dialog has its own history in the capture phase)
+useHotKey('undo', () => { history.undo(); });
+useHotKey('redo', () => { history.redo(); });
+
+// Cmd/Ctrl+C copies the selected shape, Cmd/Ctrl+V pastes it, Cmd/Ctrl+D duplicates it without touching the clipboard.
+// Like the app undo they are in the bubble phase, so a modal that stops keydown keeps them quiet.
+// Returning false (nothing to do) leaves the browser its own behaviour, e.g. Cmd+D (bookmark) with no shape selected
+const isClipboardBlocked = () => sectionModalState.isOpen || infoPanelState.topic !== null || history.isBlocked();
+useHotKey('copy', () => !isClipboardBlocked() && copySelectedShape());
+useHotKey('paste', () => !isClipboardBlocked() && pasteShape());
+useHotKey('duplicate', () => !isClipboardBlocked() && duplicateSelectedShape());
 
 const {
 	leftWidth,
@@ -23,10 +35,13 @@ const {
 const shouldInert = computed(() => infoPanelState.topic !== null);
 
 onMounted(() => {
+	nativeHotKeysService.initialize();
 	document.addEventListener('contextmenu', (e) => {
 		e.preventDefault()
 	})
 })
+
+onUnmounted(() => nativeHotKeysService.deactivate());
 
 </script>
 

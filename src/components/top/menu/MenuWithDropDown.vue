@@ -21,12 +21,12 @@ const emit = defineEmits<{
 				<button
 					type="button"
 					class="nav-menu__item"
-					:class="{ 'nav-menu__item--with-icon': item.icon }"
 					:disabled="item.disabled"
 					@click="emit('select', item.value)"
 				>
 					<span v-if="item.icon" class="nav-menu__icon" v-html="item.icon"></span>
-					{{ item.label }}
+					<span class="nav-menu__label">{{ item.label }}</span>
+					<span v-if="item.shortcut" class="nav-menu__shortcut">{{ item.shortcut }}</span>
 				</button>
 			</li>
 		</ul>
@@ -84,13 +84,16 @@ const emit = defineEmits<{
 }
 
 .nav-menu__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	width: 100%;
 	padding: 8px 12px;
 	border: none;
 	border-radius: 0;
 	background-color: transparent;
 	color: var(--color-text);
-	font-size: 14px;
+	font-size: 13px;
 	text-align: left;
 	cursor: pointer;
 	transition: background-color 0.35s;
@@ -105,10 +108,18 @@ const emit = defineEmits<{
 	cursor: default;
 }
 
-.nav-menu__item--with-icon {
-	display: flex;
-	align-items: center;
-	gap: 8px;
+.nav-menu__label {
+	flex: 1;
+	white-space: nowrap;
+}
+
+/* the hint sits on the right, quieter than the label */
+.nav-menu__shortcut {
+	flex-shrink: 0;
+	margin-left: 24px;
+	font-size: 11px;
+	opacity: 0.6;
+	white-space: nowrap;
 }
 
 .nav-menu__icon {

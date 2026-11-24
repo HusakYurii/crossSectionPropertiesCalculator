@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { useModalKeyboard } from '../../composables/useModalKeyboard.ts';
 
 const props = withDefaults(defineProps<{
 	title: string;
@@ -27,23 +28,15 @@ onBeforeUnmount(() => {
 	}
 });
 
-function onModalKeydown(event: KeyboardEvent) {
-	// shortcuts of the app (undo and so on) must not see these keys
-	event.stopPropagation();
-	// a key that belongs to an input method (IME) composition is not a command
-	if (event.isComposing || event.keyCode === 229) {
-		return;
-	}
-	if (event.key === 'Escape') {
-		props.onReject();
-	}
-}
+const onModalKeydown = useModalKeyboard({
+	onCancel: () => props.onReject(),
+});
 </script>
 
 <template>
 	<Teleport defer to=".modals-container">
 		<div class="modal-overlay" tabindex="-1" @keydown="onModalKeydown">
-			<div class="modal" role="dialog" aria-modal="true" :aria-label="title">
+			<form class="modal" role="dialog" aria-modal="true" :aria-label="title" @submit.prevent="props.onConfirm()">
 				<div class="modal-header">
 					<span class="modal-title">{{ title }}</span>
 					<button type="button" class="modal-close" aria-label="Close" @click="props.onReject">✕</button>
@@ -53,9 +46,9 @@ function onModalKeydown(event: KeyboardEvent) {
 
 				<div class="modal-actions">
 					<button type="button" class="modal-btn modal-btn--secondary" @click="props.onReject">Cancel</button>
-					<button ref="confirmRef" type="button" class="modal-btn" @click="props.onConfirm">{{ confirmLabel }}</button>
+					<button ref="confirmRef" type="submit" class="modal-btn">{{ confirmLabel }}</button>
 				</div>
-			</div>
+			</form>
 		</div>
 	</Teleport>
 </template>
@@ -73,6 +66,7 @@ function onModalKeydown(event: KeyboardEvent) {
 }
 
 .modal {
+	margin: 0;
 	width: 320px;
 	max-width: 90%;
 	padding: 16px;

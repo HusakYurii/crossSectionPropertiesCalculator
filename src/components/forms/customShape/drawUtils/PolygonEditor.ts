@@ -4,6 +4,7 @@ import type { InputService } from "../../../middle/view/services/InputService";
 import { CURSOR, MOUSE_BUTTON, POLYGON_EDITOR_INTERACTION } from "../../../../constants/canvasInteraction";
 import { lockAndSnap, snapPoint } from "../../../../mathUtils/snap";
 import { roundTo } from "../../../../mathUtils/round";
+import { hasModKey, isImeComposing } from "../../../../services/NativeHotKeysService";
 
 type PolygonEditorProps = {
 	canvas: HTMLCanvasElement;
@@ -153,7 +154,7 @@ export class PolygonEditor implements Service {
 
 	/** Shift is taken by the axis lock, and Ctrl+click is a right click on Mac */
 	private _hasModifier(event: MouseEvent): boolean {
-		return event.metaKey || event.ctrlKey;
+		return hasModKey(event);
 	}
 
 	private _onMouseDown = (event: MouseEvent): void => {
@@ -331,7 +332,7 @@ export class PolygonEditor implements Service {
 			return;
 		}
 		// a key that belongs to an IME composition (it can cancel the candidate list) is not ours
-		if (event.isComposing || event.keyCode === 229) {
+		if (isImeComposing(event)) {
 			return;
 		}
 		// a dialog on top of the editor (help panel, the CSV file name) must not act on points behind it; its overlay

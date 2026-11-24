@@ -3,6 +3,7 @@ import { CURSOR, DRAG_THRESHOLD, MOUSE_BUTTON, OBJECT_SNAP } from '../../../../c
 import { roundTo } from '../../../../mathUtils/round';
 import type { ObjectSnapMarkerModel } from '../canvas/objectSnap/ObjectSnapMarkers';
 import type { InputService } from './InputService';
+import { isImeComposing } from '../../../../services/NativeHotKeysService';
 
 type ObjectSnapInteractionServiceProps = {
 	inputService: InputService;
@@ -342,7 +343,7 @@ export class ObjectSnapInteractionService implements Service {
 	};
 
 	private _onKeyDown = (event: KeyboardEvent): void => {
-		if (event.key !== 'Escape' || event.repeat || event.isComposing || event.keyCode === 229) {
+		if (event.key !== 'Escape' || event.repeat || isImeComposing(event)) {
 			return;
 		}
 		if (!this._selected || !this._isEnabled() || event.defaultPrevented) {

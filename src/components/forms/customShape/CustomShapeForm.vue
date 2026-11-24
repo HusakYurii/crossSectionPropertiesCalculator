@@ -16,7 +16,7 @@ import IsNegativeField from '../components/IsNegativeField.vue';
 import ButtonField from '../components/ButtonField.vue';
 import { type WatchStoreGeometryProps, useStoreGeometryWatcher } from '../composables/useStoreGeometryWatcher.ts';
 import { useLocalHistory } from '../../../composables/useLocalHistory.ts';
-import { useUndoRedoShortcuts } from '../../../composables/useUndoRedoShortcuts.ts';
+import { useHotKey } from '../../../composables/useHotKey.ts';
 import { useFemCalculation } from './composables/useFemCalculation.ts';
 import { useCustomShapeCanvas } from './composables/useCustomShapeCanvas.ts';
 import { useCustomShapeCsv } from './composables/useCustomShapeCsv.ts';
@@ -78,7 +78,10 @@ const localHistory = useLocalHistory({
 	},
 	isBlocked: () => isPointerDown() || isExportModalOpen.value || infoPanelState.topic !== null,
 });
-useUndoRedoShortcuts({ undo: localHistory.undo, redo: localHistory.redo, capture: true });
+// capture phase: the dialog stops keydown from bubbling, which would hide the key from the bubble phase; the service
+// also stops the event, so the app history never hears it, even when this undo is blocked
+useHotKey('undo', () => { localHistory.undo(); }, { capture: true });
+useHotKey('redo', () => { localHistory.redo(); }, { capture: true });
 
 /** the points are swapped as a whole, so the selection and the results of the old ones go too */
 function replacePoints(points: Point[]) {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { infoPanelState, closeInfoPanel, type InfoTopic } from '../../store/infoPanel.ts';
+import { useModalKeyboard } from '../../composables/useModalKeyboard.ts';
 
 const props = defineProps<{ topic: InfoTopic }>();
 
@@ -22,12 +23,7 @@ watch(isVisible, (visible) => {
 	}
 });
 
-function onKeydown(event: KeyboardEvent) {
-	event.stopPropagation();
-	if (event.key === 'Escape') {
-		closeInfoPanel();
-	}
-}
+const onKeydown = useModalKeyboard({ onCancel: closeInfoPanel });
 </script>
 
 <template>

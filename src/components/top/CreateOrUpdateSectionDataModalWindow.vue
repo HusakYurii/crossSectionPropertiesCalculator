@@ -6,6 +6,7 @@ import { addGeometryData, updateGeometryData, getUID, store, addCrossSectionProp
 import { setShowRotation } from '../../store/appSessionState.ts';
 import { openInfoPanel } from '../../store/infoPanel.ts';
 import { history } from '../../store/history.ts';
+import { useModalKeyboard } from '../../composables/useModalKeyboard.ts';
 import type { Geometry } from '../../interfaces/beams/common.types.ts';
 import ISectionForm from '../forms/iSection/ISectionForm.vue';
 import CSectionForm from '../forms/cSection/CSectionForm.vue';
@@ -77,6 +78,9 @@ const activeForm = computed(() => {
 	return shapeType ? SHAPE_FORMS[shapeType] ?? null : null;
 });
 
+// Enter and the button do the same, so both ask this
+const canConfirm = computed(() => !!activeForm.value && formRef.value?.isValid !== false);
+
 const isExistingShape = computed(() => {
 	if (sectionModalState.selectedShapeUID === null) {
 		return false
@@ -108,6 +112,9 @@ function saveMesh(uid: string, mesh: Triangle[] | undefined) {
 }
 
 function confirmAddShape() {
+	if (!canConfirm.value) {
+		return;
+	}
 	const form = formRef.value;
 	const geometry = form?.geometry;
 	if (!form || !geometry) {
@@ -137,12 +144,11 @@ function confirmAddShape() {
 	closeSectionModal();
 }
 
-function onModalKeydown(event: KeyboardEvent) {
-	event.stopPropagation();
-	if (event.key === 'Escape') {
-		closeSectionModal();
-	}
-}
+const onModalKeydown = useModalKeyboard({
+	onCancel: closeSectionModal,
+	onConfirm: confirmAddShape,
+	canConfirm: () => canConfirm.value,
+});
 
 function openSolverInfo() {
 	openInfoPanel(currentSolver.value === 'fem' ? 'whatIsFEMSolver' : 'whatIsGreensTheoremSolver');
@@ -185,7 +191,7 @@ function openSolverInfo() {
 
 					<section class="modal-section modal-section--actions">
 						<button v-if="activeForm" type="button" class="modal-btn modal-btn-add"
-							:disabled="formRef?.isValid === false" @click="confirmAddShape">
+							:disabled="!canConfirm" @click="confirmAddShape">
 							{{ isExistingShape ? 'Save' : 'Create' }}
 						</button>
 

@@ -83,7 +83,7 @@ function handleItemClick(event: MouseEvent, item: NestedMenuLevel['items'][numbe
 	border-radius: 0;
 	background-color: transparent;
 	color: var(--color-text);
-	font-size: 14px;
+	font-size: 13px;
 	text-align: left;
 	cursor: pointer;
 	transition: background-color 0.35s;

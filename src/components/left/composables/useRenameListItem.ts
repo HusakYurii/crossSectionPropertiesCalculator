@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import type { Directive } from "vue";
+import { isImeComposing } from "../../../services/NativeHotKeysService";
 
 type RenameListItemOptions = {
 	// undefined when the item no longer exists
@@ -51,7 +52,7 @@ export const useRenameListItem = (options: RenameListItemOptions) => {
 
 	function onRenameKeydown(event: KeyboardEvent) {
 		// enter confirms an ime candidate here, not the name
-		if (event.isComposing) {
+		if (isImeComposing(event)) {
 			return;
 		}
 		if (event.key === 'Enter') {

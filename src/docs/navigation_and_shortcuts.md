@@ -17,7 +17,7 @@ On Windows and Linux, read **Ctrl** wherever this page says **Cmd**.
 | Keys | Action | Where |
 | --- | --- | --- |
 | Cmd+Z | Undo | main window, custom shape editor |
-| Shift+Cmd+Z, or Ctrl+Y | Redo | main window, custom shape editor |
+| Shift+Cmd+Z | Redo | main window, custom shape editor |
 | Cmd+C | Copy the selected shape | main window |
 | Cmd+V | Paste the copied shape, offset 10 mm from the original and selected. Repeated pastes step further | main window |
 | Cmd+D | Duplicate the selected shape, offset 10 mm and selected. The copied shape stays on the clipboard | main window |
@@ -28,9 +28,11 @@ On Windows and Linux, read **Ctrl** wherever this page says **Cmd**.
 | Tab | Apply the typed value | dimension number, shape name in the left panel |
 | Escape | Cancel the typing | dimension number, shape name in the left panel |
 | Escape | Deselect the points (the dialog stays open) | custom shape editor |
-| Enter | OK | file name dialogs (Export Project, Export CSV) |
+| Enter | Same as the OK / Confirm / Create / Save button. Does nothing while that button is disabled | any dialog |
 | Escape | Clear the first point picked for an endpoint snap | main canvas, Endpoint on |
 | Escape | Close without doing anything | any dialog, help panel, solver preview and object snap lists |
+
+<small>**Note: Enter in dialogs.** A focused button, a select, the Mesh settings header and the point coordinate fields keep their own Enter (press the button, open the list, apply the value). A held Enter does nothing. In the shape dialog, Enter with Ctrl, Cmd, Alt or Shift does nothing too.</small>
 
 <small>**Note: Escape in the shape dialog.** Escape closes the shape dialog, even while you type in one of its fields, and the changes are not saved. While points are selected, the first Escape only deselects them and the next one closes the dialog. Escape closes only the dialog on top: in a help panel or in the Export CSV dialog opened from the shape dialog, the shape dialog stays open.</small>
 
@@ -155,6 +157,6 @@ To finish the shape:
 
 1.  Have at least 3 points, with no crossing edges. The app does not check the crossing (see "CSV File For Custom Shape", section 7).
 2.  Press **Calculate with FEM**. After a change to the points or the mesh settings, the mesh disappears and **Create** / **Save** stays off until you calculate again (or undo back to the calculated shape, which brings the results back). Until then the table shows the old numbers. Switching negative / positive needs no new calculation.
-3.  Press **Create** or **Save**.
+3.  Press **Create** or **Save** (or press Enter; see the Enter exceptions in section 1).
 
 The points can also be imported from a CSV file, see "CSV File For Custom Shape".

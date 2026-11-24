@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { Point } from '../../../interfaces/common/types.ts';
 import { POLYGON_LIMITS } from '../../../constants/geometryTolerances.ts';
 import { roundTo } from '../../../mathUtils/round.ts';
+import { hasModKey } from '../../../services/NativeHotKeysService.ts';
 
 // the points are edited in place, the same way the canvas editor edits them
 const points = defineModel<Point[]>('points', { required: true });
@@ -40,7 +41,7 @@ function movePoint(index: number, delta: -1 | 1) {
 
 /** Cmd/Ctrl+click toggles a row, a plain click selects only it */
 function selectRow(index: number, event?: MouseEvent) {
-	if (event && (event.metaKey || event.ctrlKey)) {
+	if (event && hasModKey(event)) {
 		selectedIndices.value = selectedIndices.value.includes(index)
 			? selectedIndices.value.filter((i) => i !== index)
 			: [...selectedIndices.value, index].sort((a, b) => a - b);
@@ -79,18 +80,19 @@ function removePoint(index: number) {
 		A shape needs at least {{ POLYGON_LIMITS.MIN_OPEN_POINTS }} points.
 	</p>
 
+	<!-- data-own-enter: the value is committed on change, so Enter applies it instead of confirming the dialog -->
 	<ol class="custom-shape__list">
 		<li v-for="(point, index) in points" :key="index" class="custom-shape__row"
 			:class="{ 'custom-shape__row--selected': selectedIndices.includes(index) }" @click="selectRow(index, $event)">
 			<span class="custom-shape__index">{{ index + 1 }}</span>
 			<label class="custom-shape__coord">
 				<span>x</span>
-				<input :value="point.x" type="number" step="any" @click.stop @focus="focusRow(index)"
+				<input :value="point.x" type="number" step="any" data-own-enter @click.stop @focus="focusRow(index)"
 					@change="setCoordinate(point, 'x', $event)" />
 			</label>
 			<label class="custom-shape__coord">
 				<span>y</span>
-				<input :value="point.y" type="number" step="any" @click.stop @focus="focusRow(index)"
+				<input :value="point.y" type="number" step="any" data-own-enter @click.stop @focus="focusRow(index)"
 					@change="setCoordinate(point, 'y', $event)" />
 			</label>
 			<span class="custom-shape__move">
