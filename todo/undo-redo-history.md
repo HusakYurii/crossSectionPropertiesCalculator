@@ -84,7 +84,7 @@ Found by reading the code, not reproduced.
 6. **Restoring must copy:** the store edits objects in place, so it gets a copy of each history record, except the mesh.
 
 ## Controls
-- **Shortcuts:** Cmd/Ctrl+Z to undo, and Shift+Cmd/Ctrl+Z or Ctrl+Y to redo.
+- **Shortcuts:** Cmd/Ctrl+Z to undo, and Shift+Cmd/Ctrl+Z to redo.
 - **Inputs:** shortcuts are ignored while focus is in an input, so native text undo still works.
 - **Blocked states:** undo and redo do nothing while the modal is open or during a drag.
 - **Menu:** add an Edit menu with Undo and Redo, disabled when there's nothing to do. Only the can-undo and can-redo flags are reactive; the stacks stay plain arrays so Vue doesn't proxy them.

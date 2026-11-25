@@ -1,7 +1,7 @@
-import { downloadText } from "../fileLoader/downloadFiles";
-import { MIME_JSON } from "../fileLoader/mimeTypes";
+import { filesDownloader } from "../services/singletons/FilesDownloader";
+import { MIME_JSON } from "../constants/mimeTypes";
 import { PROJECT_FILE_VERSION, PROJECT_SOURCE, type ProjectFile } from "./projectFile";
-import { normalizeFileName } from "../fileLoader/fileName";
+import { normalizeFileName } from "../utils/fileNameUtils";
 import { store } from "./store";
 import { appSessionState } from "./appSessionState";
 
@@ -43,5 +43,5 @@ export const buildProjectFile = (): ProjectFile => ({
 export const DEFAULT_PROJECT_FILE_NAME = 'project';
 
 export const exportStoreData = (fileName = DEFAULT_PROJECT_FILE_NAME) => {
-    downloadText(normalizeFileName(fileName, 'json', DEFAULT_PROJECT_FILE_NAME), JSON.stringify(buildProjectFile(), null, 2), MIME_JSON);
+    filesDownloader.downloadText(normalizeFileName(fileName, 'json', DEFAULT_PROJECT_FILE_NAME), JSON.stringify(buildProjectFile(), null, 2), MIME_JSON);
 }

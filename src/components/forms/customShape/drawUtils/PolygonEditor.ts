@@ -4,7 +4,7 @@ import type { InputService } from "../../../middle/view/services/InputService";
 import { CURSOR, MOUSE_BUTTON, POLYGON_EDITOR_INTERACTION } from "../../../../constants/canvasInteraction";
 import { lockAndSnap, snapPoint } from "../../../../mathUtils/snap";
 import { roundTo } from "../../../../mathUtils/round";
-import { hasModKey, isImeComposing } from "../../../../services/NativeHotKeysService";
+import { hasModKey, isImeComposing } from "../../../../services/singletons/NativeHotKeysService";
 
 type PolygonEditorProps = {
 	canvas: HTMLCanvasElement;

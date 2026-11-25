@@ -5,7 +5,7 @@ import type { MenuItem } from '../../../interfaces/menu/menu.types.ts';
 import { history } from '../../../store/history.ts';
 import { appSessionState } from '../../../store/appSessionState.ts';
 import { copySelectedShape, duplicateSelectedShape, hasClipboard, pasteShape } from '../../../store/shapeClipboard.ts';
-import { nativeHotKeysService } from '../../../services/NativeHotKeysService.ts';
+import { nativeHotKeysService } from '../../../services/singletons/NativeHotKeysService.ts';
 import undoIconRaw from '../../../svg/undo.svg?raw';
 import redoIconRaw from '../../../svg/redo.svg?raw';
 

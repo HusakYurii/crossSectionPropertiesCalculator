@@ -3,7 +3,7 @@ import { nextTick, ref } from 'vue';
 import MenuWithNestedDropDown from './MenuWithNestedDropDown.vue';
 import ConfirmModal from '../ConfirmModal.vue';
 import SaveProjectModal from '../SaveProjectModal.vue';
-import {  uploadJSON } from '../../../fileLoader/uploadFile.ts';
+import { fileUploader } from '../../../services/singletons/FileUploader.ts';
 
 import { importExampleProject, importStoreData, loadProjectData} from '../../../store/storeDataImporter.ts';
 import { EXAMPLE_PROJECTS, type ExampleProjectId } from '../../../store/exampleProjects.ts';
@@ -14,7 +14,7 @@ import { history } from '../../../store/history.ts';
 import { compositeCrossSectionPropertiesSolver } from '../../../solvers/CompositeCrossSectionPropertiesSolver.ts';
 import { createReportSnapshot, saveReportSnapshot } from '../../../pages/report/reportSnapshot.ts';
 import { toast } from 'vue3-toastify';
-import { eventBus } from '../../../services/eventBus.ts';
+import { eventBus } from '../../../services/singletons/EventBus.ts';
 
 type ActionNames = "import" | "export" | "results" | 'new';
 // 'examples' only keys the parent item of the submenu, it is never dispatched
@@ -36,7 +36,7 @@ function emitProjectLoaded() {
 }
 
 function importProject() {
-	uploadJSON(async (file) => {
+	fileUploader.uploadJSON(async (file) => {
 		if (await importStoreData(file)) emitProjectLoaded();
 	})
 }

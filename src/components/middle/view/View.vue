@@ -33,7 +33,7 @@ import type { Point } from '../../../interfaces/common/types';
 import { appSessionState, setSelectedShapeID } from '../../../store/appSessionState';
 import { createBeamView } from './beams';
 import { history } from '../../../store/history';
-import { eventBus } from '../../../services/eventBus';
+import { eventBus } from '../../../services/singletons/EventBus';
 import { useDimensionsWithTextLabelEdit, EDITOR_MIN_WIDTH } from './composables/useDimensionsWithTextLabelEdit';
 import { useQuickSolverOverlays } from './composables/useQuickSolverOverlays';
 

@@ -1,4 +1,4 @@
-import { hasModKey, hasOwnEnterAction, isImeComposing } from '../services/NativeHotKeysService.ts';
+import { hasModKey, hasOwnEnterAction, isImeComposing } from '../services/singletons/NativeHotKeysService.ts';
 
 type ModalKeyboardOptions = {
 	onCancel: () => void;

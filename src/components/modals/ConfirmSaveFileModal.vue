@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { sanitizeFileName } from '../../fileLoader/fileName.ts';
+import { sanitizeFileName } from '../../utils/fileNameUtils.ts';
 import { useModalKeyboard } from '../../composables/useModalKeyboard.ts';
 
 const props = defineProps<{

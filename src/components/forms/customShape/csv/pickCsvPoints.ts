@@ -1,6 +1,6 @@
 import { toast } from 'vue3-toastify';
 import type { Point } from '../../../../interfaces/common/types.ts';
-import { uploadCsv } from '../../../../fileLoader/uploadFile.ts';
+import { fileUploader } from '../../../../services/singletons/FileUploader.ts';
 import { convertCSVToPoints } from './csvTextParser.ts';
 
 // Import CSV file: the points in the file replace the ones on the canvas. Rows are x,y pairs, like the
@@ -9,7 +9,7 @@ import { convertCSVToPoints } from './csvTextParser.ts';
 
 /** asks the user for a CSV file and hands over its points; shows a toast instead when the file is not usable */
 export function pickCsvPoints(onPoints: (points: Point[]) => void) {
-	uploadCsv( async (file) => {
+	fileUploader.uploadCsv( async (file) => {
 
 		if (!file) {
 			toast.error("No file was attached, try again")

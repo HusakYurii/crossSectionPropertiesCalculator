@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import type { Directive } from "vue";
-import { isImeComposing } from "../../../services/NativeHotKeysService";
+import { isImeComposing } from "../../../services/singletons/NativeHotKeysService";
 
 type RenameListItemOptions = {
 	// undefined when the item no longer exists

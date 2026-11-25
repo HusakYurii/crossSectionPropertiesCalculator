@@ -1,5 +1,5 @@
-import type { Service } from '../interfaces/common/types';
-import { MAC_HOT_KEYS_LABELS, WINDOWS_HOT_KEYS_LABELS } from '../constants/hotKeysLabels.ts';
+import type { Service } from '../../interfaces/common/types';
+import { MAC_HOT_KEYS_LABELS, WINDOWS_HOT_KEYS_LABELS } from '../../constants/hotKeysLabels.ts';
 import { operatingSystemService } from './OperatingSystemService.ts';
 
 // SELECT is not here: it has no native undo, and focus stays on it after a change, so Cmd+Z must still reach the history

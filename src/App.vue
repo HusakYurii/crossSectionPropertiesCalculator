@@ -6,7 +6,7 @@ import View from './components/middle/view/View.vue';
 import InfoPanels from './pages/info/InfoPanels.vue';
 import { infoPanelState } from './store/infoPanel.ts';
 import { useHotKey } from './composables/useHotKey.ts';
-import { nativeHotKeysService } from './services/NativeHotKeysService.ts';
+import { nativeHotKeysService } from './services/singletons/NativeHotKeysService.ts';
 import { sectionModalState } from './store/sectionModal.ts';
 import { copySelectedShape, duplicateSelectedShape, pasteShape } from './store/shapeClipboard.ts';
 import { history } from './store/history.ts';

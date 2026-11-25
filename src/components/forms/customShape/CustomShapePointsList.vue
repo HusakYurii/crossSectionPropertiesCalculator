@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import type { Point } from '../../../interfaces/common/types.ts';
 import { POLYGON_LIMITS } from '../../../constants/geometryTolerances.ts';
 import { roundTo } from '../../../mathUtils/round.ts';
-import { hasModKey } from '../../../services/NativeHotKeysService.ts';
+import { hasModKey } from '../../../services/singletons/NativeHotKeysService.ts';
 
 // the points are edited in place, the same way the canvas editor edits them
 const points = defineModel<Point[]>('points', { required: true });

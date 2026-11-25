@@ -1,4 +1,4 @@
-import type { HotKeyId } from '../services/NativeHotKeysService.ts';
+import type { HotKeyId } from '../services/singletons/NativeHotKeysService.ts';
 
 export const MAC_HOT_KEYS_LABELS: Record<HotKeyId, string> = {
 	undo: '⌘Z',

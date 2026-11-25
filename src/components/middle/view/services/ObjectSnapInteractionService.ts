@@ -3,7 +3,7 @@ import { CURSOR, DRAG_THRESHOLD, MOUSE_BUTTON, OBJECT_SNAP } from '../../../../c
 import { roundTo } from '../../../../mathUtils/round';
 import type { ObjectSnapMarkerModel } from '../canvas/objectSnap/ObjectSnapMarkers';
 import type { InputService } from './InputService';
-import { isImeComposing } from '../../../../services/NativeHotKeysService';
+import { isImeComposing } from '../../../../services/singletons/NativeHotKeysService';
 
 type ObjectSnapInteractionServiceProps = {
 	inputService: InputService;
