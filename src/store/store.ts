@@ -1,16 +1,12 @@
 import { markRaw, reactive, toRaw } from 'vue';
-import type { Geometry, HatchAngle } from '../interfaces/beams/common.types';
-import type { Point } from '../interfaces/common/types';
-import type { Triangle } from '../solvers/femTriangulator/triangulate';
-import type { CrossSectionProperties } from '../interfaces/sectionProperties';
+import type { Geometry, HatchAngle } from '@/shared/shapes/types/common.types';
+import type { Point } from '@/shared/types/geometry';
+import type { Triangle } from '@/shared/types/mesh';
+import type { CrossSectionProperties } from '@/shared/types/sectionProperties';
 import { markStateDirty } from './appSessionState';
+import type { GeometryDataExtra } from './store.types';
 
 type UID = string;
-
-export type GeometryDataExtra = {
-	name: string;
-	position: Point; // the centroid of each shape in world coordinates, is used to draw them on canvas and calculate overall props
-};
 
 type Payload<T> = {
 	uid: UID;
@@ -73,6 +69,15 @@ export const updateGeometryExtraData = (payload: Payload<Partial<GeometryDataExt
 	Object.assign(store.geometryExtra[payload.uid], payload.data);
 	markStateDirty()
 }
+
+/** Moves a shape while it is dragged: in place and without markStateDirty (a drag writes on every mouse move;
+ * the canvas redraws through onChange and history.commit() on drag end records it). */
+export const setShapePosition = (uid: UID, position: Point) => {
+	const extra = store.geometryExtra[uid];
+	if (!extra) return;
+	extra.position.x = position.x;
+	extra.position.y = position.y;
+};
 
 export const removeGeometryExtraData = (uid: UID) => {
 	delete store.geometryExtra[uid];

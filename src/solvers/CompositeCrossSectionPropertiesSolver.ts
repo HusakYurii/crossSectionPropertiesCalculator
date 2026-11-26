@@ -1,34 +1,21 @@
-import { toast } from 'vue3-toastify';
-import type { Store } from "../store/store";
-import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from "../interfaces/sectionProperties";
-import { radToDeg } from "../mathUtils/anglesMath";
-import { SHAPE_TYPES } from "../interfaces/beams/common.types";
-import type { OSectionGeometry } from "../interfaces/beams/OSection.types";
+import type { CrossSectionProperties } from "@/shared/types/sectionProperties";
+import { radToDeg } from "@/shared/math/anglesMath";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { OSectionGeometry } from "@/shared/shapes/types/OSection.types";
 import { principalAxisAngleRad } from "./propertyStrategies/greenTheoremCalculator";
-import { RESULT_PRECISION } from "../constants/geometryTolerances";
-
-export type CompositeSolveErrorCode = 'no-shapes' | 'no-area';
-
-export type CompositeSolveResult = { properties: CrossSectionProperties } | { error: string; code: CompositeSolveErrorCode };
+import { RESULT_PRECISION } from './tolerances';
+import { fail, ok } from './errors';
+import type { CompositePart, CompositeSolveResult } from './CompositeCrossSectionPropertiesSolver.types';
 
 export class CompositeCrossSectionPropertiesSolver {
 
 	/**
-	 * Properties of the whole built-up section from every shape in the store, or the reason there are none.
+	 * Properties of the whole built-up section from every shape, or the reason there are none.
 	 * It has no side effects (no toast), so it is safe to call inside a computed.
-	 * The math is in docs/composite_cross_section_properties_math.md. The shapes are not clipped: the layout is trusted.
+	 * The math is in features/info/docs/composite_cross_section_properties_math.md. The shapes are not clipped: the layout is trusted.
 	 */
-	solve(store: Store): CompositeSolveResult {
-		const parts = Object.keys(store.geometry).flatMap((uid) => {
-			const properties = store.crossSectionProperties[uid];
-			const position = store.geometryExtra[uid]?.position;
-			const polygon = store.crossSectionPolygon[uid];
-			if (!properties || !position || !polygon) {
-				return [];
-			}
-			const geometry = store.geometry[uid];
-			return [{ properties, position, polygon, geometry, sign: geometry.isNegative ? -1 : 1 }];
-		});
+	solve(shapes: readonly CompositePart[]): CompositeSolveResult {
+		const parts = shapes.map((part) => ({ ...part, sign: part.geometry.isNegative ? -1 : 1 }));
 
 		let A = 0;
 		let Sx = 0;
@@ -41,8 +28,8 @@ export class CompositeCrossSectionPropertiesSolver {
 
 		if (!(A > 0)) {
 			return parts.length === 0
-				? { error: 'There are no shapes to calculate the results for.', code: 'no-shapes' }
-				: { error: 'The negative shapes take away all the area: the total area must be positive.', code: 'no-area' };
+				? fail('no-shapes', 'There are no shapes to calculate the results for.')
+				: fail('no-area', 'The negative shapes take away all the area: the total area must be positive.');
 		}
 
 		const centroid_x = Sx / A;
@@ -117,17 +104,7 @@ export class CompositeCrossSectionPropertiesSolver {
 			Wy_rt: round(sectionModulus(Iy, c_rt)),
 			Wy_lf: round(sectionModulus(Iy, c_lf)),
 		};
-		return { properties };
-	}
-
-	/** Same as solve, but a failure is shown as an error toast and gives empty properties. */
-	calculate(store: Store): CrossSectionProperties {
-		const result = this.solve(store);
-		if ('error' in result) {
-			toast.error(result.error);
-			return { ...EMPTY_CROSS_SECTION_PROPERTIES };
-		}
-		return result.properties;
+		return ok(properties);
 	}
 }
 

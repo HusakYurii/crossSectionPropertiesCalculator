@@ -1,7 +1,7 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { TSectionGeometry } from "../../interfaces/beams/TSection.types";
-import { buildArcPoints } from "../poligonUtils/buildArcPoints";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { TSectionGeometry } from "@/shared/shapes/types/TSection.types";
+import { buildArcPoints } from "../polygon/buildArcPoints";
 import { AbstractPolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
 
 /**

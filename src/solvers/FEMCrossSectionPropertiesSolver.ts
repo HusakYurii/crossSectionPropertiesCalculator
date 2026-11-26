@@ -5,14 +5,15 @@ import {
 	resamplePolygon,
 	subdivideTriangles,
 	triangulate,
-} from "./femTriangulator/triangulate";
-import { radToDeg } from "../mathUtils/anglesMath";
+} from "./fem/triangulate";
+import { radToDeg } from "@/shared/math/anglesMath";
 import { calculateCrossSectionProperties, principalAxisAngleRad } from "./propertyStrategies/greenTheoremCalculator";
-import type { KeyCache, Triangle } from "./femTriangulator/triangulate";
-import type { Point } from "../interfaces/common/types";
-import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from "../interfaces/FEMMeshOptions";
-import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from "../interfaces/sectionProperties";
-import { POLYGON_TOLERANCES, RESULT_PRECISION } from "../constants/geometryTolerances";
+import type { KeyCache } from "./fem/triangulate.types";
+import type { Triangle } from "@/shared/types/mesh";
+import type { Point } from "@/shared/types/geometry";
+import { DEFAULT_FEM_MESH_OPTIONS, type FEMMeshOptions } from "@/shared/types/femMeshOptions";
+import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from "@/shared/types/sectionProperties";
+import { POLYGON_TOLERANCES, RESULT_PRECISION } from './tolerances';
 
 export class FEMCrossSectionPropertiesSolver {
 

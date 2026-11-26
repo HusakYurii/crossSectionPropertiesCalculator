@@ -1,37 +1,28 @@
-import { toast } from 'vue3-toastify';
-import type { Geometry } from "../interfaces/beams/common.types";
-import type { Point } from "../interfaces/common/types";
-import { removeDuplicatePoints } from "./poligonUtils/removeDuplicatePoints";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { Point } from "@/shared/types/geometry";
+import { removeDuplicatePoints } from "./polygon/removeDuplicatePoints";
 import { polygonBuildStrategies } from "./polygonStrategies";
-import { useDebounce } from '../composables/useDebounce';
-
-const [showError, clear] = useDebounce((message: string) => {
-	toast.error(message)
-}, 500);
+import { errorMessage, fail, ok } from "./errors";
+import type { Result } from "./errors.types";
 
 export class CrossSectionPolygonsBuilder {
-	calculate<T extends Geometry>(geometry: T): Point[] {
+	/** The closed polygon of a shape, or the reason there is none. It has no side effects (no toast). */
+	build<T extends Geometry>(geometry: T): Result<Point[]> {
 		const strategy = polygonBuildStrategies.find(s => s.test(geometry));
 
 		if (!strategy) {
-			showError(`No polygon build strategy registered for geometry type: ${geometry.type}`)
-			return []
+			return fail('no-strategy', `No polygon build strategy registered for geometry type: ${geometry.type}`);
 		}
 
 		try {
-			const result = removeDuplicatePoints(strategy.execute(geometry));
-			clear();
-			return result;
+			return ok(removeDuplicatePoints(strategy.execute(geometry)));
 		} catch (error) {
-			if (error instanceof Error) {
-				showError(error.message)
-			}
-			else {
-				showError(`An error while building polygon points for geometry type: ${geometry.type}`)
-			}
-			return []
+			return fail(
+				'strategy-failed',
+				errorMessage(error, `An error while building polygon points for geometry type: ${geometry.type}`),
+				error,
+			);
 		}
-
 	}
 }
 

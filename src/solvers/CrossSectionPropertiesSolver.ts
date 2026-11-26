@@ -1,36 +1,27 @@
-import { toast } from 'vue3-toastify';
-import type { Geometry } from "../interfaces/beams/common.types";
-import type { Point } from "../interfaces/common/types";
-import { EMPTY_CROSS_SECTION_PROPERTIES, type CrossSectionProperties } from "../interfaces/sectionProperties";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { Point } from "@/shared/types/geometry";
+import type { CrossSectionProperties } from "@/shared/types/sectionProperties";
 import { propertiesBuildStrategies } from "./propertyStrategies";
-import { useDebounce } from '../composables/useDebounce';
-
-const [showError, clear] = useDebounce((message: string) => {
-	toast.error(message)
-}, 500);
+import { errorMessage, fail, ok } from "./errors";
+import type { Result } from "./errors.types";
 
 export class CrossSectionPropertiesSolver {
-
-	calculate<T extends Geometry>(geometry: T, polygon: Point[]): CrossSectionProperties {
+	/** The section properties of a shape from its polygon, or the reason there are none. It has no side effects (no toast). */
+	solve<T extends Geometry>(geometry: T, polygon: Point[]): Result<CrossSectionProperties> {
 		const strategy = propertiesBuildStrategies.find(s => s.test(geometry));
 
 		if (!strategy) {
-			showError(`No properties build strategy registered for geometry type: ${geometry.type}`)
-			return { ...EMPTY_CROSS_SECTION_PROPERTIES }
+			return fail('no-strategy', `No properties build strategy registered for geometry type: ${geometry.type}`);
 		}
 
 		try {
-			const result = strategy.execute(geometry, polygon);
-			clear();
-			return result;
+			return ok(strategy.execute(geometry, polygon));
 		} catch (error) {
-			if (error instanceof Error) {
-				showError(error.message)
-			}
-			else {
-				showError(`An error while building polygon points for geometry type: ${geometry.type}`)
-			}
-			return { ...EMPTY_CROSS_SECTION_PROPERTIES }
+			return fail(
+				'strategy-failed',
+				errorMessage(error, `An error while calculating the properties for geometry type: ${geometry.type}`),
+				error,
+			);
 		}
 	}
 }

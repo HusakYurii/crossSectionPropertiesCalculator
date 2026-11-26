@@ -1,7 +1,7 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { ISectionGeometry } from "../../interfaces/beams/ISection.types";
-import type { Point } from "../../interfaces/common/types";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { ISectionGeometry } from "@/shared/shapes/types/ISection.types";
+import type { Point } from "@/shared/types/geometry";
 import { calculateCrossSectionProperties } from "./greenTheoremCalculator";
 import { AbstractPropertiesStrategy } from "./AbstractPropertiesStrategy";
 

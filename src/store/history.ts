@@ -1,14 +1,14 @@
 import { ref, toRaw } from 'vue';
-import type { Triangle } from '../solvers/femTriangulator/triangulate';
-import { isSamePlainData } from '../utils/plainData';
-import { sectionModalState } from './sectionModal';
+import type { Triangle } from '@/shared/types/mesh';
+import { isSamePlainData } from '@/shared/utils/plainData';
 import { setGeometryOrder, store } from './store';
 import {
 	appSessionState,
 	markStateDirty,
 	removeShapeSessionState,
 } from './appSessionState';
-import { captureShape, writeShape, type ShapeRecord } from './shapeRecord';
+import { captureShape, writeShape } from './shapeRecord';
+import type { ShapeRecord } from './shapeRecord.types';
 
 type UID = string;
 
@@ -41,7 +41,7 @@ class History {
 
 	private _base = new Map<UID, ShapeRecord>();
 	private _baseOrder: UID[] = [];
-	private _isDragging: () => boolean = () => false;
+	private _blockers = new Set<() => boolean>();
 	private _beforeCommit = new Set<() => void>();
 
 	private _updateFlags() {
@@ -172,7 +172,7 @@ class History {
 		if (appSessionState.currentHoveredShapeID && !(appSessionState.currentHoveredShapeID in store.geometry)) {
 			appSessionState.currentHoveredShapeID = null;
 		}
-		// setPosition and the label offsets do not bump redrawId, so a restore always does
+		// setShapePosition and the label offsets do not bump redrawId, so a restore always does
 		markStateDirty();
 	}
 
@@ -187,14 +187,20 @@ class History {
 	readonly canUndo = ref(false);
 	readonly canRedo = ref(false);
 
-	/** True while the shape dialog is open or a drag is going on: undo, redo and paste wait for it */
+	/** True while any registered blocker says so (the shape dialog is open, a drag is going on): undo, redo and paste wait */
 	isBlocked(): boolean {
-		return sectionModalState.isOpen || this._isDragging();
+		for (const probe of this._blockers) {
+			if (probe()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
-	/** The canvas tells history whether a drag is going on, undo and redo are blocked meanwhile */
-	setDragProbe(probe: (() => boolean) | null) {
-		this._isDragging = probe ?? (() => false);
+	/** Registers a probe; returns the function that removes it */
+	addBlocker(probe: () => boolean): () => void {
+		this._blockers.add(probe);
+		return () => { this._blockers.delete(probe); };
 	}
 
 	/** Runs before undo / redo commit, so edits that are still waiting (a debounced write) land first */

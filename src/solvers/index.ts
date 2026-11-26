@@ -1,0 +1,10 @@
+export { crossSectionPolygonsBuilder } from './CrossSectionPolygonsBuilder';
+export { crossSectionPropertiesSolver } from './CrossSectionPropertiesSolver';
+export { femCrossSectionPropertiesSolver } from './FEMCrossSectionPropertiesSolver';
+export { compositeCrossSectionPropertiesSolver } from './CompositeCrossSectionPropertiesSolver';
+export type { CompositePart, CompositeSolveResult, CompositeSolveErrorCode } from './CompositeCrossSectionPropertiesSolver.types';
+export type { Result, SolverError, SolverErrorCode } from './errors.types';
+export { POLYGON_LIMITS } from './tolerances';
+export { isPointInPolygon } from '@/shared/math/polygonIntersectionMath';
+export { rotatePoint } from '@/shared/math/rotatePoint';
+export { getHollowRectangleRingLengths } from './polygonStrategies/HollowRectangleStrategy';

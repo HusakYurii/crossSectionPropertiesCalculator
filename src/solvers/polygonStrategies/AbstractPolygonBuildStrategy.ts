@@ -1,11 +1,7 @@
-import { rotatePoint } from "../poligonUtils/rotatePoint";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { Point } from "../../interfaces/common/types";
-
-export interface PolygonBuildStrategy {
-	test(geometry: Geometry): boolean;
-	execute(geometry: Geometry): Point[];
-}
+import { rotatePoint } from "@/shared/math/rotatePoint";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { Point } from "@/shared/types/geometry";
+import type { PolygonBuildStrategy } from "./AbstractPolygonBuildStrategy.types";
 
 export abstract class AbstractPolygonBuildStrategy<T extends Geometry> implements PolygonBuildStrategy {
 	public abstract test(geometry: Geometry): boolean;

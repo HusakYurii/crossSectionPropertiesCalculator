@@ -1,7 +1,7 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { LSectionGeometry } from "../../interfaces/beams/LSection.types";
-import { buildArcPoints } from "../poligonUtils/buildArcPoints";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { LSectionGeometry } from "@/shared/shapes/types/LSection.types";
+import { buildArcPoints } from "../polygon/buildArcPoints";
 import { AbstractPolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
 
 export class LSectionStrategy extends AbstractPolygonBuildStrategy<LSectionGeometry> {

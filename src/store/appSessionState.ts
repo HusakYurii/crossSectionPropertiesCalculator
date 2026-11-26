@@ -1,34 +1,13 @@
 import { reactive } from 'vue';
-import { DEFAULT_QUICK_SOLVER_TOGGLES, type QuickSolverToggleKey, type QuickSolverToggles } from '../interfaces/quickSolverToggles';
-import { DEFAULT_SNAP_OPTIONS_TOGGLES, type SnapOptionToggleKey, type SnapOptionsToggles } from '../interfaces/snapOptionsToggles';
-import { SNAP, type SnapStep } from '../constants/canvasInteraction';
+import { DEFAULT_QUICK_SOLVER_TOGGLES, DEFAULT_SNAP_OPTIONS_TOGGLES } from './viewToggles';
+import type { QuickSolverToggleKey, SnapOptionToggleKey } from './viewToggles.types';
+import type { EditorSessionState } from './appSessionState.types';
+import type { DimensionLabelOffsetKey } from '@/shared/types/dimensionLabels';
+import { SNAP } from '@/shared/math/snap';
+import type { SnapStep } from '@/shared/math/snap';
 
 // not imported from store.ts: that file depends on this one, never the other way round
 type UID = string;
-
-/** x / y: how far the line is moved off its axis. xAlong / yAlong: where the number sits along the line, from its midpoint. */
-export type DimensionLabelOffsetKey = 'x' | 'y' | 'xAlong' | 'yAlong';
-
-type EditorSessionState = {
-	currentSelectedShapeID: string | null;
-	currentHoveredShapeID: string | null;
-	redrawId: number;
-	showRotationFor: Record<UID, boolean>; // only `true` entries are kept
-	dimensionLabelOffsets: Record<UID, Partial<Record<DimensionLabelOffsetKey, number>>>;
-	/** which of the section overlays (centroid, principal axes, gyration) are shown on the canvas; never saved or put in the history */
-	quickSolverToggles: QuickSolverToggles;
-	/** where the Cx / Cy labels of the section centroid were dragged to; like dimensionLabelOffsets, for the one label pair */
-	compositeLabelOffsets: Partial<Record<DimensionLabelOffsetKey, number>>;
-	/** snapping of dragged shapes and polygon points; shared by both canvases, never saved or put in the history, reset on a new or imported project */
-	snapping: { enabled: boolean; step: SnapStep };
-	/** hatching of the shapes in the editor; the report always hatches. Never saved or put in the history */
-	showHatching: boolean;
-	/** object snaps of the main canvas; never saved or put in the history */
-	snapOptionsToggles: SnapOptionsToggles;
-}
-
-/** The part of the session state that is saved to the project file */
-export type PersistedSessionState = Pick<EditorSessionState, 'showRotationFor' | 'dimensionLabelOffsets' | 'compositeLabelOffsets'>;
 
 const DEFAULT_SNAPPING = { enabled: true, step: SNAP.DEFAULT_STEP } as const;
 

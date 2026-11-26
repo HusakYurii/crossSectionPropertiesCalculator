@@ -1,13 +1,14 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { CustomShapeGeometry } from "../../interfaces/beams/CustomShape.types";
-import type { Point } from "../../interfaces/common/types";
-import { EMPTY_CROSS_SECTION_PROPERTIES } from "../../interfaces/sectionProperties";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { CustomShapeGeometry } from "@/shared/shapes/types/CustomShape.types";
+import type { Point } from "@/shared/types/geometry";
+import { EMPTY_CROSS_SECTION_PROPERTIES } from "@/shared/types/sectionProperties";
 import { femCrossSectionPropertiesSolver } from "../FEMCrossSectionPropertiesSolver";
 import { AbstractPropertiesStrategy } from "./AbstractPropertiesStrategy";
-import { POLYGON_LIMITS } from "../../constants/geometryTolerances";
+import { POLYGON_LIMITS } from '../tolerances';
 
 /**
+ * Accepted layer inversion: a strategy delegating to the FEM solver (same layer, no cycle). It keeps crossSectionPropertiesSolver total over the shape types.
  * The only shape that uses the FEM solver: it meshes the drawn polygon, which is much slower than
  * the closed-form solvers, so callers should only run it on request. Gives zeros while the drawn
  * polygon is not a real shape yet (too few points, or all on one line).

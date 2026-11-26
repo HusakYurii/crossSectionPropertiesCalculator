@@ -1,20 +1,22 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { HollowRectangleGeometry, RoundedHollowRectangleGeometry } from "../../interfaces/beams/RectSection.types";
-import type { Point } from "../../interfaces/common/types";
-import type { CrossSectionProperties } from "../../interfaces/sectionProperties";
-import { radToDeg } from "../../mathUtils/anglesMath";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { HollowRectangleGeometry, RoundedHollowRectangleGeometry } from "@/shared/shapes/types/RectSection.types";
+import type { Point } from "@/shared/types/geometry";
+import type { CrossSectionProperties } from "@/shared/types/sectionProperties";
+import { radToDeg } from "@/shared/math/anglesMath";
 import { calculateCrossSectionProperties } from "./greenTheoremCalculator";
 import { getHollowRectangleRingLengths } from "../polygonStrategies/HollowRectangleStrategy";
 import { principalAxisAngleRad } from "./greenTheoremCalculator";
 import { AbstractPropertiesStrategy } from "./AbstractPropertiesStrategy";
-import { RESULT_PRECISION } from "../../constants/geometryTolerances";
+import { RESULT_PRECISION } from '../tolerances';
 
 /**
  * Hollow rectangle: properties of the outer ring minus properties of the inner ring.
  * HollowRectangleStrategy builds the polygon as the outer ring followed by the inner ring;
  * the ring lengths come from getHollowRectangleRingLengths.
  */
+// Accepted coupling: the polygon strategy owns the ring lengths, so this strategy splits exactly the polygon it built.
+// tests/solvers/polygonStrategies.test.ts guards the contract.
 export class HollowRectanglePropertiesStrategy extends AbstractPropertiesStrategy<HollowRectangleGeometry | RoundedHollowRectangleGeometry> {
 	test(geometry: Geometry) {
 		return geometry.type === SHAPE_TYPES.HOLLOW_RECTANGLE || geometry.type === SHAPE_TYPES.HOLLOW_ROUNDED_RECTANGLE;

@@ -1,4 +1,4 @@
-import type { PropertiesBuildStrategy } from "./AbstractPropertiesStrategy";
+import type { PropertiesBuildStrategy } from "./AbstractPropertiesStrategy.types";
 import { CSectionPropertiesStrategy } from "./CSectionPropertiesStrategy";
 import { ISectionPropertiesStrategy } from "./ISectionPropertiesStrategy";
 import { LSectionPropertiesStrategy } from "./LSectionPropertiesStrategy";

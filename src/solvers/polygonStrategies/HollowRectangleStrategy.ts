@@ -1,9 +1,9 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { HollowRectangleGeometry, RoundedHollowRectangleGeometry } from "../../interfaces/beams/RectSection.types";
-import type { Point } from "../../interfaces/common/types";
-import { buildArcPoints } from "../poligonUtils/buildArcPoints";
-import { removeDuplicatePoints } from "../poligonUtils/removeDuplicatePoints";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { HollowRectangleGeometry, RoundedHollowRectangleGeometry } from "@/shared/shapes/types/RectSection.types";
+import type { Point } from "@/shared/types/geometry";
+import { buildArcPoints } from "../polygon/buildArcPoints";
+import { removeDuplicatePoints } from "../polygon/removeDuplicatePoints";
 import { AbstractPolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
 
 /**

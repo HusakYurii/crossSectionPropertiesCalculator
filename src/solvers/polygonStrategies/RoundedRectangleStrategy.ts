@@ -1,7 +1,7 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { RoundedRectangleGeometry } from "../../interfaces/beams/RectSection.types";
-import { buildArcPoints } from "../poligonUtils/buildArcPoints";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { RoundedRectangleGeometry } from "@/shared/shapes/types/RectSection.types";
+import { buildArcPoints } from "../polygon/buildArcPoints";
 import { AbstractPolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
 
 export class RoundedRectangleStrategy extends AbstractPolygonBuildStrategy<RoundedRectangleGeometry> {

@@ -1,7 +1,7 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { OSectionGeometry } from "../../interfaces/beams/OSection.types";
-import type { CrossSectionProperties } from "../../interfaces/sectionProperties";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { OSectionGeometry } from "@/shared/shapes/types/OSection.types";
+import type { CrossSectionProperties } from "@/shared/types/sectionProperties";
 import { AbstractPropertiesStrategy } from "./AbstractPropertiesStrategy";
 
 export class TubePropertiesStrategy extends AbstractPropertiesStrategy<OSectionGeometry> {

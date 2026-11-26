@@ -1,0 +1,203 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { sanitizeFileName } from '@/shared/io/fileNameUtils';
+import { useModalKeyboard } from '@/shared/composables/useModalKeyboard';
+
+const props = defineProps<{
+	title: string;
+	/** without the dot, for example 'csv' */
+	extension: string;
+	initialName?: string;
+	/** called with the trimmed, non-empty name */
+	onConfirm: (name: string) => void;
+	onReject: () => void;
+}>();
+
+const name = ref(props.initialName ?? '');
+const inputRef = ref<HTMLInputElement | null>(null);
+
+const overlayRef = ref<HTMLElement | null>(null);
+const trimmedName = computed(() => name.value.trim());
+// a name of only invalid characters would be saved under the default name, so it is not accepted
+const canConfirm = computed(() => sanitizeFileName(name.value, props.extension) !== '');
+
+let previousFocus: HTMLElement | null = null;
+
+onMounted(() => {
+	previousFocus = document.activeElement as HTMLElement | null;
+	inputRef.value?.focus();
+	inputRef.value?.select();
+});
+
+// without this the focus falls to body and the section window behind stops getting the keys (Esc)
+onBeforeUnmount(() => {
+	if (previousFocus && previousFocus !== document.body && previousFocus.isConnected) {
+		previousFocus.focus();
+		return;
+	}
+	// Safari does not focus a button on click, so there may be nothing to return to
+	const overlays = document.querySelectorAll<HTMLElement>('.modals-container .modal-overlay');
+	for (const overlay of overlays) {
+		if (overlay !== overlayRef.value) {
+			overlay.focus();
+			return;
+		}
+	}
+});
+
+function confirm() {
+	if (!canConfirm.value) {
+		return;
+	}
+	props.onConfirm(trimmedName.value);
+}
+
+const onModalKeydown = useModalKeyboard({
+	onCancel: () => props.onReject(),
+});
+</script>
+
+<template>
+	<Teleport defer to=".modals-container">
+		<div ref="overlayRef" class="modal-overlay" tabindex="-1" @keydown="onModalKeydown">
+			<form class="modal" role="dialog" aria-modal="true" :aria-label="props.title" @submit.prevent="confirm">
+				<div class="modal-header">
+					<span class="modal-title">{{ props.title }}</span>
+					<button type="button" class="modal-close" aria-label="Close" @click="props.onReject">✕</button>
+				</div>
+
+				<label class="modal-field">
+					<span class="modal-label">File name</span>
+					<span class="modal-input-box">
+						<input ref="inputRef" v-model="name" type="text" class="modal-input" aria-label="File name" />
+						<span class="modal-suffix">.{{ props.extension }}</span>
+					</span>
+				</label>
+
+				<div class="modal-actions">
+					<button type="submit" class="modal-btn" :disabled="!canConfirm">OK</button>
+				</div>
+			</form>
+		</div>
+	</Teleport>
+</template>
+
+<style scoped>
+.modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--color-overlay);
+	outline: none;
+}
+
+.modal {
+	margin: 0;
+	width: 320px;
+	max-width: 90%;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	background: var(--color-surface-chrome);
+	border: 1px solid var(--color-border-subtle);
+	border-radius: 10px;
+	box-shadow: 0 12px 32px var(--color-shadow-strong);
+	color: var(--color-text);
+}
+
+.modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.modal-title {
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.modal-close {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	border: none;
+	border-radius: 50%;
+	background: var(--color-fill);
+	color: var(--color-text);
+	font-size: 12px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.modal-close:hover {
+	background: var(--color-fill-hover);
+}
+
+.modal-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.modal-label {
+	font-size: 11px;
+	opacity: 0.7;
+}
+
+.modal-input-box {
+	display: flex;
+	align-items: center;
+	height: 30px;
+	padding: 0 8px;
+	gap: 4px;
+	border: 1px solid var(--color-border-subtle);
+	border-radius: 6px;
+	background: var(--color-surface-canvas);
+}
+
+.modal-input {
+	flex: 1;
+	min-width: 0;
+	border: none;
+	background: transparent;
+	color: var(--color-text);
+	font-size: 12px;
+	outline: none;
+}
+
+.modal-suffix {
+	font-size: 12px;
+	opacity: 0.6;
+	user-select: none;
+}
+
+.modal-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.modal-btn {
+	height: 32px;
+	padding: 0 14px;
+	border: none;
+	border-radius: 6px;
+	background: var(--color-text);
+	color: var(--color-surface-chrome);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.modal-btn:hover {
+	opacity: 0.9;
+}
+
+.modal-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+</style>

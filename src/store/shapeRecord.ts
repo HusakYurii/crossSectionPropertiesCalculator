@@ -1,28 +1,13 @@
 import { markRaw, toRaw } from 'vue';
-import type { Geometry } from '../interfaces/beams/common.types';
-import type { Point } from '../interfaces/common/types';
-import type { CrossSectionProperties } from '../interfaces/sectionProperties';
-import type { Triangle } from '../solvers/femTriangulator/triangulate';
-import { copyPlainData } from '../utils/plainData';
-import { store, type GeometryDataExtra } from './store';
+import { copyPlainData } from '@/shared/utils/plainData';
+import { store } from './store';
+import type { ShapeRecord } from './shapeRecord.types';
 import {
 	appSessionState,
 	setShowRotation,
-	type DimensionLabelOffsetKey,
 } from './appSessionState';
 
 type UID = string;
-
-/** Everything that makes up one shape: the 5 store groups and the 2 session groups. History and the clipboard both use it */
-export type ShapeRecord = {
-	geometry: Geometry;
-	extra: GeometryDataExtra;
-	properties: CrossSectionProperties;
-	polygon: Point[];
-	mesh?: Triangle[];
-	showRotation?: true;
-	labelOffsets?: Partial<Record<DimensionLabelOffsetKey, number>>;
-};
 
 // raw groups: no dependency tracking and no proxies while diffing
 const getStoreDataAsRaw = () => {

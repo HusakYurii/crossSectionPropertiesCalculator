@@ -1,0 +1,405 @@
+import type { Point } from '@/shared/types/geometry';
+import type { Service } from '@/shared/types/service';
+import type { CanvasTransformService, InputService } from "@/shared/canvas";
+import { CURSOR, MOUSE_BUTTON } from '@/shared/canvas/canvasInteraction';
+import { POLYGON_EDITOR_INTERACTION } from '../constants';
+import { lockAndSnap, snapPoint } from "@/shared/math/snap";
+import { roundTo } from "@/shared/math/round";
+import { hasModKey, isImeComposing } from "@/shared/services/hotkeys/NativeHotKeysService";
+
+type PolygonEditorProps = {
+	canvas: HTMLCanvasElement;
+	inputService: InputService;
+	transformService: CanvasTransformService;
+	/** the points being edited; the editor mutates this array in place */
+	getPoints: () => Point[];
+	getSelectedIndices: () => number[];
+	/** always receives a new sorted array, never a mutated one */
+	setSelectedIndices: (indices: number[]) => void;
+	/** the snap step in mm, or null while snapping is off */
+	getSnapStep: () => number | null;
+	onChange: () => void;
+	/** a finished edit: a point added, a drag ended, points deleted */
+	onEditEnd: () => void;
+};
+
+/**
+ * Click on empty canvas to add a point (only when nothing is selected: with a selection the click
+ * deselects it, or keeps it with Shift / Cmd/Ctrl, so a misclick never adds a point), drag a point to move it, drag on empty canvas to box-select
+ * several (they then move together). Pan / zoom is left to CanvasTransformService (right button + wheel).
+ * Hold Shift to move along one axis, Cmd/Ctrl to add to the selection.
+ * Delete / Backspace removes the selected points, Escape deselects them.
+ */
+export class PolygonEditor implements Service {
+	private _canvas: HTMLCanvasElement;
+	private _inputService: InputService;
+	private _transformService: CanvasTransformService;
+	private _getPoints: () => Point[];
+	private _getSelectedIndices: () => number[];
+	private _setSelectedIndices: (indices: number[]) => void;
+	private _getSnapStep: () => number | null;
+	private _onChange: () => void;
+	private _onEditEnd: () => void;
+
+	private _unsubscribeHandlers: Array<() => void> = [];
+	private _active = false;
+
+	// the grabbed point is the anchor: only it is snapped, the rest keep their offset from it
+	private _dragIndex: number | null = null;
+	// plain copies, the points themselves are reactive proxies that change while dragging
+	private _dragStart = new Map<number, Point>();
+	// screen coordinates, so a zoom during the drag cannot move the box away from the cursor
+	private _boxStart: Point | null = null;
+	private _boxEnd: Point | null = null;
+	private _pressHit = -1;
+	private _pressModifier = false;
+	private _pressScreen: Point | null = null;
+	// where the press happened in world units; the axis lock reads the drag direction from it
+	private _pressWorld: Point | null = null;
+	private _moved = false;
+
+	constructor(props: PolygonEditorProps) {
+		this._canvas = props.canvas;
+		this._inputService = props.inputService;
+		this._transformService = props.transformService;
+		this._getPoints = props.getPoints;
+		this._getSelectedIndices = props.getSelectedIndices;
+		this._setSelectedIndices = props.setSelectedIndices;
+		this._getSnapStep = props.getSnapStep;
+		this._onChange = props.onChange;
+		this._onEditEnd = props.onEditEnd;
+	}
+
+	initialize(): void {
+		if (this._active) {
+			return;
+		}
+
+		this._unsubscribeHandlers = [
+			this._inputService.onMouseDown(this._onMouseDown),
+			this._inputService.onMouseMove(this._onMouseMove),
+			this._inputService.onMouseUp(this._onMouseUp),
+			this._inputService.onMouseLeave(this._onMouseLeave),
+		];
+		// capture phase on purpose: the modal stops keydown from bubbling up to the window,
+		// which is where InputService listens
+		window.addEventListener('keydown', this._onKeyDown, true);
+		this._active = true;
+	}
+
+	deactivate(): void {
+		if (!this._active) {
+			return;
+		}
+
+		for (const unsubscribe of this._unsubscribeHandlers) {
+			unsubscribe();
+		}
+		this._unsubscribeHandlers = [];
+		window.removeEventListener('keydown', this._onKeyDown, true);
+		this._reset();
+		this._active = false;
+	}
+
+	/** true between a mouse press and its release; undo must not run in the middle of a drag */
+	isPointerDown(): boolean {
+		return this._pressScreen !== null;
+	}
+
+	/** index of the topmost point under the cursor, or -1 */
+	private _findPointAt(screen: Point): number {
+		const points = this._getPoints();
+		for (let i = points.length - 1; i >= 0; i--) {
+			const s = this._worldToScreen(points[i]);
+			if (Math.hypot(s.x - screen.x, s.y - screen.y) <= POLYGON_EDITOR_INTERACTION.HIT_RADIUS) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private _worldToScreen(world: Point): Point {
+		// inverse of CanvasTransformService.screenToWorld
+		const { zoom, panX, panY } = this._transformService.transforms;
+		const rect = this._canvas.getBoundingClientRect();
+		return {
+			x: rect.width / 2 + panX + world.x * zoom,
+			y: rect.height / 2 + panY - world.y * zoom,
+		};
+	}
+
+	private _toWorld(event: MouseEvent): Point {
+		return this._transformService.screenToWorld({ x: event.offsetX, y: event.offsetY });
+	}
+
+	/** imported and typed points may have decimals (0.001 mm); a dragged or added point lands on the step of the snap control, or is rounded to 0.01 when snapping is off */
+	private _snap(point: Point): Point {
+		return snapPoint(point, this._getSnapStep());
+	}
+
+	/** world-space box of the running selection drag, or null before the click tolerance is passed */
+	getSelectionBox(): { min: Point; max: Point } | null {
+		if (!this._boxStart || !this._boxEnd) {
+			return null;
+		}
+
+		// converted now, because the wheel can zoom during the drag
+		const a = this._transformService.screenToWorld(this._boxStart);
+		const b = this._transformService.screenToWorld(this._boxEnd);
+		// y is flipped on the canvas, so the corners are sorted in world space too
+		return {
+			min: { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) },
+			max: { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) },
+		};
+	}
+
+	/** Shift is taken by the axis lock, and Ctrl+click is a right click on Mac */
+	private _hasModifier(event: MouseEvent): boolean {
+		return hasModKey(event);
+	}
+
+	private _onMouseDown = (event: MouseEvent): void => {
+		if (event.button !== MOUSE_BUTTON.LEFT) {
+			return;
+		}
+
+		const screen = { x: event.offsetX, y: event.offsetY };
+		this._pressScreen = screen;
+		this._pressWorld = this._toWorld(event);
+		this._moved = false;
+		this._pressModifier = this._hasModifier(event);
+
+		const hit = this._findPointAt(screen);
+		this._pressHit = hit;
+		if (hit < 0) {
+			// empty space: a click adds a point (or deselects), a drag draws a box; the selection waits for the mouse up
+			return;
+		}
+
+		const selected = this._getSelectedIndices();
+		let next = selected;
+		if (this._pressModifier) {
+			next = selected.includes(hit)
+				? selected.filter((i) => i !== hit)
+				: [...selected, hit].sort((a, b) => a - b);
+		} else if (!selected.includes(hit)) {
+			next = [hit];
+		}
+		if (next !== selected) {
+			this._setSelectedIndices(next);
+		}
+
+		// a point that was just deselected is not grabbed
+		if (!next.includes(hit)) {
+			this._onChange();
+			return;
+		}
+
+		const points = this._getPoints();
+		this._dragIndex = hit;
+		this._dragStart = new Map(next.map((i) => [i, { x: points[i].x, y: points[i].y }]));
+		this._canvas.style.cursor = CURSOR.GRABBING;
+		this._onChange();
+	};
+
+	private _onMouseMove = (event: MouseEvent): void => {
+		const screen = { x: event.offsetX, y: event.offsetY };
+		if (this._pressScreen && !this._moved && Math.hypot(screen.x - this._pressScreen.x, screen.y - this._pressScreen.y) > POLYGON_EDITOR_INTERACTION.CLICK_TOLERANCE) {
+			this._moved = true;
+		}
+
+		if (this._dragIndex !== null) {
+			if (this._moved) {
+				this._dragSelected(event);
+			}
+			return;
+		}
+
+		if (this._pressScreen && this._pressHit < 0 && this._moved) {
+			this._boxStart = this._pressScreen;
+			this._boxEnd = screen;
+			this._onChange();
+			return;
+		}
+
+		// hovering a point shows it can be grabbed; panning owns the cursor otherwise
+		if (!this._transformService.isPanModeActive) {
+			this._canvas.style.cursor = this._findPointAt(screen) >= 0 ? CURSOR.GRAB : CURSOR.CROSSHAIR;
+		}
+	};
+
+	private _dragSelected(event: MouseEvent): void {
+		const anchorStart = this._dragStart.get(this._dragIndex!);
+		if (!anchorStart) {
+			return;
+		}
+
+		// the anchor jumps to the cursor, so the axis comes from the press point, not from the anchor
+		const world = this._toWorld(event);
+		const pressWorld = this._pressWorld ?? world;
+		const moveDelta = { x: world.x - pressWorld.x, y: world.y - pressWorld.y };
+		const snapped = lockAndSnap(anchorStart, world, moveDelta, this._getSnapStep(), event.shiftKey);
+		const dx = snapped.x - anchorStart.x;
+		const dy = snapped.y - anchorStart.y;
+		const points = this._getPoints();
+		for (const [index, start] of this._dragStart) {
+			const point = points[index];
+			if (!point) {
+				continue;
+			}
+			// rounded so a shifted point does not pick up float noise like 12.700000000000001
+			point.x = roundTo(start.x + dx, 3);
+			point.y = roundTo(start.y + dy, 3);
+		}
+		this._onChange();
+	}
+
+	private _onMouseUp = (event: MouseEvent): void => {
+		if (event.button !== MOUSE_BUTTON.LEFT) {
+			return;
+		}
+
+		if (this._boxStart && this._boxEnd) {
+			this._selectInBox(this._boxStart, this._boxEnd);
+		} else if (this._pressHit >= 0) {
+			// a plain click on a selected point narrows the group down to it
+			if (!this._moved && !this._pressModifier && this._dragIndex !== null) {
+				this._setSelectedIndices([this._pressHit]);
+			}
+		} else if (!this._moved && this._pressScreen) {
+			// a click on empty canvas while points are selected is a misclick: it never adds a point
+			if (this._getSelectedIndices().length > 0) {
+				// Shift / Cmd/Ctrl keep the selection, a plain click clears it
+				if (!event.shiftKey && !this._pressModifier) {
+					this._setSelectedIndices([]);
+					this._onChange();
+				}
+				this._reset();
+				return;
+			}
+			// nothing selected: a click that did not move adds a point there
+			const raw = this._toWorld(event);
+			const points = this._getPoints();
+			// Shift aligns the new point with the last one, the start of the new edge
+			const last = points[points.length - 1];
+			const world = last
+				? lockAndSnap({ x: last.x, y: last.y }, raw, { x: raw.x - last.x, y: raw.y - last.y }, this._getSnapStep(), event.shiftKey)
+				: this._snap(raw);
+			// the new point stays unselected, so the next click on empty canvas adds another point
+			// instead of being taken as a misclick that deselects
+			points.push({ x: world.x, y: world.y });
+			this._onChange();
+		}
+
+		this._reset();
+	};
+
+	private _selectInBox(a: Point, b: Point): void {
+		const minX = Math.min(a.x, b.x);
+		const maxX = Math.max(a.x, b.x);
+		const minY = Math.min(a.y, b.y);
+		const maxY = Math.max(a.y, b.y);
+
+		const inside: number[] = [];
+		this._getPoints().forEach((point, index) => {
+			const s = this._worldToScreen(point);
+			if (s.x >= minX && s.x <= maxX && s.y >= minY && s.y <= maxY) {
+				inside.push(index);
+			}
+		});
+
+		if (this._pressModifier) {
+			if (inside.length > 0) {
+				const union = new Set([...this._getSelectedIndices(), ...inside]);
+				this._setSelectedIndices([...union].sort((x, y) => x - y));
+			}
+		} else {
+			this._setSelectedIndices(inside);
+		}
+	}
+
+	private _onMouseLeave = (): void => {
+		this._reset();
+	};
+
+	private _onKeyDown = (event: KeyboardEvent): void => {
+		const isEscape = event.key === 'Escape';
+		const isDelete = event.key === 'Delete' || event.key === 'Backspace';
+		if (!isEscape && !isDelete) {
+			return;
+		}
+		const selected = this._getSelectedIndices();
+		if (selected.length === 0) {
+			return;
+		}
+		// a key that belongs to an IME composition (it can cancel the candidate list) is not ours
+		if (isImeComposing(event)) {
+			return;
+		}
+		// a dialog on top of the editor (help panel, the CSV file name) must not act on points behind it; its overlay
+		// can hold the focus too (a click on the backdrop), so that counts as the dialog
+		const target = event.target as HTMLElement | null;
+		const dialog = target?.closest('[aria-modal="true"], .modal-overlay');
+		if (dialog && !dialog.contains(this._canvas)) {
+			return;
+		}
+
+		if (isEscape) {
+			// the selection stays while the mouse button is held, so a drag in progress is not cut short;
+			// the Escape is swallowed too, because letting it reach the shape dialog would close it
+			// mid-drag and throw the changes away
+			if (this.isPointerDown()) {
+				event.preventDefault();
+				event.stopPropagation();
+				return;
+			}
+			// stopped here at window capture, the shape dialog never sees this Escape and stays open;
+			// number inputs have no Escape of their own, so it works with a coordinate field focused too
+			this._setSelectedIndices([]);
+			this._onChange();
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		}
+
+		// let a focused form control (a number input, the snap step select) keep its own Backspace / Delete
+		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
+			return;
+		}
+
+		// highest first, so the indices still to remove do not shift
+		const points = this._getPoints();
+		for (let i = selected.length - 1; i >= 0; i--) {
+			points.splice(selected[i], 1);
+		}
+		this._setSelectedIndices([]);
+		this._onChange();
+		this._onEditEnd();
+	};
+
+	private _reset(): void {
+		const hadPress = this._pressScreen !== null;
+		const hadBox = this._boxStart !== null;
+		this._dragIndex = null;
+		this._dragStart = new Map();
+		this._boxStart = null;
+		this._boxEnd = null;
+		this._pressHit = -1;
+		this._pressModifier = false;
+		this._pressScreen = null;
+		this._pressWorld = null;
+		this._moved = false;
+		if (!this._transformService.isPanModeActive) {
+			this._canvas.style.cursor = CURSOR.CROSSHAIR;
+		}
+		// the box is drawn from the editor state, so it needs one more repaint to disappear
+		if (hadBox) {
+			this._onChange();
+		}
+		// _reset also runs when the mouse leaves the canvas, so a drag that ends outside still counts as one edit.
+		// A click or a box-select without edits is a no-op for the history (the selection is not tracked)
+		if (hadPress) {
+			this._onEditEnd();
+		}
+	}
+}

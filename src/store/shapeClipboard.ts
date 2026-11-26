@@ -1,10 +1,13 @@
 import { ref } from 'vue';
-import { PASTE_OFFSET } from '../constants/shapeClipboard';
-import { copyPlainData } from '../utils/plainData';
+import { copyPlainData } from '@/shared/utils/plainData';
 import { appSessionState, markStateDirty, setSelectedShapeID } from './appSessionState';
 import { history } from './history';
-import { captureShape, writeShape, type ShapeRecord } from './shapeRecord';
+import { captureShape, writeShape } from './shapeRecord';
+import type { ShapeRecord } from './shapeRecord.types';
 import { getUID, store, takeNextHatchAngle } from './store';
+
+/** How far a pasted shape lands from the one it was copied from, in x and y (world units, mm). Each repeated paste steps one more */
+const PASTE_OFFSET = 10;
 
 /**
  * The clipboard lives in memory only, not in the system one. It is not cleared when another project is

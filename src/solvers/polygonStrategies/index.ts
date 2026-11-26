@@ -1,4 +1,4 @@
-import type { PolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
+import type { PolygonBuildStrategy } from "./AbstractPolygonBuildStrategy.types";
 import { CSectionStrategy } from "./CSectionStrategy";
 import { ISectionStrategy } from "./ISectionStrategy";
 import { LSectionStrategy } from "./LSectionStrategy";

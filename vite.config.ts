@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import Markdown from 'unplugin-vue-markdown/vite'
@@ -6,6 +8,14 @@ import { katex } from '@mdit/plugin-katex'
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  test: {
+    include: ['tests/**/*.test.ts'],
+    environment: 'node',
+    testTimeout: 30000,
+  },
   plugins: [
     vue({ include: [/\.vue$/, /\.md$/] }),
     // .md files are compiled into Vue components; $...$ / $$...$$ math is rendered by KaTeX

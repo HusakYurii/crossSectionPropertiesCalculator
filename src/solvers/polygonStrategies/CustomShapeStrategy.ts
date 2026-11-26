@@ -1,8 +1,8 @@
-import { SHAPE_TYPES } from "../../interfaces/beams/common.types";
-import type { Geometry } from "../../interfaces/beams/common.types";
-import type { CustomShapeGeometry } from "../../interfaces/beams/CustomShape.types";
+import { SHAPE_TYPES } from "@/shared/shapes/types/common.types";
+import type { Geometry } from "@/shared/shapes/types/common.types";
+import type { CustomShapeGeometry } from "@/shared/shapes/types/CustomShape.types";
 import { AbstractPolygonBuildStrategy } from "./AbstractPolygonBuildStrategy";
-import { POLYGON_LIMITS } from "../../constants/geometryTolerances";
+import { POLYGON_LIMITS } from '../tolerances';
 
 /**
  * User drawn polygon. The points are used as they are and the polygon is closed by repeating the
