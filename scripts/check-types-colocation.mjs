@@ -18,7 +18,7 @@ const VALUE_DERIVED = {
 	'src/shared/math/snap.ts': ['SnapStep'],
 };
 /** .types.ts contract modules that have no same-named origin file */
-const OWNERLESS_TYPES_FILES = ['src/features/top-bar/menu/menu.types.ts', 'src/features/section-editor/sectionForm.types.ts'];
+const OWNERLESS_TYPES_FILES = ['src/features/top-bar/menu/menu.types.ts', 'src/features/standard-shapes-modal-editor/sectionForm.types.ts'];
 
 const rel = (f) => path.relative(process.cwd(), f).split(path.sep).join('/');
 const inTypeModuleDir = (f) => TYPE_MODULE_DIRS.some((d) => rel(f).startsWith(d));

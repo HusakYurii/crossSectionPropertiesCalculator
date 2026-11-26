@@ -12,7 +12,7 @@ export class CompositeCrossSectionPropertiesSolver {
 	/**
 	 * Properties of the whole built-up section from every shape, or the reason there are none.
 	 * It has no side effects (no toast), so it is safe to call inside a computed.
-	 * The math is in features/info/docs/composite_cross_section_properties_math.md. The shapes are not clipped: the layout is trusted.
+	 * The math is in features/help-panel/docs/composite_cross_section_properties_math.md. The shapes are not clipped: the layout is trusted.
 	 */
 	solve(shapes: readonly CompositePart[]): CompositeSolveResult {
 		const parts = shapes.map((part) => ({ ...part, sign: part.geometry.isNegative ? -1 : 1 }));

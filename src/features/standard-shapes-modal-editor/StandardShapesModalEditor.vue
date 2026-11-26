@@ -11,7 +11,7 @@ import CSectionForm from './forms/CSectionForm.vue';
 import LSectionForm from './forms/LSectionForm.vue';
 import ZSectionForm from './forms/ZSectionForm.vue';
 import TSectionForm from './forms/TSectionForm.vue';
-import { CustomShapeForm } from '@/features/custom-shape';
+import { CustomShapeModalEditor } from '@/features/custom-shape-modal-editor';
 import TubeSectionForm from './forms/TubeSectionForm.vue';
 import RectSectionForm from './forms/RectSectionForm.vue';
 import HollowRectSectionForm from './forms/HollowRectSectionForm.vue';
@@ -37,7 +37,7 @@ const SHAPE_FORMS: Partial<Record<ShapeType, Component>> = {
 	T_SECTION: TSectionForm,
 	L_SECTION: LSectionForm,
 	Z_SECTION: ZSectionForm,
-	CUSTOM_SHAPE: CustomShapeForm,
+	CUSTOM_SHAPE: CustomShapeModalEditor,
 };
 
 const modalElRef = ref<HTMLElement | null>(null);

@@ -21,7 +21,7 @@ import { useCustomShapeCsv } from './composables/useCustomShapeCsv';
 import SaveCustomShapeCSVFileModal from './modals/SaveCustomShapeCSVFileModal.vue';
 import CustomShapePointsList from './components/CustomShapePointsList.vue';
 import FemMeshSettings from './components/FemMeshSettings.vue';
-import type { SectionFormExposeSource } from '@/features/section-editor';
+import type { SectionFormExposeSource } from '@/features/standard-shapes-modal-editor';
 
 // the form starts empty: the user draws the polygon
 const getDefault = (): CustomShapeGeometry => ({

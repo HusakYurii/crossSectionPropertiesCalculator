@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import 'vue3-toastify/dist/index.css';
 import './app/styles/style.css'
-import { ReportPage, loadReportSnapshot } from '@/features/report'
+import { ReportPage, loadReportSnapshot } from '@/features/results-page'
 import { loadProjectData } from '@/store/persistence/storeDataImporter'
 import App from './app/App.vue';
 

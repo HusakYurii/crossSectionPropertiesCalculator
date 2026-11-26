@@ -15,7 +15,7 @@ import { store } from '@/store/store';
 import { getCompositeParts } from '@/store/compositeParts';
 import { history } from '@/store/history';
 import { compositeCrossSectionPropertiesSolver } from '@/solvers';
-import { createReportSnapshot, saveReportSnapshot } from '@/features/report';
+import { createReportSnapshot, saveReportSnapshot } from '@/features/results-page';
 import { toast } from 'vue3-toastify';
 import { eventBus } from '@/shared/services/EventBus';
 

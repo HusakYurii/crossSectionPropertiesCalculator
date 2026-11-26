@@ -118,17 +118,17 @@ export default [
     rules: { 'no-restricted-imports': ['error', { patterns: [...IMPORT_POLICY_PATTERNS, { regex: '^@/shared/canvas$', message: 'inside shared/canvas use relative imports, not the barrel' }] }] },
   },
 
-  // custom-shape -> section-editor: TYPE-ONLY (plan 18, decision 2026-11-26, review Q5).
-  // section-editor imports custom-shape at runtime; CustomShapeForm only needs `import type { SectionFormExposeSource }`.
+  // custom-shape-modal-editor -> standard-shapes-modal-editor: TYPE-ONLY (plan 18, decision 2026-11-26, review Q5).
+  // standard-shapes-modal-editor imports custom-shape-modal-editor at runtime; CustomShapeModalEditor only needs `import type { SectionFormExposeSource }`.
   // A value import here would create a runtime cycle, so it is an error; `import type` is allowed (erased by verbatimModuleSyntax).
   // Separate rule name (@typescript-eslint/…), so it does not replace the base `no-restricted-imports` policy above.
   {
-    files: ['src/features/custom-shape/**/*.{ts,vue}'],
+    files: ['src/features/custom-shape-modal-editor/**/*.{ts,vue}'],
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: {
       '@typescript-eslint/no-restricted-imports': ['error', {
-        paths: [{ name: '@/features/section-editor', allowTypeImports: true,
-          message: 'custom-shape may import section-editor only with `import type` (no runtime cycle)' }],
+        paths: [{ name: '@/features/standard-shapes-modal-editor', allowTypeImports: true,
+          message: 'custom-shape-modal-editor may import standard-shapes-modal-editor only with `import type` (no runtime cycle)' }],
       }],
     },
   },

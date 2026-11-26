@@ -72,4 +72,4 @@ In `standard_cross_section_properties_math.md`, "Both axes are axes of symmetry 
 - Code that uses the centroid or principal axes (`GenericBeamView`, `PropertyOverlays.ts`, `principalAxes.ts`) sees the same values as before.
 - `Ixy` can show small non-zero values at extreme sizes (at most 1.59 in the grid, where it used to be 0). `theta_p_deg` stays correct, so this is cosmetic.
 - Negative `w` or `h` now gives positive `A` and inertias. The old code gave negative values.
-- Section references in the docs and the pages in `src/features/info/pages` are accurate.
+- Section references in the docs and the pages in `src/features/help-panel/pages` are accurate.

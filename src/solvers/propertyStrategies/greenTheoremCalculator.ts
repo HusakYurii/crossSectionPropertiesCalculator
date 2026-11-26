@@ -21,7 +21,7 @@ export function principalAxisAngleRad(Ix: number, Iy: number, Ixy: number): numb
 }
 
 /**
- * Section properties of a closed polygon from its vertices. The math is in features/info/docs/green_theorem_cross_section_properties_math.md.
+ * Section properties of a closed polygon from its vertices. The math is in features/help-panel/docs/green_theorem_cross_section_properties_math.md.
  */
 export function calculateCrossSectionProperties(polygon: Polygon, precision: number = RESULT_PRECISION.SECTION_PROPERTIES): CrossSectionProperties {
 

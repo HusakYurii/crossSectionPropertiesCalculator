@@ -41,8 +41,8 @@ Feature-level services (not global): `components/middle/view/services/*` (Input,
 |---|---|---|
 | `useDebounce` | forms/ShapeCanvasPreview, right (dead), **solvers** (2) | Pure TS, not a composable. Move to `shared/utils/debounce.ts` |
 | `useEditorPanelsResize` | App.vue only | Move to `app/` |
-| `useHotKey` | App, customShape/CustomShapeForm | `shared/composables` |
-| `useLocalHistory` | customShape/CustomShapeForm only | Generic; keep in `shared/composables` |
+| `useHotKey` | App, customShape/CustomShapeModalEditor | `shared/composables` |
+| `useLocalHistory` | customShape/CustomShapeModalEditor only | Generic; keep in `shared/composables` |
 | `useModalKeyboard` | modals/ConfirmSaveFileModal, top/ConfirmModal, top/CreateOrUpdate…Modal, info/InfoPanel | `shared/composables` (part of the BaseModal kit) |
 
 Feature-local composables already exist:
@@ -113,8 +113,8 @@ External: interfaces/{common,beams,sectionProperties,FEMMeshOptions}, mathUtils/
 | `interfaces/sectionProperties`, `FEMMeshOptions` | solvers, store, forms, report | `shared/types/` (or exported from solvers) |
 | `interfaces/annotations/DimensionSource.ts` | view only; **imports a component file and the store** (cycle) | `shared/canvas/annotations/`; move `ArrowAxis` into it |
 | `interfaces/menu/menu.types.ts` | top/menu only | `features/top-bar/menu/` |
-| `interfaces/quickSolverToggles.ts`, `snapOptionsToggles.ts` | view + appSessionState | `features/view/model/` (store imports the types) |
-| `docs/*.md` | info pages only | `features/info/docs/` |
+| `interfaces/quickSolverToggles.ts`, `snapOptionsToggles.ts` | view + appSessionState | `features/shapes-viewer/model/` (store imports the types) |
+| `docs/*.md` | info pages only | `features/help-panel/docs/` |
 | `svg/*` | mostly view or left only; `undo`/`redo` shared | per feature `assets/`; `undo`/`redo` → `shared/assets/icons` |
 | `exampleProjects/*.json` | top/FilesMenu via store/exampleProjects | `features/top-bar/exampleProjects/` |
 
@@ -221,7 +221,7 @@ top/CreateOrUpdateSectionDataModalWindow.vue   (opened via store/sectionModal by
 
 ### 6.7 Custom shape (sub-feature of forms; 13 files, about 1,700 lines)
 ```
-forms/customShape/CustomShapeForm.vue
+forms/customShape/CustomShapeModalEditor.vue
 ├─ [XF] middle/view/quickActions/{SnapControl, QuickActionsBar, QuickActionsDivider, ViewQuickActions, HistoryQuickActions}
 ├─ ../components/{IsNegativeField, ButtonField}, ../composables/useStoreGeometryWatcher
 ├─ CustomShapePointsList.vue ── constants/geometryTolerances, mathUtils/round, NativeHotKeysService
@@ -242,7 +242,7 @@ It is big enough to be **its own feature**.
 | `modals/ConfirmSaveFileModal.vue` | top/SaveProjectModal, customShape/csv/SaveCustomShapeCSVFileModal | `shared/components/modals/` |
 | `top/ConfirmModal.vue` | top/FilesMenu (New / Import / Open example) | `shared/components/modals/` (generic) |
 | `top/SaveProjectModal.vue` | top/FilesMenu (Export) | `features/top-bar/modals/` |
-| `top/CreateOrUpdateSectionDataModalWindow.vue` | ShapesMenu + LeftPanel via store/sectionModal | `features/section-editor/` |
+| `top/CreateOrUpdateSectionDataModalWindow.vue` | ShapesMenu + LeftPanel via store/sectionModal | `features/standard-shapes-modal-editor/` |
 
 Three modals duplicate the `.modal-overlay/.modal/.modal-header/.modal-btn` CSS, the Teleport and the focus return. Extract a `shared/components/modals/BaseModal.vue`.
 
@@ -335,21 +335,21 @@ src/
 │  │  └─ index.ts
 │  │
 │  ├─ section-editor/                  (the create/edit modal + standard forms)
-│  │  ├─ SectionEditorModal.vue        (was top/CreateOrUpdateSectionDataModalWindow.vue)
+│  │  ├─ StandardShapesModalEditor.vue        (was top/CreateOrUpdateSectionDataModalWindow.vue)
 │  │  ├─ forms/{CSection, ISection, LSection, TSection, ZSection, RectSection, HollowRectSection, TubeSection}Form.vue
 │  │  ├─ components/{SectionShapeLayout, ShapeCanvasPreview, PlaceholderSectionForm}.vue
 │  │  ├─ composables/{useSimpleFormSolver, useCrossSectionPropertiesSolver}.ts
-│  │  └─ index.ts                      (exports SectionEditorModal)
+│  │  └─ index.ts                      (exports StandardShapesModalEditor)
 │  │
 │  ├─ custom-shape/
-│  │  ├─ CustomShapeForm.vue
+│  │  ├─ CustomShapeModalEditor.vue
 │  │  ├─ components/{CustomShapePointsList, FemMeshSettings}.vue
 │  │  ├─ composables/{useCustomShapeCanvas, useCustomShapeCsv, useFemCalculation}.ts
 │  │  ├─ editor/{PolygonEditor, PolygonDrawTarget}.ts
 │  │  ├─ csv/{csvTextParser, exportCsvPoints, pickCsvPoints}.ts
 │  │  ├─ modals/SaveCustomShapeCSVFileModal.vue
 │  │  ├─ constants.ts                  (CUSTOM_SHAPE_EDITOR_VIEW, POLYGON_EDITOR_STYLE, POLYGON_EDITOR_INTERACTION)
-│  │  └─ index.ts                      (exports CustomShapeForm)
+│  │  └─ index.ts                      (exports CustomShapeModalEditor)
 │  │
 │  ├─ info/
 │  │  ├─ InfoPanels.vue, InfoPanel.vue

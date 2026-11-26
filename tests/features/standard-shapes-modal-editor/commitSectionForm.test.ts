@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { commitSectionForm } from '@/features/section-editor/commitSectionForm';
-import type { SectionFormResult } from '@/features/section-editor/sectionForm.types';
+import { commitSectionForm } from '@/features/standard-shapes-modal-editor/commitSectionForm';
+import type { SectionFormResult } from '@/features/standard-shapes-modal-editor/sectionForm.types';
 import { appSessionState } from '@/store/appSessionState';
 import { history } from '@/store/history';
 import { store } from '@/store/store';

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { TopPanel } from '@/features/top-bar';
-import { SectionEditorModal } from '@/features/section-editor';
+import { StandardShapesModalEditor } from '@/features/standard-shapes-modal-editor';
 import { ShapesList } from '@/features/shapes-list';
-import { View } from '@/features/view';
-import { InfoPanels } from '@/features/info';
+import { View } from '@/features/shapes-viewer';
+import { InfoPanels } from '@/features/help-panel';
 import { infoPanelState } from '@/store/ui/infoPanel';
 import { useHotKey } from '@/shared/composables/useHotKey';
 import { nativeHotKeysService } from '@/shared/services/hotkeys/NativeHotKeysService';
@@ -64,7 +64,7 @@ onUnmounted(() => nativeHotKeysService.deactivate());
 		<div class="modals-container" :inert="shouldInert"></div>
 		<div class="info-page-container"></div>
 		<InfoPanels />
-		<SectionEditorModal />
+		<StandardShapesModalEditor />
 	</div>
 </template>
 
